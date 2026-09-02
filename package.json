@@ -1,8 +1,8 @@
 {
   "name": "tms-pdc-warehouse-v2",
   "private": true,
-  "version": "2.8.8",
-  "description": "TMS PDC Warehouse V2.8.8 \u2014 balanced dashboard KPI spacing + Supabase schema",
+  "version": "2.9.3",
+  "description": "TMS PDC Warehouse V2.9.3 \u2014 responsive desktop, tablet, and mobile layout + Supabase schema",
   "scripts": {
     "test": "node --check app.js && node --check master-data.js"
   }
