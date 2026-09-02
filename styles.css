@@ -252,7 +252,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .ut-header-logo-2 img{display:block;width:100%;max-width:380px;height:auto;max-height:62px;object-fit:contain;object-position:right center}
 @media(max-width:1100px){.ut-header-logo-2{width:min(33vw,320px);padding-left:14px}.ut-header-logo-2 img{max-height:52px}}
 @media(max-width:800px){.ut-header-logo-2{width:min(38vw,230px);padding-left:10px}.ut-header-logo-2 img{max-height:42px}}
-@media(max-width:560px){.ut-header-logo-2{display:none}}
+@media(max-width:560px){
+  .ut-header-logo-2{display:flex;width:112px;max-width:32vw;padding-left:6px;margin-left:auto;flex:0 0 auto}
+  .ut-header-logo-2 img{width:100%;max-width:112px;max-height:34px;object-fit:contain;object-position:right center}
+}
+
 
 /* =========================================================
    V2.9.3 MOBILE & RESPONSIVE SUPPORT
@@ -415,4 +419,86 @@ button,.btn,.sidebar button,.import-btn{touch-action:manipulation}
 /* Better mobile scroll behavior */
 @supports(padding:max(0px)){
   .ut-topbar{padding-top:max(10px,env(safe-area-inset-top))}
+}
+
+/* MOBILE HEADER FIX: keep UT logo 2 on the right */
+@media(max-width:520px){
+  .ut-topbar{height:78px;min-height:78px;padding:10px 12px;gap:8px;flex-wrap:nowrap;align-items:center}
+  .page-heading{order:initial;flex:1 1 auto;flex-basis:auto;min-width:0}
+  .page-heading h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .page-heading .eyebrow{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ut-topbar .top-actions{order:initial;width:auto}
+  .ut-header-logo-2{display:flex;order:3;width:105px;max-width:29vw;padding-left:4px;margin-left:0;flex:0 0 105px}
+  .ut-header-logo-2 img{max-width:105px;max-height:32px}
+}
+
+/* V2.9.4 — mobile viewport and header hardening */
+html, body { width:100%; max-width:100%; min-width:0; overflow-x:hidden; }
+.app-shell, .main, #app, .content, .dashboard-content, .card, .workspace, .dashboard-filter, .chart-card, .video-card { min-width:0; max-width:100%; }
+img, video, svg, canvas { max-width:100%; }
+
+@media (max-width: 760px) {
+  .ut-topbar {
+    display:grid !important;
+    grid-template-columns:40px minmax(0,1fr) minmax(82px, 105px) !important;
+    width:100% !important;
+    min-width:0 !important;
+    height:78px !important;
+    min-height:78px !important;
+    padding:10px 12px !important;
+    gap:8px !important;
+    align-items:center !important;
+    overflow:hidden !important;
+  }
+  .ut-topbar .sidebar-toggle { grid-column:1; width:40px; min-width:40px; }
+  .ut-topbar .page-heading {
+    grid-column:2;
+    min-width:0 !important;
+    width:100% !important;
+    order:initial !important;
+    overflow:hidden !important;
+  }
+  .ut-topbar .ut-header-logo-2 {
+    grid-column:3;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    padding:0 !important;
+    margin:0 !important;
+    display:flex !important;
+    order:initial !important;
+    justify-content:flex-end !important;
+    align-items:center !important;
+    overflow:hidden !important;
+  }
+  .ut-topbar .ut-header-logo-2 img {
+    display:block !important;
+    width:100% !important;
+    max-width:105px !important;
+    max-height:32px !important;
+    height:auto !important;
+    object-fit:contain !important;
+    object-position:right center !important;
+  }
+  .topbar h1, .page-heading h1 { max-width:100%; }
+}
+
+@media (max-width: 480px) {
+  .ut-topbar {
+    grid-template-columns:38px minmax(0,1fr) minmax(82px, 96px) !important;
+    height:74px !important;
+    min-height:74px !important;
+    padding:8px 10px !important;
+    gap:7px !important;
+  }
+  .ut-topbar .sidebar-toggle { width:38px; min-width:38px; height:40px; }
+  .ut-topbar .ut-header-logo-2 img { max-width:96px !important; max-height:30px !important; }
+}
+
+@media (max-width: 380px) {
+  /* Never hide the right-side UT logo on small phones. */
+  .ut-topbar .ut-header-logo-2 { display:flex !important; }
+  .ut-topbar { grid-template-columns:36px minmax(0,1fr) minmax(76px,88px) !important; padding-left:8px !important; padding-right:8px !important; }
+  .ut-topbar .sidebar-toggle { width:36px; min-width:36px; }
+  .ut-topbar .ut-header-logo-2 img { max-width:88px !important; max-height:28px !important; }
 }
