@@ -1,0 +1,37 @@
+# TMS PDC Warehouse V2.8.8 Fullstack
+
+Versi ini sudah berisi frontend statis dan backend/database schema Supabase.
+
+## Update V2.8.8
+
+- Revisi vertical spacing Dashboard: jarak filter → KPI → Time Classification/Pareto dibuat konsisten dan seimbang atas-bawah.
+- KPI tidak lagi menempel pada card filter di atas atau terlihat memiliki ruang bawah yang berlebihan.
+- Video observasi dapat dibuka dalam mode **fullscreen**.
+- Ditambahkan **seek/timeline bar** yang dapat ditarik dengan mouse/kursor untuk maju atau mundur ke detik mana pun.
+- Kontrol Mundur/Maju 5 Detik dan keyboard tetap tersedia.
+- Setelah **Set End** dan **Simpan Observasi**, video **tetap aktif** dan tidak perlu di-upload ulang. Satu video dapat digunakan untuk menyimpan banyak segmen observasi.
+- Ditambahkan tombol **×** di area video untuk menutup/menghapus video dari sesi observasi setelah selesai digunakan. Data observasi yang sudah tersimpan tetap aman.
+
+## Update V2.8.4
+- Tampilan video sekarang membaca rasio asli file setelah metadata dimuat. Video portrait, landscape, dan square ditampilkan tanpa crop/zoom paksa.
+- Penjelasan bantuan di bawah kontrol video dan input manual dihapus agar halaman lebih ringkas.
+- Deskripsi panjang di Master Process & Lean dihapus.
+- Form Tambah PIC diberi ruang dan posisi yang lebih nyaman dari tabel rating di bawahnya.
+
+## Update V2.8.3
+- **Set End** sekarang otomatis menjeda/pause video.
+- **Set Start** menyimpan titik awal lalu otomatis menjalankan/play video kembali.
+- Tampilan waktu video dan input manual menggunakan **2 angka di belakang koma**, bukan 3 digit.
+- Frontend dirapikan: ukuran font, tinggi kontrol, tombol, tabel, kartu, dan alignment dibuat lebih konsisten serta responsif.
+
+## Update V2.8.2
+- Sidebar/taskbar kiri default tersembunyi.
+- Klik tombol garis tiga di header kiri atas untuk membuka navigasi.
+- Saat memilih Dashboard, Observation, atau halaman lain, sidebar otomatis tersembunyi kembali.
+- Klik area gelap di luar sidebar atau tekan `Esc` untuk menutup menu.
+
+## Backend/database
+Folder `supabase/schema.sql` berisi schema database untuk deployment backend. Lihat `BACKEND-SETUP.md` dan `DEPLOY.md`.
+
+## Jalankan lokal
+Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan localStorage sampai integrasi Supabase diaktifkan.
