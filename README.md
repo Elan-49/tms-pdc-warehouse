@@ -57,3 +57,9 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 
 ## V3.0.6 Fix
 - Realtime Supabase tidak lagi me-render ulang halaman Observation saat menyimpan observasi, sehingga video lokal tetap terbuka dan dapat dipakai untuk banyak segmentasi.
+
+
+## V3.0.7 Final
+- Simbol Set Start diganti menjadi ikon play CSS murni (tanpa background/badge).
+- Tombol Set Start dan Set End dibuat transparan/polos di desktop dan mobile.
+- Tidak mengubah struktur frontend, backend, database schema, maupun konfigurasi cloud yang sudah ada.
