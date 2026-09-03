@@ -592,3 +592,11 @@ img, video, svg, canvas { max-width:100%; }
     border-left-width:12px!important;
   }
 }
+
+/* V3.0.9 — Login: Masuk / Buat Akun */
+.login-switch{display:flex;justify-content:center;gap:8px;margin-top:14px;border:1px solid rgba(255,255,255,.14);padding:4px;border-radius:12px;background:rgba(0,0,0,.14)}
+.login-link{flex:1;border:0;background:transparent;color:#dbe6f4;padding:9px 12px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
+.login-link:hover{background:rgba(255,255,255,.08)}
+.login-link.active{background:#f9b400;color:#0a2138}
+#signupForm label{display:block;margin-bottom:12px}
+@media (max-width:600px){.login-card{width:min(92vw,420px);padding:24px 18px}.login-switch{margin-top:12px}}

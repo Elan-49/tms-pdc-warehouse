@@ -39,18 +39,45 @@
     });
   }
 
+  async function getSupabaseClient() {
+    if (!hasSupabaseConfig) {
+      throw new Error('Pendaftaran akun membutuhkan konfigurasi Supabase.');
+    }
+    const sb = await loadSupabaseSdk();
+    if (!supabaseClient) supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.tmsSupabaseClient = supabaseClient;
+    return supabaseClient;
+  }
+
   async function doLogin(user, pass) {
     if (hasSupabaseConfig) {
-      const sb = await loadSupabaseSdk();
-      if (!supabaseClient) supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      window.tmsSupabaseClient = supabaseClient;
-      const { error } = await supabaseClient.auth.signInWithPassword({ email: user, password: pass });
+      const sb = await getSupabaseClient();
+      const { error } = await sb.auth.signInWithPassword({ email: user, password: pass });
       if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah.' : error.message);
       localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user, at: Date.now() }));
       return;
     }
     if (pass !== LOCAL_ACCESS_CODE) throw new Error('Passcode salah. Hubungi admin jika lupa.');
     localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'local', user: user || 'Pengguna', at: Date.now() }));
+  }
+
+  async function doSignup(name, email, pass) {
+    const sb = await getSupabaseClient();
+    if (pass.length < 6) throw new Error('Password minimal 6 karakter.');
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { full_name: name } }
+    });
+    if (error) throw new Error(error.message);
+
+    // Jika email confirmation aktif, session bisa masih null. Dalam kondisi ini
+    // tampilkan pesan agar pengguna memeriksa email sebelum login.
+    if (data.session) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: email, at: Date.now() }));
+      return { signedIn: true, message: 'Akun berhasil dibuat. Anda sudah masuk.' };
+    }
+    return { signedIn: false, message: 'Akun berhasil dibuat. Cek email Anda untuk verifikasi sebelum masuk.' };
   }
 
   function isLoggedIn() {
@@ -65,12 +92,30 @@
   window.tmsAuth = { logout, isLoggedIn, getClient: () => supabaseClient };
 
   setModeLabel();
+  const loginForm = $('#loginForm');
+  const signupForm = $('#signupForm');
+  const showLoginBtn = $('#showLoginBtn');
+  const showSignupBtn = $('#showSignupBtn');
+
+  function showAuthTab(mode) {
+    const signup = mode === 'signup';
+    loginForm.classList.toggle('hidden', signup);
+    signupForm.classList.toggle('hidden', !signup);
+    showLoginBtn.classList.toggle('active', !signup);
+    showSignupBtn.classList.toggle('active', signup);
+    $('#loginError').classList.add('hidden');
+    $('#loginError').textContent = '';
+  }
+
+  showLoginBtn.addEventListener('click', () => showAuthTab('login'));
+  showSignupBtn.addEventListener('click', () => showAuthTab('signup'));
+
   if (isLoggedIn()) {
     showApp();
     document.dispatchEvent(new CustomEvent('tms-auth-ready'));
   } else showLogin();
 
-  $('#loginForm').addEventListener('submit', async (e) => {
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
     const errEl = $('#loginError');
@@ -84,6 +129,40 @@
       document.dispatchEvent(new CustomEvent('tms-auth-ready'));
     } catch (err) {
       errEl.textContent = err.message || 'Login gagal. Coba lagi.';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const errEl = $('#loginError');
+    errEl.classList.add('hidden'); errEl.textContent = '';
+    const name = $('#signupName').value.trim();
+    const email = $('#signupEmail').value.trim();
+    const pass = $('#signupPass').value;
+    const confirm = $('#signupPassConfirm').value;
+    if (pass !== confirm) {
+      errEl.textContent = 'Konfirmasi password tidak sama.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Membuat akun...';
+    try {
+      const result = await doSignup(name, email, pass);
+      errEl.textContent = result.message;
+      errEl.classList.remove('hidden');
+      if (result.signedIn) {
+        showApp();
+        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+      } else {
+        signupForm.reset();
+        showAuthTab('login');
+      }
+    } catch (err) {
+      errEl.textContent = err.message || 'Pendaftaran akun gagal. Coba lagi.';
       errEl.classList.remove('hidden');
     } finally {
       btn.disabled = false; btn.textContent = original;

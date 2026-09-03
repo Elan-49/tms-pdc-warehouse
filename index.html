@@ -1,4 +1,4 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TMS PDC Warehouse V3.0.7</title><link rel="stylesheet" href="styles.css"></head><body>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TMS PDC Warehouse</title><link rel="stylesheet" href="styles.css"></head><body>
 <div class="login-screen" id="loginScreen">
   <div class="login-bg"><img src="login-hero.jpg" alt="Gedung United Tractors"></div>
   <div class="login-bg-gradient" aria-hidden="true"></div>
@@ -11,6 +11,17 @@
         <label>Password / Passcode<input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" required></label>
         <button class="btn primary full" type="submit">Masuk</button>
       </form>
+      <form id="signupForm" class="hidden">
+        <label>Nama Lengkap<input id="signupName" type="text" autocomplete="name" placeholder="cth. Budi Santoso" required></label>
+        <label>Email<input id="signupEmail" type="email" autocomplete="email" placeholder="nama@contoh.com" required></label>
+        <label>Password<input id="signupPass" type="password" autocomplete="new-password" minlength="6" placeholder="Minimal 6 karakter" required></label>
+        <label>Konfirmasi Password<input id="signupPassConfirm" type="password" autocomplete="new-password" minlength="6" placeholder="Ulangi password" required></label>
+        <button class="btn primary full" type="submit">Buat Akun</button>
+      </form>
+      <div class="login-switch" role="group" aria-label="Pilihan autentikasi">
+        <button type="button" class="login-link active" id="showLoginBtn">Masuk</button>
+        <button type="button" class="login-link" id="showSignupBtn">Buat Akun</button>
+      </div>
       <p class="login-error hidden" id="loginError"></p>
       <p class="login-mode" id="loginMode"></p>
     </div>

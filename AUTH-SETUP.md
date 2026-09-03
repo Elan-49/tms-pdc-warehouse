@@ -48,11 +48,9 @@ ini begitu Anda mengisi 2 baris konfigurasi — tidak perlu ubah kode lain.
    pemakaian internal kantor.
 
 ### Langkah 3 — Buat akun untuk tiap pengguna
-1. Buka **Authentication → Users → Add user**.
-2. Isi email dan password untuk tiap orang yang boleh login (misalnya
-   `andi@pdc.local` / password bebas). Ulangi untuk setiap PIC/analis.
-3. Tidak ada halaman "daftar sendiri" di aplikasi ini — sengaja, supaya
-   hanya admin yang bisa menambah pengguna baru lewat dashboard Supabase.
+Anda bisa membuat akun langsung dari halaman login melalui tombol **Buat Akun**. Pengguna mengisi nama, email, password, dan konfirmasi password. Jika **Confirm email** aktif di Supabase, pengguna harus memverifikasi email terlebih dahulu sebelum login.
+
+Admin juga tetap bisa membuat akun lewat **Authentication → Users → Add user** di Supabase.
 
 ### Langkah 4 — Ambil Project URL & anon key
 1. Buka **Project Settings → API**.
