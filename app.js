@@ -195,10 +195,8 @@ function renderRating(){
   const captureRatingDraft=()=>{
     settings.westinghouse??={}; settings.operatorDepartments??={}; settings.ratings??={};
     $$('#app tr[data-pic]').forEach(tr=>{
-      const pic=tr.dataset.pic;
-      const values=$$('.grade',tr).map(x=>+x.value||0);
-      const dept=tr.querySelector('.pic-dept')?.value||'';
-      settings.operatorDepartments[pic]=dept;
+      const pic=tr.dataset.pic, values=$$('.grade',tr).map(x=>+x.value||0);
+      settings.operatorDepartments[pic]=tr.querySelector('.pic-dept')?.value||'';
       settings.westinghouse[pic]={skill:values[0]||0,effort:values[1]||0,condition:values[2]||0,consistency:values[3]||0};
       settings.ratings[pic]=westinghouseFactor(settings.westinghouse[pic]);
     });
@@ -208,7 +206,7 @@ function renderRating(){
     <div class="analysis-note"><b>N Minimum Observasi Awal</b> adalah jumlah minimum observasi aktual (N) yang harus tersedia sebelum data dievaluasi pada Uji Kecukupan. Jika N masih di bawah batas ini, statusnya <b>Belum Dapat Diuji</b>.</div>
     <div class="card section"><div class="form-grid two-equal"><label>N Minimum Observasi Awal (N)<input id="minInitialN" type="number" min="2" step="1" value="${settings.minInitialN}"><small>Minimum jumlah observasi sebelum evaluasi kecukupan</small></label><label>Allowance (%)<input id="allowance" type="number" min="0" max="90" step="0.1" value="${settings.allowance*100}"><small>Allowance untuk perhitungan Standard Time</small></label></div></div>
     <div class="card section"><div class="section-head rating-head"><div><h3>WESTINGHOUSE • PER PIC</h3><p class="muted">RF = 1 + Skill + Effort + Condition + Consistency. Perubahan diterapkan ke Normal Time dan Standard Time.</p></div><div class="add-pic-form"><input id="newOperator" placeholder="Nama"><select id="newOperatorDept">${opt(activities,'Pilih Bagian / Activity')}</select><button id="addOperator" class="btn secondary">＋ Tambah PIC</button></div></div>
-    <div class="table-wrap rating-table-wrap"><table class="data-table rating-table"><thead><tr><th>PIC</th><th>Bagian / Activity</th><th>Skill</th><th>Effort</th><th>Condition</th><th>Consistency</th><th>Rating Factor</th><th>Aksi</th></tr></thead><tbody>${operatorList().map(o=>{const w=settings.westinghouse?.[o]||defaultWestinghouse();return `<tr data-pic="${esc(o)}"><td><b>${esc(o)}</b></td><td><select class="pic-dept">${opt(activities,'Pilih Bagian / Activity')}</select></td><td>${grade(skill,w.skill)}</td><td>${grade(effort,w.effort)}</td><td>${grade(condition,w.condition)}</td><td>${grade(consistency,w.consistency)}</td><td class="rf-result">1.000</td><td><button class="btn ghost remove-pic" data-pic="${esc(o)}">Hapus</button></td></tr>`}).join('')}</tbody></table></div><button id="saveSettings" class="btn primary" style="margin-top:15px">Simpan Rating & Analysis Settings</button></div>
+    <div class="table-wrap rating-table-wrap"><table class="data-table rating-table"><thead><tr><th>PIC</th><th>Bagian / Activity</th><th>Skill</th><th>Effort</th><th>Condition</th><th>Consistency</th><th>Rating Factor</th><th>Aksi</th></tr></thead><tbody>${operatorList().map(o=>{const w=settings.westinghouse?.[o]||defaultWestinghouse();const dept=settings.operatorDepartments?.[o]||'';return `<tr data-pic="${esc(o)}"><td><b>${esc(o)}</b></td><td><select class="pic-dept">${opt(activities,'Pilih Bagian / Activity')}</select></td><td>${grade(skill,w.skill)}</td><td>${grade(effort,w.effort)}</td><td>${grade(condition,w.condition)}</td><td>${grade(consistency,w.consistency)}</td><td class="rf-result">1.000</td><td><button class="btn ghost remove-pic" data-pic="${esc(o)}">Hapus</button></td></tr>`}).join('')}</tbody></table></div><button id="saveSettings" class="btn primary" style="margin-top:15px">Simpan Rating & Analysis Settings</button></div>
     <div class="grid cols-2 section">${refTable('Acuan Westinghouse — Skill',skill)}${refTable('Acuan Westinghouse — Effort',effort)}${refTable('Acuan Westinghouse — Condition',condition)}${refTable('Acuan Westinghouse — Consistency',consistency)}</div>
   </div>`;
   $$('#app tr[data-pic]').forEach(tr=>{
@@ -260,14 +258,15 @@ async function bootCloud(){
     if(window.tmsCloud?.enabled){
       const cloud=await window.tmsCloud.loadState();
       if(cloud){
-        observations=cloud.observations||[];
+        // Jangan pernah menimpa cache/data yang ada dengan respons cloud kosong.
+        if(Array.isArray(cloud.observations) && cloud.observations.length) observations=cloud.observations;
         settings={...settings,...(cloud.settings||{})};
         if(Array.isArray(cloud.master)&&cloud.master.length) localStorage.setItem(MASTER_KEY,JSON.stringify(cloud.master));
         saveLocalOnly();
       }
       window.tmsCloud.subscribe(async(remote)=>{
         if(!remote)return;
-        observations=remote.observations||observations;
+        if(Array.isArray(remote.observations) && remote.observations.length) observations=remote.observations;
         settings={...settings,...(remote.settings||{})};
         if(Array.isArray(remote.master)&&remote.master.length)localStorage.setItem(MASTER_KEY,JSON.stringify(remote.master));
         saveLocalOnly();

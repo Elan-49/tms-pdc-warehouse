@@ -13,6 +13,10 @@
   function n(v){return v==null?null:+v}
   async function loadState(){
     const sb=await getClient(); if(!sb)return null;
+    // Hindari membaca tabel sebagai user anonim lalu mengganti state aplikasi dengan data kosong.
+    const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+    if(sessionError) throw sessionError;
+    if(!sessionData?.session) throw new Error('Sesi Supabase belum siap. Silakan masuk ulang.');
     const [ops,masters,obs,rfs,st]=await Promise.all([
       sb.from('operators').select('*').order('name'),
       sb.from('master_elements').select('*').order('process').order('activity').order('element_name'),
