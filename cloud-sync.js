@@ -19,7 +19,7 @@
     if(sessionError) throw sessionError;
     const [ops,masters,obs,rfs,st]=await Promise.all([
       sb.from('operators').select('*').order('name'),
-      sb.from('master_elements').select('*').order('process').order('activity').order('element_name'),
+      sb.from('master_elements').select('*').order('created_at', {ascending:true}).order('id', {ascending:true}),
       sb.from('observations').select('*').order('created_at'),
       sb.from('rating_factors').select('*'),
       sb.from('study_settings').select('*').eq('id',1).maybeSingle()
