@@ -19,5 +19,5 @@ const LOCAL_ACCESS_CODE = 'utpdc2026';
    memakai MODE 1 di atas. Isi kedua nilai ini SETELAH mengikuti panduan
    di AUTH-SETUP.md kalau sudah siap memakai akun Supabase sungguhan:
    ------------------------------------------------------------------------ */
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://cakfxhtnakqicphvaiss.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_tE7rJ0xcnW4hc1DNtVvU9g_E-byR1yv';
