@@ -36,6 +36,8 @@ input,select,textarea{border-color:#cbd3dd}input:focus,select:focus,textarea:foc
 /* V2.8.3 UI consistency and observation precision cleanup */
 :root{--ui-radius:12px;--ui-radius-sm:9px;--ui-control-h:44px;--ui-font:Inter,"Segoe UI",Arial,sans-serif}
 html{font-size:16px}body,button,input,select,textarea{font-family:var(--ui-font)}button,input,select,textarea{font-size:13px}
+input[type="date"],input[type="time"],input[type="datetime-local"],input[type="number"]{min-width:0}
+@media(max-width:760px){input,select,textarea{font-size:16px}}
 .topbar{min-height:96px}.page-heading h1{font-size:26px;line-height:1.15}.eyebrow{line-height:1.2}
 .card{border-radius:var(--ui-radius)}.btn,.top-actions button,.sidebar-toggle,input,select{min-height:var(--ui-control-h)}
 .btn{display:inline-flex;align-items:center;justify-content:center;line-height:1.15;text-align:center}
@@ -501,4 +503,28 @@ img, video, svg, canvas { max-width:100%; }
   .ut-topbar { grid-template-columns:36px minmax(0,1fr) minmax(76px,88px) !important; padding-left:8px !important; padding-right:8px !important; }
   .ut-topbar .sidebar-toggle { width:36px; min-width:36px; }
   .ut-topbar .ut-header-logo-2 img { max-width:88px !important; max-height:28px !important; }
+}
+
+/* ==========================================================================
+   LOGIN SCREEN — full-bleed building photo, gradient only at the bottom
+   ========================================================================== */
+.login-screen{position:fixed;inset:0;z-index:1000;overflow-y:auto}
+.login-bg{position:fixed;inset:0;z-index:0;background:#0b2340}
+.login-bg img{width:100%;height:100%;object-fit:cover;display:block}
+.login-bg-gradient{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(7,27,51,0) 0%,rgba(7,27,51,0) 52%,rgba(7,27,51,.35) 75%,rgba(7,27,51,.72) 100%)}
+.login-panel{position:relative;z-index:2;min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:24px 18px 56px}
+.login-card{width:100%;max-width:400px;background:rgba(13,22,36,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:30px 28px 26px;box-shadow:0 20px 50px rgba(0,0,0,.45);text-align:center}
+.login-badge{width:56px;height:56px;object-fit:contain;margin-bottom:14px;border-radius:12px;background:#fff;padding:8px}
+.login-card h1{color:#fff;font-size:19px;margin:0 0 20px;letter-spacing:.4px;font-weight:800}
+.login-card form{display:grid;gap:14px;text-align:left}
+.login-card label{color:#dbe5f5;font-size:12px;font-weight:700;display:grid;gap:6px}
+.login-card input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:11px 12px}
+.login-card input::placeholder{color:#a9b8cc}
+.login-card input:focus{outline:2px solid rgba(245,180,0,.35);border-color:var(--ut-yellow)}
+.login-card .btn.primary{margin-top:2px;min-height:44px}
+.login-error{color:#ff9c94;font-size:12px;margin:14px 0 0;background:rgba(230,73,73,.16);border:1px solid rgba(230,73,73,.4);border-radius:8px;padding:9px 10px;line-height:1.4}
+.login-mode{color:#c7d2e2;font-size:11px;margin:18px 0 0}
+@media(max-width:520px){
+  .login-panel{padding:20px 14px 40px}
+  .login-card{padding:24px 20px 22px;border-radius:14px}
 }

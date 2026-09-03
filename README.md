@@ -1,6 +1,13 @@
-# TMS PDC Warehouse V2.8.8 Fullstack
+# TMS PDC Warehouse V2.9.7 Fullstack
 
 Versi ini sudah berisi frontend statis dan backend/database schema Supabase.
+
+## Update V2.9.7
+- Ditambahkan **halaman Login** sebelum masuk ke dashboard: background gradasi biru navy (warna UT) dengan foto gedung United Tractors di bagian atas.
+- Login mendukung 2 mode yang otomatis dipilih tergantung konfigurasi: **Passcode Lokal** (aktif secara default, tanpa setup) atau **Supabase** (akun & password sungguhan per orang). Panduan lengkap ada di `AUTH-SETUP.md`.
+- Tombol **Keluar** ditambahkan di footer aplikasi untuk logout.
+- Perbaikan mobile: input tanggal & form lain tidak lagi memicu auto-zoom Safari di iPhone (font kontrol dinaikkan ke 16px khusus di layar HP).
+- Tombol Fullscreen video sekarang mem-fullscreen-kan video itu sendiri (bukan bingkainya), sehingga video portrait langsung tampil benar tanpa perlu klik dua kali.
 
 ## Update V2.8.8
 

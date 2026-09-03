@@ -140,7 +140,7 @@ function wireObserve(){
   $('#forward5').onclick=()=>seekBy(5);
   $('#fullVideo').onclick=async()=>{
     if(!hasVideo())return alert('Pilih video terlebih dahulu.');
-    try{if(wrap.requestFullscreen)await wrap.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen();}catch(e){console.warn(e);}
+    try{if(video.requestFullscreen)await video.requestFullscreen();else if(wrap.requestFullscreen)await wrap.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen();}catch(e){console.warn(e);}
   };
   $('#removeVideo').onclick=()=>{if(confirm('Tutup video ini? Video tidak akan menghapus data observasi yang sudah disimpan.'))removeVideo();};
   $('#videoInput').onchange=e=>loadVideoFile(e.target.files[0]);
@@ -219,7 +219,7 @@ function renderMaster(){
  setHeader('Master Process & Lean','MASTER DATA • EDITABLE');
  const rows=masterData();
  $('#app').innerHTML=`<div class="content">
- <div class="card"><div class="section-head"><div><h3>Master Data Dinamis</h3></div><div><button id="addMaster" class="btn primary">＋ Tambah Element</button> <button id="resetMaster" class="btn ghost">Reset ke Dummy</button></div></div>
+ <div class="card"><div class="section-head"><div><h3>Master Data Dinamis</h3></div><div><button id="addMaster" class="btn primary">＋ Tambah Element</button></div></div>
  <div class="master-legend"><b>8 Lean Waste:</b> ${WASTE_TYPES.map(x=>`<span class="badge warn">${x}</span>`).join(' ')} <span class="badge">None / - = tidak ada waste</span></div>
  <div class="table-wrap"><table class="data-table"><thead><tr><th>Process</th><th>Activity</th><th>Element Kerja</th><th>Klasifikasi</th><th>Lean Waste</th><th>Metode</th><th>Peralatan</th><th>Freq/Hari</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${esc(r.classification)}</td><td>${esc(r.waste||'-')}</td><td>${esc(r.method||'-')}</td><td>${esc(r.equipment||'-')}</td><td>${fmt(r.frequency)}</td><td><button class="btn ghost editMaster" data-i="${i}">Edit</button> <button class="btn ghost delMaster" data-i="${i}">Hapus</button></td></tr>`).join('')}</tbody></table></div></div></div>`;
  function modal(existing={},editIndex=null){
@@ -231,7 +231,6 @@ function renderMaster(){
  $('#addMaster').onclick=()=>modal();
  $$('.editMaster').forEach(b=>b.onclick=()=>modal(masterData()[+b.dataset.i],+b.dataset.i));
  $$('.delMaster').forEach(b=>b.onclick=()=>{if(confirm('Hapus master element ini? Observasi lama tidak otomatis dihapus.')){let a=masterData();a.splice(+b.dataset.i,1);saveMaster(a);save();renderMaster();}});
- $('#resetMaster').onclick=()=>{if(confirm('Kembalikan seluruh master ke data dummy awal? Master lapangan saat ini akan hilang.')){localStorage.removeItem(MASTER_KEY);renderMaster();}};
 }
 
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste};

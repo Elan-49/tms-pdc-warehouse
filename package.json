@@ -1,7 +1,7 @@
 {
   "name": "tms-pdc-warehouse-v2",
   "private": true,
-  "version": "2.9.3",
+  "version": "2.9.7",
   "description": "TMS PDC Warehouse V2.9.3 \u2014 responsive desktop, tablet, and mobile layout + Supabase schema",
   "scripts": {
     "test": "node --check app.js && node --check master-data.js"
