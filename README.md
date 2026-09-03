@@ -48,7 +48,7 @@ Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan lo
 Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.
 
 
-## V3.0.3 Fix
+## V3.0.4 Fix
 - Cloud backend tidak lagi dijalankan sebelum login Supabase selesai.
 - Menghapus pengecekan sesi yang menyebabkan error `Sesi Supabase belum siap`.
 - Perbaikan Rating PIC dan penghapusan Reset Data Lokal dari V3.0.2 tetap dipertahankan.

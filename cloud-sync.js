@@ -46,7 +46,7 @@
     if(opRows.length){const {error}=await sb.from('operators').upsert(opRows,{onConflict:'name'});if(error)throw error;}
     const {data:ops,error:oe}=await sb.from('operators').select('id,name');if(oe)throw oe;
     const opId=Object.fromEntries((ops||[]).map(x=>[x.name,x.id]));
-    const masters=(state.master||[]).map(m=>({process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:m.method||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,notes:m.notes||null}));
+    const masters=(state.master||[]).map(m=>{const row={process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:m.method||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,notes:m.notes||null};if(m.id)row.id=m.id;return row;});
     if(masters.length){const {error}=await sb.from('master_elements').upsert(masters,{onConflict:'process,activity,element_name'});if(error)throw error;}
     const ratings=names.map(name=>{const w=state.settings.westinghouse?.[name]||{};return {operator_id:opId[name],skill_value:n(w.skill)||0,effort_value:n(w.effort)||0,condition_value:n(w.condition)||0,consistency_value:n(w.consistency)||0};}).filter(x=>x.operator_id);
     if(ratings.length){const {error}=await sb.from('rating_factors').upsert(ratings,{onConflict:'operator_id'});if(error)throw error;}
@@ -60,5 +60,18 @@
     channel=sb.channel('tms-realtime').on('postgres_changes',{event:'*',schema:'public',table:'observations'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'operators'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'master_elements'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'rating_factors'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'study_settings'},refresh).subscribe();
     async function refresh(){if(applying)return;applying=true;try{const data=await loadState();cb(data)}finally{setTimeout(()=>applying=false,500)}}
   }
-  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe};
+  async function deleteObservation(id){
+    const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
+    const {error}=await sb.from('observations').delete().eq('id',id); if(error)throw error;
+  }
+  async function deleteOperator(name){
+    const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
+    const {error}=await sb.from('operators').delete().eq('name',name); if(error)throw error;
+  }
+  async function deleteMaster(id){
+    const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
+    if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
+    const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;
+  }
+  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe,deleteObservation,deleteOperator,deleteMaster};
 })();
