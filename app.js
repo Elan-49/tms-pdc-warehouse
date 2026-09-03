@@ -277,4 +277,14 @@ async function bootCloud(){
   render();
 }
 function saveLocalOnly(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
-bootCloud();
+function startAppCloud(){
+  // Jika memakai Supabase, jangan load tabel sebelum login berhasil.
+  // Pada mode lokal aplikasi dapat langsung berjalan seperti biasa.
+  const shell=$('#appShell');
+  if(window.tmsCloud?.enabled && shell?.classList.contains('hidden')){
+    document.addEventListener('tms-auth-ready',()=>bootCloud(),{once:true});
+  }else{
+    bootCloud();
+  }
+}
+startAppCloud();

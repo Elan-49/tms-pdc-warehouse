@@ -65,7 +65,10 @@
   window.tmsAuth = { logout, isLoggedIn, getClient: () => supabaseClient };
 
   setModeLabel();
-  if (isLoggedIn()) showApp(); else showLogin();
+  if (isLoggedIn()) {
+    showApp();
+    document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+  } else showLogin();
 
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -78,6 +81,7 @@
     try {
       await doLogin(user, pass);
       showApp();
+      document.dispatchEvent(new CustomEvent('tms-auth-ready'));
     } catch (err) {
       errEl.textContent = err.message || 'Login gagal. Coba lagi.';
       errEl.classList.remove('hidden');
