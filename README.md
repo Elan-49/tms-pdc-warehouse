@@ -54,3 +54,6 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 - Perbaikan blank pada dropdown Westinghouse untuk PIC pertama/baris paling atas: nilai 0 sekarang dinormalisasi ke format 0.00 agar otomatis memilih D (0.00).
 - Menghapus seluruh simbol ikon teks pada taskbar/sidebar: Dashboard, Observation, Data Waktu, Master Process & Lean, Data Quality, Uji Keseragaman, Uji Kecukupan, Rating Factor, dan Standard Time.
 - Perbaikan Rating PIC dan penghapusan Reset Data Lokal dari V3.0.2 tetap dipertahankan.
+
+## V3.0.6 Fix
+- Realtime Supabase tidak lagi me-render ulang halaman Observation saat menyimpan observasi, sehingga video lokal tetap terbuka dan dapat dipakai untuk banyak segmentasi.

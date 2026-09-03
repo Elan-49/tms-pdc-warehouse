@@ -284,7 +284,12 @@ async function bootCloud(){
         settings={...settings,...(remote.settings||{})};
         if(Array.isArray(remote.master)&&remote.master.length)localStorage.setItem(MASTER_KEY,JSON.stringify(remote.master));
         saveLocalOnly();
-        render();
+        // Saat halaman Observation sedang aktif, jangan re-render seluruh halaman akibat
+        // event realtime. Re-render akan membuat elemen <video> dibuat ulang sehingga
+        // video lokal/blob URL terlihat seperti tertutup dan pengguna harus upload ulang.
+        // Data cloud tetap diperbarui di memori; tampilan lain akan memakai data terbaru
+        // saat pengguna berpindah halaman.
+        if(state.view!=='observe') render();
       });
     }
   }catch(err){console.error(err);alert('Cloud backend belum dapat dimuat. Aplikasi tetap memakai data lokal. Periksa konfigurasi Supabase.');}
