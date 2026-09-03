@@ -43,6 +43,7 @@
     if (hasSupabaseConfig) {
       const sb = await loadSupabaseSdk();
       if (!supabaseClient) supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.tmsSupabaseClient = supabaseClient;
       const { error } = await supabaseClient.auth.signInWithPassword({ email: user, password: pass });
       if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah.' : error.message);
       localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user, at: Date.now() }));
@@ -61,7 +62,7 @@
     if (supabaseClient) supabaseClient.auth.signOut().catch(() => {});
     showLogin();
   }
-  window.tmsAuth = { logout, isLoggedIn };
+  window.tmsAuth = { logout, isLoggedIn, getClient: () => supabaseClient };
 
   setModeLabel();
   if (isLoggedIn()) showApp(); else showLogin();

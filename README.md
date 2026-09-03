@@ -42,3 +42,7 @@ Folder `supabase/schema.sql` berisi schema database untuk deployment backend. Li
 
 ## Jalankan lokal
 Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan localStorage sampai integrasi Supabase diaktifkan.
+
+
+## V3.0 Cloud Realtime
+Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.

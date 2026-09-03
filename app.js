@@ -2,7 +2,7 @@ const KEY='tms-pdc-v2-data'; const SETTINGS_KEY='tms-pdc-v2-settings'; const MAS
 const WASTE_TYPES=['Defects','Overproduction','Waiting','Non-Utilized Talent','Transportation','Inventory','Motion','Extra Processing'];
 const CLASSIFICATIONS=['Direct Value-Added','Non-Value-Added','Indirect','Loss'];
 function masterData(){return JSON.parse(localStorage.getItem(MASTER_KEY)||JSON.stringify(MASTER_DATA));}
-function saveMaster(rows){localStorage.setItem(MASTER_KEY,JSON.stringify(rows));}
+function saveMaster(rows){localStorage.setItem(MASTER_KEY,JSON.stringify(rows));if(window.tmsCloud?.enabled)window.tmsCloud.saveSnapshot({observations,settings,master:rows}).catch(console.error);}
 function getMaster(element){return masterData().find(x=>x.element===element);}
 let observations=JSON.parse(localStorage.getItem(KEY)||'[]');
 let settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
@@ -22,7 +22,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[m]));
 function operatorList(){return [...new Set(settings.operators.filter(Boolean).map(x=>String(x).trim()).filter(x=>!x.startsWith('Kalau menambah operator baru:')))]}
 function westinghouseFactor(r){return 1+(+r.skill||0)+(+r.effort||0)+(+r.condition||0)+(+r.consistency||0)}
-function save(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings)); const x=$('#storageStatus');if(x){x.textContent='Auto-saved '+new Date().toLocaleTimeString('id-ID');}}
+function save(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings)); if(window.tmsCloud?.enabled)window.tmsCloud.saveSnapshot({observations,settings,master:masterData()}).catch(console.error); const x=$('#storageStatus');if(x){x.textContent=(window.tmsCloud?.enabled?'Cloud sync ':'Auto-saved ')+new Date().toLocaleTimeString('id-ID');}}
 function fmt(n){return Number(n||0).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function t(sec){if(sec==null||!isFinite(sec))return '—';sec=Math.max(0,Math.round(sec*100)/100);let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),whole=Math.floor(sec%60),cs=Math.round((sec-Math.floor(sec))*100);if(cs===100){whole++;cs=0}if(whole===60){whole=0;m++}if(m===60){m=0;h++}return `${h?String(h).padStart(2,'0')+':':''}${String(m).padStart(2,'0')}:${String(whole).padStart(2,'0')}.${String(cs).padStart(2,'0')}`}
 function unique(a){return [...new Set(a)]}
@@ -236,4 +236,39 @@ function renderMaster(){
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste};
 function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.classList.toggle('sidebar-open',!!open); const toggle=$('#sidebarToggle'); if(toggle) toggle.setAttribute('aria-expanded',String(!!open));}
 function render(){renderers[state.view]();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));}
-$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;setSidebar(false);render()});document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;setSidebar(false);render()}});$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open'));$('#sidebarBackdrop').onclick=()=>setSidebar(false);document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});$('#exportCsv').onclick=exportCsv;$('#importCsv').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);$('#clearAll').onclick=()=>{if(confirm('Hapus semua local observations?')){observations=[];save();render()}};render();
+$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;setSidebar(false);render()});
+document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;setSidebar(false);render()}});
+$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open'));
+$('#sidebarBackdrop').onclick=()=>setSidebar(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});
+$('#exportCsv').onclick=exportCsv;
+$('#importCsv').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);
+$('#clearAll').onclick=async()=>{
+  if(!confirm(window.tmsCloud?.enabled?'Hapus cache lokal dan muat ulang data dari cloud? Data Supabase tidak akan dihapus.':'Hapus semua data lokal?'))return;
+  localStorage.removeItem(KEY);localStorage.removeItem(SETTINGS_KEY);localStorage.removeItem(MASTER_KEY);
+  if(window.tmsCloud?.enabled){await bootCloud();}else{observations=[];settings={allowance:.1,confidence:95,minInitialN:5,operators:[...DEFAULT_OPERATORS],operatorDepartments:{},ratings:{}};render();}
+};
+async function bootCloud(){
+  try{
+    if(window.tmsCloud?.enabled){
+      const cloud=await window.tmsCloud.loadState();
+      if(cloud){
+        observations=cloud.observations||[];
+        settings={...settings,...(cloud.settings||{})};
+        if(Array.isArray(cloud.master)&&cloud.master.length) localStorage.setItem(MASTER_KEY,JSON.stringify(cloud.master));
+        saveLocalOnly();
+      }
+      window.tmsCloud.subscribe(async(remote)=>{
+        if(!remote)return;
+        observations=remote.observations||observations;
+        settings={...settings,...(remote.settings||{})};
+        if(Array.isArray(remote.master)&&remote.master.length)localStorage.setItem(MASTER_KEY,JSON.stringify(remote.master));
+        saveLocalOnly();
+        render();
+      });
+    }
+  }catch(err){console.error(err);alert('Cloud backend belum dapat dimuat. Aplikasi tetap memakai data lokal. Periksa konfigurasi Supabase.');}
+  render();
+}
+function saveLocalOnly(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
+bootCloud();
