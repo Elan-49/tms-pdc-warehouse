@@ -48,7 +48,9 @@ Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan lo
 Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.
 
 
-## V3.0.4 Fix
+## V3.0.5 Fix
 - Cloud backend tidak lagi dijalankan sebelum login Supabase selesai.
 - Menghapus pengecekan sesi yang menyebabkan error `Sesi Supabase belum siap`.
+- Perbaikan blank pada dropdown Westinghouse untuk PIC pertama/baris paling atas: nilai 0 sekarang dinormalisasi ke format 0.00 agar otomatis memilih D (0.00).
+- Menghapus seluruh simbol ikon teks pada taskbar/sidebar: Dashboard, Observation, Data Waktu, Master Process & Lean, Data Quality, Uji Keseragaman, Uji Kecukupan, Rating Factor, dan Standard Time.
 - Perbaikan Rating PIC dan penghapusan Reset Data Lokal dari V3.0.2 tetap dipertahankan.

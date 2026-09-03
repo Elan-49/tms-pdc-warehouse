@@ -17,6 +17,16 @@ settings.operators ??= [...DEFAULT_OPERATORS];
 settings.operatorDepartments ??= {};
 settings.ratings ??= {};
 settings.operators.forEach(o=>settings.ratings[o]??=1);
+settings.westinghouse??={};
+settings.operators.forEach(o=>{
+  const w=settings.westinghouse[o]||{};
+  settings.westinghouse[o]={
+    skill:Number.isFinite(+w.skill)?+w.skill:0,
+    effort:Number.isFinite(+w.effort)?+w.effort:0,
+    condition:Number.isFinite(+w.condition)?+w.condition:0,
+    consistency:Number.isFinite(+w.consistency)?+w.consistency:0
+  };
+});
 let state={view:'dashboard',videoUrl:null,start:null,end:null,manualTime:null};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[m]));
@@ -212,7 +222,11 @@ function renderRating(){
   $$('#app tr[data-pic]').forEach(tr=>{
     const pic=tr.dataset.pic, old=settings.westinghouse?.[pic];
     const dept=tr.querySelector('.pic-dept'); dept.value=settings.operatorDepartments?.[pic]||'';
-    if(old){const vals=[old.skill,old.effort,old.condition,old.consistency];$$('.grade',tr).forEach((el,i)=>{if(vals[i]!=null)el.value=String(vals[i])})}
+    if(old){const vals=[old.skill,old.effort,old.condition,old.consistency];$$('.grade',tr).forEach((el,i)=>{
+      const value=Number.isFinite(+vals[i])?(+vals[i]).toFixed(2):'0.00';
+      el.value=value;
+      if(!el.value) el.value='0.00';
+    })}
     const recalc=()=>{const v=$$('.grade',tr).map(x=>+x.value);tr.querySelector('.rf-result').textContent=westinghouseFactor({skill:v[0],effort:v[1],condition:v[2],consistency:v[3]}).toFixed(3)};
     $$('.grade',tr).forEach(x=>x.onchange=recalc);recalc();
   });
