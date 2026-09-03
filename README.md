@@ -46,3 +46,10 @@ Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan lo
 
 ## V3.0 Cloud Realtime
 Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.
+
+
+## V3.0.1 fix
+- Rating Westinghouse tetap tersimpan saat menambah PIC dan halaman dirender ulang.
+- PIC baru otomatis memiliki nilai default D / D / D / D (RF 1.000).
+- Tombol dan handler Reset Data Lokal dihapus dari UI.
+- Struktur frontend, Supabase realtime adapter, dan schema database tetap dipertahankan.
