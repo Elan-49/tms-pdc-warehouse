@@ -517,6 +517,7 @@ img, video, svg, canvas { max-width:100%; }
 .login-badge{width:82px;height:82px;object-fit:contain;margin-bottom:16px;border-radius:50%;background:transparent;padding:0;display:block;margin-left:auto;margin-right:auto}
 .login-card h1{color:#fff;font-size:19px;margin:0 0 20px;letter-spacing:.4px;font-weight:800}
 .login-card form{display:grid;gap:14px;text-align:left}
+.login-card form.hidden{display:none!important}
 .login-card label{color:#dbe5f5;font-size:12px;font-weight:700;display:grid;gap:6px}
 .login-card input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:11px 12px}
 .login-card input::placeholder{color:#a9b8cc}
@@ -524,9 +525,26 @@ img, video, svg, canvas { max-width:100%; }
 .login-card .btn.primary{margin-top:2px;min-height:44px}
 .login-error{color:#ff9c94;font-size:12px;margin:14px 0 0;background:rgba(230,73,73,.16);border:1px solid rgba(230,73,73,.4);border-radius:8px;padding:9px 10px;line-height:1.4}
 .login-mode{color:#c7d2e2;font-size:11px;margin:18px 0 0}
+@media(max-width:900px){
+  .login-panel{padding:24px 16px}
+  .login-card{width:min(94vw,460px)}
+}
 @media(max-width:520px){
-  .login-panel{padding:20px 14px}
-  .login-card{padding:24px 20px 22px;border-radius:14px}
+  .login-screen{-webkit-overflow-scrolling:touch}
+  .login-panel{padding:18px 12px;align-items:flex-start}
+  .login-card{width:100%;max-width:420px;margin:12px 0;padding:22px 18px 20px;border-radius:14px}
+  .login-card h1{font-size:18px;margin-bottom:16px}
+  .login-card form{gap:12px}
+  .login-card label{font-size:12px;gap:6px}
+  .login-card input{min-height:46px;padding:12px}
+  .login-card .btn.primary{min-height:46px}
+}
+@media(max-width:380px){
+  .login-panel{padding:12px 8px}
+  .login-card{margin:6px 0;padding:20px 14px 18px}
+  .login-badge{width:60px;height:60px;margin-bottom:10px}
+  .login-card h1{font-size:17px}
+  .login-link{padding:9px 8px}
 }
 @media(max-height:700px){
   .login-badge{width:64px;height:64px;margin-bottom:12px}
