@@ -37,8 +37,21 @@
   async function getClient() {
     if (!configured) return null;
     if (client) return client;
-    const sb = await loadSdk();
-    client = window.tmsSupabaseClient || sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (window.__tmsSupabaseClient) {
+      client = window.__tmsSupabaseClient;
+      window.tmsSupabaseClient = client;
+      return client;
+    }
+    if (!window.__tmsSupabaseClientPromise) {
+      window.__tmsSupabaseClientPromise = loadSdk().then(sb => {
+        const existing = window.tmsSupabaseClient || window.__tmsSupabaseClient;
+        const instance = existing || sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.__tmsSupabaseClient = instance;
+        window.tmsSupabaseClient = instance;
+        return instance;
+      });
+    }
+    client = await window.__tmsSupabaseClientPromise;
     window.tmsSupabaseClient = client;
     return client;
   }
@@ -111,6 +124,18 @@
 
     // Baca ulang session supaya race condition setelah sign-in tidak memicu 401.
     const session = await readSession();
+    if (session?.refresh_token) {
+      try {
+        const refreshed = await (await getClient()).auth.refreshSession(session);
+        if (!refreshed.error && refreshed.data?.session) {
+          currentSession = refreshed.data.session;
+          persistSession(refreshed.data.session);
+          return { mode: 'supabase', session: refreshed.data.session };
+        }
+      } catch (refreshError) {
+        console.warn('Supabase session refresh skipped:', refreshError);
+      }
+    }
     if (session?.user) {
       persistSession(session);
       return { mode: 'supabase', session };

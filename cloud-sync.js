@@ -9,7 +9,23 @@
     await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});
     return window.supabase;
   }
-  async function getClient(){if(!configured)return null;if(client)return client;const sb=await sdk();client=window.tmsSupabaseClient||sb.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);window.tmsSupabaseClient=client;return client}
+  async function getClient(){
+    if(!configured)return null;
+    if(client)return client;
+    if(window.__tmsSupabaseClient){client=window.__tmsSupabaseClient;window.tmsSupabaseClient=client;return client}
+    if(!window.__tmsSupabaseClientPromise){
+      window.__tmsSupabaseClientPromise=sdk().then(sb=>{
+        const existing=window.tmsSupabaseClient||window.__tmsSupabaseClient;
+        const instance=existing||sb.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+        window.__tmsSupabaseClient=instance;
+        window.tmsSupabaseClient=instance;
+        return instance;
+      });
+    }
+    client=await window.__tmsSupabaseClientPromise;
+    window.tmsSupabaseClient=client;
+    return client;
+  }
   function n(v){return v==null?null:+v}
 
   async function ensureAuthSession(){

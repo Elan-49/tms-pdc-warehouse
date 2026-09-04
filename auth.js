@@ -43,8 +43,20 @@
     if (!hasSupabaseConfig) {
       throw new Error('Pendaftaran akun membutuhkan konfigurasi Supabase.');
     }
-    const sb = await loadSupabaseSdk();
-    if (!supabaseClient) supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (window.__tmsSupabaseClient) {
+      supabaseClient = window.__tmsSupabaseClient;
+      return supabaseClient;
+    }
+    if (!window.__tmsSupabaseClientPromise) {
+      window.__tmsSupabaseClientPromise = loadSupabaseSdk().then(sb => {
+        const existing = window.tmsSupabaseClient || window.__tmsSupabaseClient;
+        const client = existing || sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.__tmsSupabaseClient = client;
+        window.tmsSupabaseClient = client;
+        return client;
+      });
+    }
+    supabaseClient = await window.__tmsSupabaseClientPromise;
     window.tmsSupabaseClient = supabaseClient;
     return supabaseClient;
   }

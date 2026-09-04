@@ -270,6 +270,8 @@ $('#importCsv').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);
 async function bootCloud(){
   try{
     if(window.tmsCloud?.enabled){
+      if(window.tmsAuthMiddleware?.waitUntilReady) await window.tmsAuthMiddleware.waitUntilReady();
+      if(window.tmsAuthMiddleware?.requireSession) await window.tmsAuthMiddleware.requireSession();
       const cloud=await window.tmsCloud.loadState();
       if(cloud){
         // Jangan pernah menimpa cache/data yang ada dengan respons cloud kosong.
