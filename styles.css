@@ -608,6 +608,11 @@ img, video, svg, canvas { max-width:100%; }
   #resetSeg{grid-column:1/-1;}
 }
 
+/* V3.0.29 — Prevent login-screen flash while Supabase session is restoring */
+body.auth-booting #loginScreen{visibility:hidden!important;}
+body.auth-booting #appShell{visibility:hidden!important;}
+body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:#f7f9fc;color:#102a43;font:700 14px/1.2 Inter,Segoe UI,Arial,sans-serif;letter-spacing:.2px;}
+
 /* V3.0.9 — Login: Masuk / Buat Akun */
 .login-switch{display:flex;justify-content:center;gap:8px;margin-top:14px;border:1px solid rgba(255,255,255,.14);padding:4px;border-radius:12px;background:rgba(0,0,0,.14)}
 .login-link{flex:1;border:0;background:transparent;color:#dbe6f4;padding:9px 12px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}

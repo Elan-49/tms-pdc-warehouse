@@ -212,7 +212,9 @@
     }
   }
 
-  restoreAuthSession();
+  restoreAuthSession().finally(() => {
+    document.body.classList.remove('auth-booting');
+  });
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
