@@ -705,3 +705,73 @@ img, video, svg, canvas { max-width:100%; }
 .classify-process-grid select,.classify-activity-grid select,.classify-element-grid select{width:100%;min-width:0;max-width:100%}
 @media(max-width:900px){.classify-top-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){.classify-top-grid{grid-template-columns:1fr}.classify-process-grid,.classify-activity-grid,.classify-element-grid{grid-template-columns:1fr;margin-top:10px}}
+
+
+/* V3.0.27: dynamic Time Classification legend — safe at every card width */
+.pie-chart-wrap{
+  grid-template-columns:minmax(160px,.82fr) minmax(0,1.18fr);
+  width:100%;
+  min-width:0;
+}
+.chart-legend{width:100%;min-width:0}
+.chart-legend>div.chart-legend-item,
+.chart-legend .chart-legend-item{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  gap:12px;
+  align-items:center;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+.chart-legend-label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.chart-legend-label i{
+  flex:0 0 10px;
+  width:10px;
+  height:10px;
+  border-radius:3px;
+}
+.chart-legend-label span{
+  min-width:0;
+  overflow-wrap:anywhere;
+  white-space:normal;
+  line-height:1.35;
+}
+.chart-legend-metrics{
+  display:grid;
+  grid-template-columns:max-content max-content;
+  gap:12px;
+  align-items:center;
+  justify-content:end;
+  min-width:0;
+  white-space:nowrap;
+}
+.chart-legend-metrics b,
+.chart-legend-metrics small{
+  white-space:nowrap;
+  text-align:right;
+}
+@media(max-width:1100px){
+  .pie-chart-wrap{grid-template-columns:minmax(140px,.75fr) minmax(0,1.25fr);gap:14px}
+  .pie-chart{width:min(100%,240px)}
+  .chart-legend-metrics{gap:8px}
+}
+@media(max-width:900px){
+  .pie-chart-wrap{grid-template-columns:1fr!important;justify-items:center}
+  .chart-legend{max-width:520px}
+}
+@media(max-width:520px){
+  .chart-legend-item{grid-template-columns:minmax(0,1fr) max-content!important}
+  .chart-legend-label span{font-size:12px}
+  .chart-legend-metrics{grid-template-columns:1fr;gap:2px;justify-items:end}
+}
+@media(max-width:360px){
+  .chart-legend>div.chart-legend-item,
+  .chart-legend .chart-legend-item{grid-template-columns:1fr!important;gap:6px}
+  .chart-legend-metrics{grid-template-columns:max-content max-content;justify-content:start;justify-items:start;gap:12px}
+}

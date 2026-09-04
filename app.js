@@ -69,7 +69,7 @@ function dashboardPie(classNames, cls, total){
     offset+=length;
     return node;
   }).join('');
-  return `<div class="pie-chart-wrap"><svg class="pie-chart" viewBox="0 0 200 200" role="img" aria-label="Time Classification">${slices}<circle cx="100" cy="100" r="48" fill="#fff"></circle><text x="100" y="95" text-anchor="middle" class="pie-total-label">TOTAL</text><text x="100" y="115" text-anchor="middle" class="pie-total-value">${fmt(safeTotal)}</text></svg><div class="chart-legend">${classNames.map((cName,i)=>{const value=Math.max(0,Number(cls[cName])||0);return `<div><i style="background:${colors[i%colors.length]}"></i><span>${esc(cName)}</span><b>${fmt(value)} dtk</b><small>${fmt(value/safeTotal*100)}%</small></div>`}).join('')}</div></div>`;
+  return `<div class="pie-chart-wrap"><svg class="pie-chart" viewBox="0 0 200 200" role="img" aria-label="Time Classification">${slices}<circle cx="100" cy="100" r="48" fill="#fff"></circle><text x="100" y="95" text-anchor="middle" class="pie-total-label">TOTAL</text><text x="100" y="115" text-anchor="middle" class="pie-total-value">${fmt(safeTotal)}</text></svg><div class="chart-legend">${classNames.map((cName,i)=>{const value=Math.max(0,Number(cls[cName])||0);return `<div class="chart-legend-item"><div class="chart-legend-label"><i style="background:${colors[i%colors.length]}"></i><span>${esc(cName)}</span></div><div class="chart-legend-metrics"><b>${fmt(value)} dtk</b><small>${fmt(value/safeTotal*100)}%</small></div></div>`}).join('')}</div></div>`;
 }
 function dashboardPareto(top){
   if(!top.length)return `<div class="chart-empty">Belum ada data waste pada filter aktif.</div>`;
