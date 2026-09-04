@@ -775,3 +775,13 @@ img, video, svg, canvas { max-width:100%; }
   .chart-legend .chart-legend-item{grid-template-columns:1fr!important;gap:6px}
   .chart-legend-metrics{grid-template-columns:max-content max-content;justify-content:start;justify-items:start;gap:12px}
 }
+
+/* User Management status badges */
+.user-status-cell{min-width:150px}
+.user-status-pill{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;margin-right:8px;border:1px solid transparent}
+.user-status-approved{background:#dff5e7;color:#28e379;border-color:#b8e5c8}
+.user-status-pending{background:#fff4c9;color:#ffcf3e;border-color:#f1df95}
+.user-status-suspended{background:#fde3df;color:#f47569;border-color:#f2bbb4}
+.user-status-select{min-width:108px}
+@media(max-width:760px){.user-status-pill{min-width:76px;padding:6px 8px;font-size:10px;margin-right:6px}.user-status-select{min-width:102px}.user-status-cell{min-width:170px}}
+@media(max-width:520px){.user-status-cell{min-width:176px}.user-status-select{width:100%;margin-top:6px}.user-status-pill{margin-right:0}}
