@@ -776,12 +776,39 @@ img, video, svg, canvas { max-width:100%; }
   .chart-legend-metrics{grid-template-columns:max-content max-content;justify-content:start;justify-items:start;gap:12px}
 }
 
-/* User Management status badges */
-.user-status-cell{min-width:150px}
-.user-status-pill{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;margin-right:8px;border:1px solid transparent}
-.user-status-approved{background:#dff5e7;color:#28e379;border-color:#b8e5c8}
-.user-status-pending{background:#fff4c9;color:#ffcf3e;border-color:#f1df95}
-.user-status-suspended{background:#fde3df;color:#f47569;border-color:#f2bbb4}
-.user-status-select{min-width:108px}
-@media(max-width:760px){.user-status-pill{min-width:76px;padding:6px 8px;font-size:10px;margin-right:6px}.user-status-select{min-width:102px}.user-status-cell{min-width:170px}}
-@media(max-width:520px){.user-status-cell{min-width:176px}.user-status-select{width:100%;margin-top:6px}.user-status-pill{margin-right:0}}
+/* User Management status dropdown */
+.user-management-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.user-management-table{width:100%;min-width:860px;table-layout:fixed}
+.user-management-table .user-col-name{width:150px}
+.user-management-table .user-col-email{width:255px}
+.user-management-table .user-col-role{width:150px}
+.user-management-table .user-col-status{width:175px}
+.user-management-table .user-col-created{width:120px}
+.user-management-table .user-col-action{width:110px}
+.user-management-table th,.user-management-table td{vertical-align:middle}
+.user-email-cell{overflow-wrap:anywhere;word-break:break-word}
+.user-created-cell{white-space:nowrap}
+.user-status-select{display:block;width:100%;max-width:160px;min-width:0;padding:9px 34px 9px 12px;border-radius:10px;font:inherit;font-size:14px;font-weight:700;line-height:1.2;background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
+.user-status-approved{background:#dff5e7;color:#1f7a46;border:1px solid #b8e5c8}
+.user-status-pending{background:#fff4c9;color:#8a6800;border:1px solid #f1df95}
+.user-status-suspended{background:#fde3df;color:#b6453b;border:1px solid #f2bbb4}
+@media(max-width:760px){
+  .user-management-table{min-width:780px}
+  .user-management-table .user-col-name{width:130px}
+  .user-management-table .user-col-email{width:220px}
+  .user-management-table .user-col-role{width:135px}
+  .user-management-table .user-col-status{width:160px}
+  .user-management-table .user-col-created{width:110px}
+  .user-management-table .user-col-action{width:100px}
+  .user-status-select{max-width:150px;font-size:13px;padding:8px 30px 8px 10px}
+}
+@media(max-width:520px){
+  .user-management-table{min-width:740px}
+  .user-management-table .user-col-name{width:120px}
+  .user-management-table .user-col-email{width:205px}
+  .user-management-table .user-col-role{width:125px}
+  .user-management-table .user-col-status{width:150px}
+  .user-management-table .user-col-created{width:105px}
+  .user-management-table .user-col-action{width:95px}
+  .user-status-select{max-width:140px;font-size:12px}
+}

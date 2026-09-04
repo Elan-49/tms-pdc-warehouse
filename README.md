@@ -82,3 +82,8 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 - Added production security headers through `vercel.json` including CSP, HSTS, frame protection, and Permissions Policy.
 
 Before production use, run `SECURITY-TEST-PLAN.md` and complete the first-admin bootstrap in `SECURITY-OPERATIONS.md`.
+
+
+## V3.0.28 UI Fix
+- User Management: Status is a single color-coded dropdown (Approved/Pending/Suspended).
+- Responsive mobile/tablet handling keeps Status and Created Date in separate fixed columns with horizontal scroll when needed.
