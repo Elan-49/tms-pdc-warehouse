@@ -1,3 +1,8 @@
+
+## V3.0.28 Refresh Session Fix
+- Keeps valid Supabase sessions across browser refreshes.
+- Retries user profile reads before treating them as temporary failures.
+- Avoids signing out a valid user because of a transient network/profile read error.
 # TMS PDC Warehouse V3.0.28
 
 Versi ini sudah berisi frontend statis dan backend/database schema Supabase.
@@ -82,8 +87,3 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 - Added production security headers through `vercel.json` including CSP, HSTS, frame protection, and Permissions Policy.
 
 Before production use, run `SECURITY-TEST-PLAN.md` and complete the first-admin bootstrap in `SECURITY-OPERATIONS.md`.
-
-
-## V3.0.28 UI Fix
-- User Management: Status is a single color-coded dropdown (Approved/Pending/Suspended).
-- Responsive mobile/tablet handling keeps Status and Created Date in separate fixed columns with horizontal scroll when needed.

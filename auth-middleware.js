@@ -128,14 +128,23 @@
       throw error;
     }
     let profile = null;
-    try {
-      const { data, error } = await client.from('user_profiles').select('id,email,full_name,role,status,approved_at').eq('id', session.user.id).maybeSingle();
-      if (error) throw error;
-      profile = data;
-    } catch (profileError) {
+    let profileError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { data, error } = await client.from('user_profiles').select('id,email,full_name,role,status,approved_at').eq('id', session.user.id).maybeSingle();
+        if (error) throw error;
+        profile = data;
+        profileError = null;
+        break;
+      } catch (err) {
+        profileError = err;
+        await sleep(250 * (attempt + 1));
+      }
+    }
+    if (profileError) {
       console.error('Profile authorization check failed:', profileError);
-      const error = new Error('Profil akses tidak dapat diverifikasi. Hubungi administrator.');
-      error.code = 'AUTH_PROFILE_REQUIRED';
+      const error = new Error('Profil akses sementara belum dapat diverifikasi. Coba muat ulang halaman.');
+      error.code = 'AUTH_PROFILE_TEMPORARY';
       throw error;
     }
     if (!profile || profile.status !== 'approved') {

@@ -64,9 +64,14 @@
   }
 
   async function getProfile(sb, userId) {
-    const { data, error } = await sb.from('user_profiles').select('id,email,full_name,role,status,created_at,updated_at,approved_at').eq('id', userId).maybeSingle();
-    if (error) throw error;
-    return data || null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data, error } = await sb.from('user_profiles').select('id,email,full_name,role,status,created_at,updated_at,approved_at').eq('id', userId).maybeSingle();
+      if (!error) return data || null;
+      lastError = error;
+      await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+    }
+    throw lastError || new Error('Profil pengguna belum dapat dibaca.');
   }
 
   async function requireApprovedProfile(sb, userId) {
@@ -177,7 +182,7 @@
       if (error) throw error;
       if (data?.session?.user) {
         const profile = await requireApprovedProfile(sb, data.session.user.id);
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: data.session.user.email || '', userId: data.session.user.id, role: profile.role, at: Date.now() }));
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: data.session.user.email || '', userId: data.session.user.id, role: profile.role, status: profile.status, at: Date.now() }));
         showApp();
         document.dispatchEvent(new CustomEvent('tms-auth-ready'));
       } else {
@@ -187,9 +192,22 @@
       }
     } catch (err) {
       console.error('Supabase session restore failed:', err);
+      // IMPORTANT: do not sign the user out on a transient profile/network error.
+      // A page refresh must not destroy a valid Supabase session just because
+      // user_profiles was temporarily unavailable. Only explicit access states
+      // (pending/suspended/no profile) are signed out by requireApprovedProfile.
+      try {
+        const sb = await getSupabaseClient();
+        const { data: retry } = await sb.auth.getSession();
+        if (retry?.session?.user) {
+          // Keep the Supabase session alive and let the middleware retry its guard.
+          currentProfile = null;
+          showLogin();
+          return;
+        }
+      } catch (_) {}
       currentProfile = null;
       localStorage.removeItem(SESSION_KEY);
-      try { const sb = await getSupabaseClient(); await sb.auth.signOut(); } catch (_) {}
       showLogin();
     }
   }
