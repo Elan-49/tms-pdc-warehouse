@@ -634,3 +634,22 @@ img, video, svg, canvas { max-width:100%; }
 .classify-top-grid label,.classify-master-grid label{margin-top:0!important}
 @media(max-width:900px){.classify-top-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.classify-master-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.classify-top-grid,.classify-master-grid{grid-template-columns:1fr}.classify-master-grid{margin-top:10px}}
+
+/* V3.0.23 — Observation Classify mobile overflow fix */
+.classify-card,
+.classify-card .form-grid,
+.classify-card label,
+.classify-card input,
+.classify-card select{min-width:0;max-width:100%;}
+.classify-card input[type="date"]{width:100%;max-width:100%;}
+@media(max-width:760px){
+  .classify-card{width:100%;overflow:hidden;}
+  .classify-top-grid,
+  .classify-master-grid{grid-template-columns:minmax(0,1fr)!important;width:100%;}
+  .classify-top-grid label,
+  .classify-master-grid label{width:100%;min-width:0;}
+  .classify-top-grid input,
+  .classify-top-grid select,
+  .classify-master-grid input,
+  .classify-master-grid select{width:100%;min-width:0;max-width:100%;}
+}
