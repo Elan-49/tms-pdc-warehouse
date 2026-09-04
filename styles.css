@@ -697,3 +697,11 @@ img, video, svg, canvas { max-width:100%; }
   .ut-footer-motto img{width:min(45vw,180px);max-height:34px;}
   .ut-footer-reset .btn{padding-left:9px;padding-right:9px;}
 }
+
+/* V3.0.26: Classify Segment layout — 3 fields on row 1, then one full-width field per row */
+.classify-top-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}
+.classify-process-grid,.classify-activity-grid,.classify-element-grid{grid-template-columns:minmax(0,1fr);margin-top:12px}
+.classify-process-grid label,.classify-activity-grid label,.classify-element-grid label{width:100%;min-width:0}
+.classify-process-grid select,.classify-activity-grid select,.classify-element-grid select{width:100%;min-width:0;max-width:100%}
+@media(max-width:900px){.classify-top-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.classify-top-grid{grid-template-columns:1fr}.classify-process-grid,.classify-activity-grid,.classify-element-grid{grid-template-columns:1fr;margin-top:10px}}
