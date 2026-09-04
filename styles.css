@@ -538,25 +538,42 @@ img, video, svg, canvas { max-width:100%; }
 }
 
 
-/* V3.0.7 FINAL — Plain Set Start / Set End controls on desktop and mobile */
-#setStart,#setEnd,#setStart:hover,#setEnd:hover,#setStart:active,#setEnd:active,#setStart:focus,#setEnd:focus,#setStart:focus-visible,#setEnd:focus-visible{
-  background:transparent!important;
-  background-color:transparent!important;
-  box-shadow:none!important;
-  border-color:transparent!important;
-}
-#setStart,#setEnd{
-  color:var(--ut-navy)!important;
-}
-#setStart:hover,#setEnd:hover{
-  color:var(--ut-navy-2)!important;
-}
+/* V3.0.19 — Set Start / Set End visible buttons (desktop, tablet, mobile) */
 .plain-segment-btn{
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
   gap:8px!important;
+  min-height:42px!important;
+  padding:10px 16px!important;
+  border-radius:10px!important;
+  font-weight:700!important;
+  cursor:pointer;
   -webkit-tap-highlight-color:transparent;
+  transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;
+}
+#resetSeg{
+  min-height:42px!important;
+  padding:10px 16px!important;
+}
+#setStart{
+  background:var(--ut-yellow)!important;
+  color:var(--ut-navy)!important;
+  border:1px solid var(--ut-yellow)!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.12)!important;
+}
+#setEnd{
+  background:var(--ut-navy)!important;
+  color:#fff!important;
+  border:1px solid var(--ut-navy)!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.12)!important;
+}
+#setStart:hover,#setEnd:hover{
+  transform:translateY(-1px);
+}
+#setStart:focus-visible,#setEnd:focus-visible{
+  outline:3px solid rgba(255,197,0,.35)!important;
+  outline-offset:2px;
 }
 .start-play-icon{
   display:inline-block!important;
@@ -565,7 +582,6 @@ img, video, svg, canvas { max-width:100%; }
   border-top:7px solid transparent!important;
   border-bottom:7px solid transparent!important;
   border-left:12px solid currentColor!important;
-  border-radius:0!important;
   background:transparent!important;
   box-shadow:none!important;
   flex:0 0 auto!important;
@@ -574,23 +590,22 @@ img, video, svg, canvas { max-width:100%; }
   display:inline-block!important;
   width:13px!important;
   height:13px!important;
-  border-radius:0!important;
+  border-radius:2px!important;
   background:currentColor!important;
   box-shadow:none!important;
   flex:0 0 auto!important;
 }
 @media(max-width:760px){
-  #setStart,#setEnd,#setStart:hover,#setEnd:hover,#setStart:active,#setEnd:active,#setStart:focus,#setEnd:focus,#setStart:focus-visible,#setEnd:focus-visible{
-    background:transparent!important;
-    background-color:transparent!important;
-    border-color:transparent!important;
-    box-shadow:none!important;
+  .seg-controls{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
   }
-  .start-play-icon{
-    border-top-width:7px!important;
-    border-bottom-width:7px!important;
-    border-left-width:12px!important;
+  #setStart,#setEnd,#resetSeg{
+    width:100%!important;
+    min-width:0!important;
   }
+  #resetSeg{grid-column:1/-1;}
 }
 
 /* V3.0.9 — Login: Masuk / Buat Akun */
@@ -612,3 +627,10 @@ img, video, svg, canvas { max-width:100%; }
 .login-card [hidden]{
   display:none !important;
 }
+
+/* V3.0.20 — Classify Segment alignment */
+.classify-top-grid{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
+.classify-master-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px}
+.classify-top-grid label,.classify-master-grid label{margin-top:0!important}
+@media(max-width:900px){.classify-top-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.classify-master-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.classify-top-grid,.classify-master-grid{grid-template-columns:1fr}.classify-master-grid{margin-top:10px}}
