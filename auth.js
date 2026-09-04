@@ -114,6 +114,8 @@
 
   showLoginBtn.addEventListener('click', () => showAuthTab('login'));
   showSignupBtn.addEventListener('click', () => showAuthTab('signup'));
+  // Defensive initialization: always open on the Login tab.
+  showAuthTab('login');
 
   async function restoreAuthSession() {
     if (!hasSupabaseConfig) {

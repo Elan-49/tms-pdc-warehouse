@@ -600,3 +600,13 @@ img, video, svg, canvas { max-width:100%; }
 .login-link.active{background:#f9b400;color:#0a2138}
 #signupForm label{display:block;margin-bottom:12px}
 @media (max-width:600px){.login-card{width:min(92vw,420px);padding:24px 18px}.login-switch{margin-top:12px}}
+
+/* V3.0.16 — HARD FIX: auth tab visibility on desktop/tablet/mobile
+   The login form has display:grid, which previously overrode .hidden.
+   Keep every hidden element truly hidden until its tab is selected. */
+.login-screen .hidden,
+.login-card .hidden,
+.login-card form.hidden,
+.login-card [hidden]{
+  display:none !important;
+}
