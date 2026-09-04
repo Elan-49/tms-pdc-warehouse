@@ -1,4 +1,4 @@
-# TMS PDC Warehouse V2.9.7 Fullstack
+# TMS PDC Warehouse V3.0.28
 
 Versi ini sudah berisi frontend statis dan backend/database schema Supabase.
 
@@ -44,7 +44,7 @@ Folder `supabase/schema.sql` berisi schema database untuk deployment backend. Li
 Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan localStorage sampai integrasi Supabase diaktifkan.
 
 
-## V3.0 Cloud Realtime
+## Cloud Realtime
 Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.
 
 
@@ -67,3 +67,18 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 
 ### Auth Middleware
 `auth-middleware.js` memastikan session Supabase siap sebelum operasi cloud. RLS Supabase tetap menjadi lapisan keamanan utama.
+
+
+## V3.0.28 Production Security Hardening
+- Supabase Auth is required on public production hosts; local passcode is development-only on localhost.
+- New accounts are `pending` by default and need admin approval.
+- Added `user_profiles` RBAC: admin, analyst, viewer.
+- RLS changed from shared unrestricted authenticated access to explicit read/write/delete policies.
+- Added immutable `audit_logs` with actor, action, table, record ID, old/new payloads, and timestamp.
+- Added User Management screen for admin approval, suspension, and role changes.
+- Viewer is read-only in the UI and cannot export/import or edit data.
+- Admin-only destructive operations: delete observations, delete PIC, delete master elements, and change study settings.
+- Local browser cache is cleared on logout to reduce data exposure on shared workstations.
+- Added production security headers through `vercel.json` including CSP, HSTS, frame protection, and Permissions Policy.
+
+Before production use, run `SECURITY-TEST-PLAN.md` and complete the first-admin bootstrap in `SECURITY-OPERATIONS.md`.

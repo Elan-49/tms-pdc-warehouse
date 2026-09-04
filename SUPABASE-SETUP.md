@@ -1,18 +1,20 @@
 # TMS PDC Warehouse — Setup Supabase Realtime
 
-1. Buat project di Supabase.
-2. Authentication > Providers > Email: aktifkan Email.
-3. SQL Editor > New query > paste seluruh `supabase/schema.sql` > Run.
-4. Authentication > Users > Add user: buat akun email/password untuk pengguna.
-5. Settings > API: salin Project URL dan anon public key.
-6. Isi `auth-config.js`:
-   const SUPABASE_URL = '...';
-   const SUPABASE_ANON_KEY = '...';
-7. Commit ke GitHub. Vercel akan redeploy otomatis.
-8. Login menggunakan email/password Supabase.
+1. Authentication > Providers > Email: aktifkan Email.
+2. SQL Editor > New query > paste seluruh `supabase/schema.sql` > Run. Ini mempertahankan data lama dan mengganti policy RLS ke model RBAC.
+3. Settings > API: gunakan Project URL dan publishable/anon key pada `auth-config.js`. Jangan pernah memasukkan `service_role`.
+4. Commit ke GitHub. Vercel akan redeploy otomatis.
+5. Buat akun admin pertama melalui form Buat Akun. Akun baru otomatis berstatus `pending`.
+6. Supabase Authentication > Users: salin UUID akun admin pertama. Jalankan bootstrap SQL pada `SECURITY-OPERATIONS.md` untuk menjadikannya `admin + approved`.
+7. Login sebagai admin. Menu `User Management` dipakai untuk menyetujui pengguna lain dan menentukan role `viewer`, `analyst`, atau `admin`.
+8. Jalankan seluruh checklist `SECURITY-TEST-PLAN.md` sebelum dipakai sebagai aplikasi produksi internal.
 
 ## Catatan
-- URL dan anon key boleh berada di frontend Supabase; keamanan akses database tetap ditangani RLS.
-- Reset Data Lokal tidak menghapus data cloud.
+
+Build ini menggunakan mode produksi Supabase-only. Jangan kosongkan URL/key pada deployment publik.
+- Project URL dan publishable/anon key boleh berada di frontend; `service_role` tidak boleh. Keamanan data ditentukan oleh RLS + RBAC.
+- Reset/cache lokal tidak menghapus data cloud.
+- Logout menghapus cache data lokal browser; data cloud tetap ada.
 - Video tetap lokal di perangkat dan tidak di-upload ke database.
 - Cloud realtime menyinkronkan Observations, Master Process, PIC, Rating Factor, dan Study Settings.
+- Akun baru tidak langsung mendapat akses data: harus approved oleh admin.

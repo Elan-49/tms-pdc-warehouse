@@ -5,13 +5,15 @@
    ========================================================================== */
 
 /* ------------------------------------------------------------------------
-   MODE 1 — PASSCODE LOKAL (default, langsung bisa dipakai tanpa setup apa pun)
-   Semua orang yang tahu passcode ini bisa masuk. Kolom "Email / Nama
-   Pengguna" boleh diisi bebas (hanya untuk catatan siapa yang login),
-   yang divalidasi hanya Password / Passcode-nya.
-   Ganti nilai di bawah ini sesuai keinginan Anda:
+   MODE 1 — PASSCODE LOKAL
+   Sengaja dinonaktifkan untuk build produksi agar deployment tidak pernah
+   fallback ke satu passcode bersama. Development lokal juga sebaiknya memakai
+   akun Supabase.
    ------------------------------------------------------------------------ */
-const LOCAL_ACCESS_CODE = 'utpdc2026';
+const LOCAL_ACCESS_CODE = '';
+
+// Production safety: local passcode mode is blocked.
+const ALLOW_LOCAL_MODE = false;
 
 /* ------------------------------------------------------------------------
    MODE 2 — SUPABASE (akun & password sungguhan per orang, tersimpan di cloud)

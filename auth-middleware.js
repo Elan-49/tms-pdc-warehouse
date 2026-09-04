@@ -114,39 +114,38 @@
 
   async function requireSession() {
     const state = await waitUntilReady();
-
     if (!configured) {
-      if (localSessionExists()) return { mode: 'local', session: null };
-      const error = new Error('Sesi login lokal tidak ditemukan.');
+      if (localSessionExists() && ['localhost','127.0.0.1'].includes(location.hostname) && typeof ALLOW_LOCAL_MODE !== 'undefined' && ALLOW_LOCAL_MODE) return { mode: 'local', session: null, profile: { role:'admin', status:'approved' } };
+      const error = new Error('Akses lokal tidak diizinkan pada host produksi.');
       error.code = 'AUTH_SESSION_REQUIRED';
       throw error;
     }
-
-    // Baca ulang session supaya race condition setelah sign-in tidak memicu 401.
+    const client = await getClient();
     const session = await readSession();
-    if (session?.refresh_token) {
-      try {
-        const refreshed = await (await getClient()).auth.refreshSession(session);
-        if (!refreshed.error && refreshed.data?.session) {
-          currentSession = refreshed.data.session;
-          persistSession(refreshed.data.session);
-          return { mode: 'supabase', session: refreshed.data.session };
-        }
-      } catch (refreshError) {
-        console.warn('Supabase session refresh skipped:', refreshError);
-      }
+    if (!session?.user) {
+      const error = new Error('Sesi Supabase belum siap. Silakan login ulang.');
+      error.code = 'AUTH_SESSION_REQUIRED';
+      throw error;
     }
-    if (session?.user) {
-      persistSession(session);
-      return { mode: 'supabase', session };
+    let profile = null;
+    try {
+      const { data, error } = await client.from('user_profiles').select('id,email,full_name,role,status,approved_at').eq('id', session.user.id).maybeSingle();
+      if (error) throw error;
+      profile = data;
+    } catch (profileError) {
+      console.error('Profile authorization check failed:', profileError);
+      const error = new Error('Profil akses tidak dapat diverifikasi. Hubungi administrator.');
+      error.code = 'AUTH_PROFILE_REQUIRED';
+      throw error;
     }
-
-    currentSession = state?.session || null;
-    if (currentSession?.user) return { mode: 'supabase', session: currentSession };
-
-    const error = new Error('Sesi Supabase belum siap. Silakan login ulang.');
-    error.code = 'AUTH_SESSION_REQUIRED';
-    throw error;
+    if (!profile || profile.status !== 'approved') {
+      await client.auth.signOut().catch(()=>{});
+      const error = new Error(profile?.status === 'pending' ? 'Akun masih menunggu persetujuan admin.' : 'Akun tidak memiliki akses aktif.');
+      error.code = 'AUTH_ACCESS_DENIED';
+      throw error;
+    }
+    persistSession(session);
+    return { mode: 'supabase', session, profile };
   }
 
   function handleSignedOut() {

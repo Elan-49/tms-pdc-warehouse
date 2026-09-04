@@ -1,13 +1,15 @@
 /* ==========================================================================
    TMS PDC WAREHOUSE — auth.js
-   Gerbang login sebelum aplikasi utama tampil. Mendukung 2 mode (lihat
-   auth-config.js): Passcode Lokal (default), atau Supabase (akun & password
-   sungguhan) — otomatis dipilih tergantung apakah SUPABASE_URL/ANON_KEY diisi.
+   Gerbang login sebelum aplikasi utama tampil. Menggunakan Supabase Auth untuk produksi. Mode passcode lokal hanya boleh
+   digunakan pada localhost untuk development dan otomatis diblokir pada host publik.
    ========================================================================== */
 (function () {
   const SESSION_KEY = 'tms_pdc_session';
   const hasSupabaseConfig = typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL &&
                              typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY;
+  const localHost = ['localhost','127.0.0.1'].includes(location.hostname);
+  const localModeAllowed = !hasSupabaseConfig && !!ALLOW_LOCAL_MODE && localHost;
+  let currentProfile = null;
   let supabaseClient = null;
 
   const $ = (s) => document.querySelector(s);
@@ -25,7 +27,7 @@
     if (!el) return;
     el.textContent = hasSupabaseConfig
       ? 'Masuk menggunakan akun Supabase'
-      : 'Masuk menggunakan passcode lokal — hubungi admin jika lupa';
+      : (localModeAllowed ? 'Mode development lokal' : 'Konfigurasi Supabase belum siap — akses produksi dikunci');
   }
 
   function loadSupabaseSdk() {
@@ -61,6 +63,22 @@
     return supabaseClient;
   }
 
+  async function getProfile(sb, userId) {
+    const { data, error } = await sb.from('user_profiles').select('id,email,full_name,role,status,created_at,updated_at,approved_at').eq('id', userId).maybeSingle();
+    if (error) throw error;
+    return data || null;
+  }
+
+  async function requireApprovedProfile(sb, userId) {
+    const profile = await getProfile(sb, userId);
+    currentProfile = profile;
+    if (!profile) { await sb.auth.signOut().catch(()=>{}); throw new Error('Profil akses belum tersedia. Hubungi admin.'); }
+    if (profile.status === 'pending') { await sb.auth.signOut().catch(()=>{}); throw new Error('Akun sudah terdaftar tetapi masih menunggu persetujuan admin.'); }
+    if (profile.status === 'suspended') { await sb.auth.signOut().catch(()=>{}); throw new Error('Akun Anda sedang dinonaktifkan. Hubungi admin.'); }
+    if (profile.status !== 'approved') { await sb.auth.signOut().catch(()=>{}); throw new Error('Akses akun belum aktif. Hubungi admin.'); }
+    return profile;
+  }
+
   async function doLogin(user, pass) {
     if (hasSupabaseConfig) {
       const sb = await getSupabaseClient();
@@ -68,33 +86,32 @@
       if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah.' : error.message);
       const session = data?.session;
       if (!session?.user) throw new Error('Login berhasil tetapi sesi Supabase belum siap. Coba lagi.');
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: session.user.email || user, at: Date.now() }));
-      // Pastikan token sudah tersimpan dan dapat dipakai request berikutnya.
-      const { data: verified } = await sb.auth.getSession();
-      if (!verified?.session?.user) throw new Error('Sesi Supabase belum siap. Silakan coba lagi.');
-      return;
+      await sb.auth.getSession();
+      const profile = await requireApprovedProfile(sb, session.user.id);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: session.user.email || user, userId: session.user.id, role: profile.role, at: Date.now() }));
+      return profile;
     }
-    if (pass !== LOCAL_ACCESS_CODE) throw new Error('Passcode salah. Hubungi admin jika lupa.');
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'local', user: user || 'Pengguna', at: Date.now() }));
+    if (!localModeAllowed) throw new Error('Akses produksi dikunci. Hubungi administrator untuk menyiapkan Supabase Auth.');
+    if (pass !== LOCAL_ACCESS_CODE) throw new Error('Passcode salah.');
+    currentProfile = { id: null, email: user || '', full_name: user || 'Pengguna Lokal', role: 'admin', status: 'approved' };
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'local', user: user || 'Pengguna', role: 'admin', at: Date.now() }));
+    return currentProfile;
   }
 
   async function doSignup(name, email, pass) {
+    if (!hasSupabaseConfig) throw new Error('Pendaftaran akun membutuhkan konfigurasi Supabase.');
     const sb = await getSupabaseClient();
-    if (pass.length < 6) throw new Error('Password minimal 6 karakter.');
+    if (pass.length < 10) throw new Error('Password minimal 10 karakter untuk akun perusahaan.');
     const { data, error } = await sb.auth.signUp({
       email,
       password: pass,
       options: { data: { full_name: name } }
     });
     if (error) throw new Error(error.message);
-
-    // Jika email confirmation aktif, session bisa masih null. Dalam kondisi ini
-    // tampilkan pesan agar pengguna memeriksa email sebelum login.
-    if (data.session) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: email, at: Date.now() }));
-      return { signedIn: true, message: 'Akun berhasil dibuat. Anda sudah masuk.' };
-    }
-    return { signedIn: false, message: 'Akun berhasil dibuat. Cek email Anda untuk verifikasi sebelum masuk.' };
+    // New accounts are always pending. Even if Supabase returns a session,
+    // the user must wait for an administrator to approve the profile.
+    if (data?.session) await sb.auth.signOut();
+    return { signedIn: false, message: 'Pendaftaran berhasil. Akun menunggu persetujuan admin. Anda akan dapat masuk setelah status akun disetujui.' };
   }
 
   function isLoggedIn() {
@@ -103,10 +120,21 @@
 
   function logout() {
     localStorage.removeItem(SESSION_KEY);
+    // Cloud data is not deleted. Only local browser cache is cleared so the
+    // next user on a shared workstation cannot read the previous session's data.
+    ['tms-pdc-v2-data','tms-pdc-v2-settings','tms-pdc-v2-master'].forEach(k => localStorage.removeItem(k));
+    currentProfile = null;
     if (supabaseClient) supabaseClient.auth.signOut().catch(() => {});
     showLogin();
   }
-  window.tmsAuth = { logout, isLoggedIn, getClient: () => supabaseClient };
+  window.tmsAuth = {
+    logout,
+    isLoggedIn,
+    getClient: () => supabaseClient,
+    getProfile: () => currentProfile,
+    getRole: () => currentProfile?.role || (localModeAllowed ? 'admin' : null),
+    isApproved: () => currentProfile?.status === 'approved'
+  };
 
   setModeLabel();
   const loginForm = $('#loginForm');
@@ -131,34 +159,37 @@
 
   async function restoreAuthSession() {
     if (!hasSupabaseConfig) {
+      if (!localModeAllowed) {
+        localStorage.removeItem(SESSION_KEY);
+        showLogin();
+        return;
+      }
       if (isLoggedIn()) {
+        currentProfile = { id: null, email: '', role: 'admin', status: 'approved' };
         showApp();
         document.dispatchEvent(new CustomEvent('tms-auth-ready'));
-      } else {
-        showLogin();
-      }
+      } else showLogin();
       return;
     }
-
     try {
       const sb = await getSupabaseClient();
       const { data, error } = await sb.auth.getSession();
       if (error) throw error;
       if (data?.session?.user) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify({
-          mode: 'supabase',
-          user: data.session.user.email || '',
-          at: Date.now()
-        }));
+        const profile = await requireApprovedProfile(sb, data.session.user.id);
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: data.session.user.email || '', userId: data.session.user.id, role: profile.role, at: Date.now() }));
         showApp();
         document.dispatchEvent(new CustomEvent('tms-auth-ready'));
       } else {
+        currentProfile = null;
         localStorage.removeItem(SESSION_KEY);
         showLogin();
       }
     } catch (err) {
       console.error('Supabase session restore failed:', err);
+      currentProfile = null;
       localStorage.removeItem(SESSION_KEY);
+      try { const sb = await getSupabaseClient(); await sb.auth.signOut(); } catch (_) {}
       showLogin();
     }
   }

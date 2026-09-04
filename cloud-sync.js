@@ -73,6 +73,8 @@
   }
   async function write(state){
     const authState=await ensureAuthSession();
+    const currentRole=window.tmsAuth?.getRole?.()||authState?.profile?.role||null;
+    if(!['admin','analyst'].includes(currentRole)) return;
     const sb=await getClient(); if(!sb)return;
     if(configured&&!authState?.session&&!authState?.user)throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
     const names=[...new Set((state.settings.operators||[]).map(x=>String(x).trim()).filter(Boolean))];
@@ -85,7 +87,7 @@
     const ratings=names.map(name=>{const w=state.settings.westinghouse?.[name]||{};return {operator_id:opId[name],skill_value:n(w.skill)||0,effort_value:n(w.effort)||0,condition_value:n(w.condition)||0,consistency_value:n(w.consistency)||0};}).filter(x=>x.operator_id);
     if(ratings.length){const {error}=await sb.from('rating_factors').upsert(ratings,{onConflict:'operator_id'});if(error)throw error;}
     const setRow={id:1,n_min_observations:+state.settings.minInitialN||5,allowance_percent:(+state.settings.allowance||0)*100,updated_at:new Date().toISOString()};
-    {const {error}=await sb.from('study_settings').upsert(setRow);if(error)throw error;}
+    if(currentRole==='admin'){const {error}=await sb.from('study_settings').upsert(setRow);if(error)throw error;}
     const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
     if(obs.length){const {error}=await sb.from('observations').upsert(obs,{onConflict:'id'});if(error)throw error;}
   }
@@ -96,16 +98,19 @@
   }
   async function deleteObservation(id){
     await ensureAuthSession();
+    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Delete observasi hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('observations').delete().eq('id',id); if(error)throw error;
   }
   async function deleteOperator(name){
     await ensureAuthSession();
+    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus PIC hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('operators').delete().eq('name',name); if(error)throw error;
   }
   async function deleteMaster(id){
     await ensureAuthSession();
+    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus master hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
     const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;
