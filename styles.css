@@ -598,7 +598,9 @@ img, video, svg, canvas { max-width:100%; }
 .login-link{flex:1;border:0;background:transparent;color:#dbe6f4;padding:9px 12px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
 .login-link:hover{background:rgba(255,255,255,.08)}
 .login-link.active{background:#f9b400;color:#0a2138}
-#signupForm label{display:block;margin-bottom:12px}
+#signupForm label{display:grid;gap:6px;margin:0}
+#signupForm input{margin:0}
+#signupForm{display:grid;gap:14px;text-align:left}
 @media (max-width:600px){.login-card{width:min(92vw,420px);padding:24px 18px}.login-switch{margin-top:12px}}
 
 /* V3.0.16 — HARD FIX: auth tab visibility on desktop/tablet/mobile
