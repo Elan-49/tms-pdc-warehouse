@@ -58,7 +58,7 @@ function priority(p){return p>=30?'Critical':p>=20?'High':p>=10?'Medium':p>0?'Lo
 function dashboardPie(classNames, cls, total){
   if(!total)return `<div class="chart-empty">Belum ada standard time yang dapat divisualisasikan.</div>`;
   const colors=['#f7c600','#102a43','#263238','#b8860b']; let a=0;
-  const slices=classNames.map((c,i)=>{const v=cls[c]||0,p=v/total*100,from=a; a+=p;return `<path d="${piePath(100,100,82,from,a)}" fill="${colors[i]}"></path>`}).join('');
+  const slices=classNames.map((c,i)=>{const v=cls[c]||0,p=v/total*360,from=a; a+=p;return `<path d="${piePath(100,100,82,from,a)}" fill="${colors[i]}"></path>`}).join('');
   return `<div class="pie-chart-wrap"><svg class="pie-chart" viewBox="0 0 200 200" role="img" aria-label="Time Classification">${slices}<circle cx="100" cy="100" r="48" fill="#fff"></circle><text x="100" y="95" text-anchor="middle" class="pie-total-label">TOTAL</text><text x="100" y="115" text-anchor="middle" class="pie-total-value">${fmt(total)}</text></svg><div class="chart-legend">${classNames.map((c,i)=>`<div><i style="background:${colors[i]}"></i><span>${esc(c)}</span><b>${fmt(cls[c]||0)} dtk</b><small>${fmt((cls[c]||0)/total*100)}%</small></div>`).join('')}</div></div>`;
 }
 function piePath(cx,cy,r,from,to){if(to-from<=0)return '';const polar=d=>{const rad=(d-90)*Math.PI/180;return [cx+r*Math.cos(rad),cy+r*Math.sin(rad)]};const [x1,y1]=polar(from),[x2,y2]=polar(to);const large=to-from>50?1:0;return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;}

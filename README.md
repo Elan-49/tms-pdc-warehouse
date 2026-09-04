@@ -63,3 +63,7 @@ Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon ke
 - Simbol Set Start diganti menjadi ikon play CSS murni (tanpa background/badge).
 - Tombol Set Start dan Set End dibuat transparan/polos di desktop dan mobile.
 - Tidak mengubah struktur frontend, backend, database schema, maupun konfigurasi cloud yang sudah ada.
+
+
+### Auth Middleware
+`auth-middleware.js` memastikan session Supabase siap sebelum operasi cloud. RLS Supabase tetap menjadi lapisan keamanan utama.

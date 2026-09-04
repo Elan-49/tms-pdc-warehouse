@@ -11,12 +11,28 @@
   }
   async function getClient(){if(!configured)return null;if(client)return client;const sb=await sdk();client=window.tmsSupabaseClient||sb.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);window.tmsSupabaseClient=client;return client}
   function n(v){return v==null?null:+v}
+
+  async function ensureAuthSession(){
+    if(!configured)return null;
+    const mw=window.tmsAuthMiddleware;
+    if(mw&&typeof mw.requireSession==='function') return mw.requireSession();
+    const sb=await getClient();
+    if(!sb)return null;
+    for(let attempt=0;attempt<4;attempt++){
+      const {data,error}=await sb.auth.getSession();
+      if(error)throw error;
+      if(data?.session?.user)return data.session;
+      await new Promise(r=>setTimeout(r,150*(attempt+1)));
+    }
+    throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
+  }
+
   async function loadState(){
+    const authState=await ensureAuthSession();
     const sb=await getClient(); if(!sb)return null;
-    // Cloud dimulai setelah autentikasi siap. Jangan jadikan sesi kosong sebagai error koneksi,
-    // karena sesi Supabase dapat dipulihkan dari storage secara asynchronous.
-    const {error:sessionError}=await sb.auth.getSession();
-    if(sessionError) throw sessionError;
+    if(configured&&!authState?.session&&!authState?.user){
+      throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
+    }
     const [ops,masters,obs,rfs,st]=await Promise.all([
       sb.from('operators').select('*').order('name'),
       sb.from('master_elements').select('*').order('created_at', {ascending:true}).order('id', {ascending:true}),
@@ -40,7 +56,9 @@
     clearTimeout(timer);timer=setTimeout(()=>write(state).catch(err=>console.error('Cloud sync failed',err)),250);
   }
   async function write(state){
+    const authState=await ensureAuthSession();
     const sb=await getClient(); if(!sb)return;
+    if(configured&&!authState?.session&&!authState?.user)throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
     const names=[...new Set((state.settings.operators||[]).map(x=>String(x).trim()).filter(Boolean))];
     const opRows=names.map(name=>({name,activity:state.settings.operatorDepartments?.[name]||null}));
     if(opRows.length){const {error}=await sb.from('operators').upsert(opRows,{onConflict:'name'});if(error)throw error;}
@@ -61,14 +79,17 @@
     async function refresh(){if(applying)return;applying=true;try{const data=await loadState();cb(data)}finally{setTimeout(()=>applying=false,500)}}
   }
   async function deleteObservation(id){
+    await ensureAuthSession();
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('observations').delete().eq('id',id); if(error)throw error;
   }
   async function deleteOperator(name){
+    await ensureAuthSession();
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('operators').delete().eq('name',name); if(error)throw error;
   }
   async function deleteMaster(id){
+    await ensureAuthSession();
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
     const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;

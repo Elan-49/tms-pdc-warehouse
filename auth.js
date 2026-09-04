@@ -52,9 +52,14 @@
   async function doLogin(user, pass) {
     if (hasSupabaseConfig) {
       const sb = await getSupabaseClient();
-      const { error } = await sb.auth.signInWithPassword({ email: user, password: pass });
+      const { data, error } = await sb.auth.signInWithPassword({ email: user, password: pass });
       if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah.' : error.message);
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user, at: Date.now() }));
+      const session = data?.session;
+      if (!session?.user) throw new Error('Login berhasil tetapi sesi Supabase belum siap. Coba lagi.');
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: session.user.email || user, at: Date.now() }));
+      // Pastikan token sudah tersimpan dan dapat dipakai request berikutnya.
+      const { data: verified } = await sb.auth.getSession();
+      if (!verified?.session?.user) throw new Error('Sesi Supabase belum siap. Silakan coba lagi.');
       return;
     }
     if (pass !== LOCAL_ACCESS_CODE) throw new Error('Passcode salah. Hubungi admin jika lupa.');
@@ -110,10 +115,41 @@
   showLoginBtn.addEventListener('click', () => showAuthTab('login'));
   showSignupBtn.addEventListener('click', () => showAuthTab('signup'));
 
-  if (isLoggedIn()) {
-    showApp();
-    document.dispatchEvent(new CustomEvent('tms-auth-ready'));
-  } else showLogin();
+  async function restoreAuthSession() {
+    if (!hasSupabaseConfig) {
+      if (isLoggedIn()) {
+        showApp();
+        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+      } else {
+        showLogin();
+      }
+      return;
+    }
+
+    try {
+      const sb = await getSupabaseClient();
+      const { data, error } = await sb.auth.getSession();
+      if (error) throw error;
+      if (data?.session?.user) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          mode: 'supabase',
+          user: data.session.user.email || '',
+          at: Date.now()
+        }));
+        showApp();
+        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+        showLogin();
+      }
+    } catch (err) {
+      console.error('Supabase session restore failed:', err);
+      localStorage.removeItem(SESSION_KEY);
+      showLogin();
+    }
+  }
+
+  restoreAuthSession();
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
