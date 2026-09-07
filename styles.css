@@ -827,7 +827,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .tskk-meta-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:16px;gap:14px}
 .tskk-meta-grid .full{grid-column:1/-1}
 .tskk-meta-grid label{min-width:0}
-.tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{width:100%;min-width:0;box-sizing:border-box}
+.tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box}.tskk-meta-grid input[type="date"]{min-width:0;max-width:100%;width:100%;display:block}
 .tskk-meta-helper{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;padding:13px 15px;border:1px solid #e1e7ed;border-radius:12px;background:#f8fafc;color:#5f7185;font-size:13px;line-height:1.5}
 .tskk-meta-helper span{flex:1 1 320px;min-width:0}
 .tskk-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin:18px 0}
@@ -843,7 +843,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .tskk-end-cell{font-weight:700;white-space:nowrap}
 
 /* Actual-cycle TSKK chart: one row per Work Element, Type sits next to the label. */
-.tskk-combination-chart{position:relative;border:1px solid #e1e6eb;border-radius:12px;background:#fff;overflow-x:auto;overflow-y:hidden;min-width:1020px}
+.tskk-chart-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scrollbar-width:thin}.tskk-combination-chart{position:relative;border:1px solid #e1e6eb;border-radius:12px;background:#fff;overflow:hidden;width:max-content;min-width:1020px;max-width:none}
 .tskk-combo-header,.tskk-combo-row{display:grid;grid-template-columns:40px minmax(170px,1fr) 140px minmax(630px,1fr)}
 .tskk-combo-heading,.tskk-combo-no-head{min-height:48px;display:flex;align-items:center;padding:0 12px;background:#f7f9fc;border-bottom:1px solid #e2e8ee;font-weight:800;color:#29445c;font-size:13px}
 .tskk-combo-no-head{justify-content:center;color:#738396}
@@ -885,7 +885,6 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tskk-actions{width:100%}
   .tskk-actions .btn{flex:1 1 auto}
-  .tskk-combination-chart{min-width:930px}
 }
 @media(max-width:560px){
   .tskk-meta-grid{grid-template-columns:1fr}
@@ -895,7 +894,6 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-meta-helper span{width:100%;flex-basis:100%}
   .tskk-meta-helper .btn{width:100%}
   .tskk-table-card,.tskk-chart-card{padding:13px}
-  .tskk-combination-chart{min-width:900px}
 }
 
 /* V3.0.32 Observation-driven TSKK */
@@ -908,7 +906,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .tskk-readonly-element{font-weight:700;line-height:1.35;min-width:220px;overflow-wrap:anywhere;padding:9px 10px;background:#f8fafc;border:1px solid #e2e8ee;border-radius:9px}
 .tskk-readonly-number{font-variant-numeric:tabular-nums;white-space:nowrap;padding:9px 10px;background:#f8fafc;border:1px solid #e2e8ee;border-radius:9px;text-align:right}
 @media (max-width:900px){.observation-cycle-banner{align-items:stretch;flex-direction:column}.observation-cycle-banner .btn{width:100%}}
-@media (max-width:700px){.tskk-work-table{min-width:1080px}.tskk-combination-chart{min-width:980px}}
+@media (max-width:700px){.tskk-work-table{min-width:1080px}.tskk-chart-scroll{width:100%;max-width:100%}}
 
 
 /* V3.0.39: Observation method + separated administration + responsive hardening */

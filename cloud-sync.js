@@ -67,10 +67,20 @@
     const observations=(obs.data||[]).map(x=>({id:x.id,observationSessionId:x.observation_session_id||x.observation_cycle_id||`LEGACY-${x.id}`,observationCycleId:x.observation_cycle_id||x.observation_session_id||`LEGACY-${x.id}`,date:(x.observed_at||'').slice(0,10),study:x.study||'',operator:opById.get(x.operator_id)?.name||x.operator_name||'',process:x.process,activity:x.activity,element:x.element_name,size:x.size_category,start:n(x.start_time),end:n(x.end_time),time:n(x.observed_time)||0,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,note:x.notes||'',createdAt:Date.parse(x.created_at||Date.now())}));
     return {observations,settings,master};
   }
+  let queuedState=null, queuedResolvers=[];
   async function saveSnapshot(state){
     if(!configured||applying)return false;
-    clearTimeout(timer);
-    return await new Promise(resolve=>{timer=setTimeout(async()=>{try{await write(state);resolve(true)}catch(err){console.error('Cloud sync failed',err);resolve(false)}},150)});
+    queuedState=state;
+    return await new Promise(resolve=>{
+      queuedResolvers.push(resolve);
+      clearTimeout(timer);
+      timer=setTimeout(async()=>{
+        const snapshot=queuedState; queuedState=null;
+        const resolvers=queuedResolvers.splice(0);
+        try{await write(snapshot);resolvers.forEach(resolve=>resolve(true));}
+        catch(err){console.error('Cloud sync failed',err);resolvers.forEach(resolve=>resolve(false));}
+      },150);
+    });
   }
   async function write(state){
     const authState=await ensureAuthSession();
