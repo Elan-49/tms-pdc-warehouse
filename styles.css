@@ -1044,3 +1044,139 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-combination-chart{min-width:760px!important;}
   .tskk-combo-header,.tskk-combo-row{grid-template-columns:30px 135px 105px minmax(490px,1fr)!important;}
 }
+
+/* V3.0.66 — Global compact & consistent mobile system
+   Goal: reduce vertical density without sacrificing touch usability. */
+@media (max-width:760px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  .main{min-width:0;width:100%;}
+  .topbar{height:68px;padding:10px 12px;border-bottom-width:2px;}
+  .topbar h1{font-size:18px;line-height:1.15;}
+  .eyebrow{font-size:8px;letter-spacing:1.1px;margin-bottom:3px;}
+  .top-actions{gap:6px;}
+  .top-actions button{padding:7px 8px;font-size:11px;border-radius:7px;}
+  .content{padding:10px!important;width:100%;max-width:100%;}
+  .section{margin-top:12px;}
+  .grid{gap:8px;}
+  .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .card{padding:11px!important;border-radius:10px;box-shadow:0 2px 10px rgba(7,27,51,.045);}
+  .card h3{font-size:13px;margin:0 0 8px;line-height:1.25;}
+  .card h2{font-size:17px!important;line-height:1.2;margin:0 0 6px;}
+  .card p{margin-top:5px;margin-bottom:7px;}
+  .section-head{gap:7px!important;}
+  .section-head>div:last-child{margin-top:6px;}
+  .muted{font-size:10.5px;line-height:1.35;}
+  .hint{font-size:10px;line-height:1.35;}
+  .toolbar{gap:6px;}
+  .toolbar .btn{min-height:36px;}
+  .btn{min-height:36px;padding:8px 10px;font-size:11px;border-radius:7px;}
+  label{font-size:10.5px;gap:4px;}
+  input,select,textarea{padding:8px!important;min-height:36px;font-size:13px!important;border-radius:7px;}
+  textarea{min-height:58px;}
+  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .form-grid.four{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .full{grid-column:1/-1!important;}
+
+  /* compact KPIs across Dashboard and analysis pages */
+  .kpi{padding:9px!important;min-height:0!important;}
+  .kpi .label{font-size:8.5px;letter-spacing:.5px;}
+  .kpi .value{font-size:19px;margin-top:4px;line-height:1.1;}
+  .kpi .sub{font-size:9px;margin-top:3px;line-height:1.25;}
+  .stat-table td.num{font-size:11px;}
+  .summary-bar{gap:8px;font-size:10px;}
+
+  /* tables: compact rows + a real scroll viewport */
+  .table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
+  .data-table{font-size:11px;}
+  .data-table th{font-size:8.5px;letter-spacing:.25px;}
+  .data-table th,.data-table td{padding:7px 8px;}
+  .data-table td{line-height:1.25;}
+  .badge{padding:3px 6px;font-size:8.5px;}
+  .empty{padding:22px 10px;font-size:11px;}
+
+  /* dashboard charts / analysis */
+  .chart-row{gap:6px;margin:7px 0;}
+  .chart-label{width:105px;font-size:10px;}
+  .bar{height:20px;border-radius:5px;}
+  .bar small{font-size:8.5px;top:3px;right:5px;}
+  .analysis-note{padding:8px 9px;margin-bottom:8px;font-size:10px;line-height:1.35;}
+  .progress{height:6px;}
+
+  /* observation */
+  .workspace{gap:10px;}
+  .video-card{padding-bottom:10px!important;}
+  .video-stage{gap:7px;}
+  .video-wrap{min-height:190px!important;border-radius:9px;}
+  .video-empty{font-size:10px;}
+  .video-empty strong{font-size:13px;}
+  .video-empty span{font-size:9px;}
+  .video-tools{gap:6px;}
+  .video-skip{min-height:40px!important;padding:6px;font-size:10px;border-radius:8px;}
+  .video-skip span{font-size:9px;}
+  .video-tip{margin:6px 0 0;padding:7px 8px;font-size:9px;}
+  .dropzone{padding:11px 8px;margin-bottom:8px;border-radius:8px;}
+  .dropzone b{font-size:11px;}
+  .dropzone small{font-size:9px;}
+  .time-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0;}
+  .timebox{padding:7px;border-radius:7px;}
+  .timebox span{font-size:8.5px;}
+  .timebox b{font-size:13px;margin-top:2px;}
+  .master-preview{gap:6px;margin:8px 0;}
+  .master-preview div{padding:7px;border-radius:7px;}
+  .master-preview span{font-size:8.5px;}
+  .master-preview b{font-size:10.5px;}
+  .seg-controls{gap:6px;margin:8px 0;}
+
+  /* master / data-entry pages */
+  .filters{gap:6px;margin-bottom:8px;}
+  .filters select,.filters input{max-width:none;min-width:0;flex:1 1 140px;}
+  .master-legend{margin:8px 0;gap:5px;}
+
+  /* keep horizontal tables inside their cards */
+  .card>.table-wrap,.card>.table-scroll,.card>.data-table-wrap{width:100%;max-width:100%;min-width:0;}
+  table{max-width:none;}
+
+  /* modal */
+  .modal-backdrop{padding:8px;}
+  .modal{padding:12px!important;border-radius:11px;max-height:94vh;}
+  .modal-actions{gap:6px;margin-top:9px;}
+  .modal-actions .btn{flex:1;}
+
+  /* navigation */
+  .sidebar{width:min(82vw,280px);padding:14px 10px;}
+  .sidebar button,.import-btn{padding:9px 10px;font-size:12px;}
+  .nav-label{font-size:8.5px;margin:12px 8px 4px;}
+}
+
+@media (max-width:560px){
+  .topbar{height:62px;padding:8px 10px;}
+  .topbar h1{font-size:16px;}
+  .content{padding:8px!important;}
+  .card{padding:9px!important;border-radius:9px;}
+  .grid{gap:7px;}
+  .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .form-grid,.form-grid.four{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+  label{font-size:9.5px;}
+  input,select,textarea{min-height:34px;padding:7px!important;font-size:12px!important;}
+  .btn{min-height:34px;padding:7px 8px;font-size:10.5px;}
+  .card h3{font-size:12px;margin-bottom:6px;}
+  .muted{font-size:9.5px;}
+  .kpi{padding:8px!important;}
+  .kpi .label{font-size:7.8px;}
+  .kpi .value{font-size:17px;}
+  .kpi .sub{font-size:8.5px;}
+  .data-table{font-size:10px;}
+  .data-table th{font-size:8px;}
+  .data-table th,.data-table td{padding:6px 7px;}
+  .badge{font-size:8px;padding:3px 5px;}
+  .video-wrap{min-height:165px!important;}
+  .video-tools{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));}
+  .video-skip{min-height:38px!important;}
+  .dropzone{padding:9px 7px;}
+  .timebox{padding:6px;}
+  .timebox b{font-size:12px;}
+  .chart-label{width:88px;font-size:9px;}
+  .bar{height:18px;}
+  .analysis-note{font-size:9px;}
+  .toolbar .btn{flex:1 1 auto;}
+}
