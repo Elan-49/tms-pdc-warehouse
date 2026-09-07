@@ -495,7 +495,7 @@ function tskkTimeline(study){
   return `<div class="tskk-combination-chart"><div class="tskk-combo-header"><div class="tskk-combo-no-head">No</div><div class="tskk-combo-heading">Work Element</div><div class="tskk-combo-heading tskk-type-heading">Type</div><div class="tskk-combo-axis">${axis.map(v=>`<span style="left:${(v/scale)*100}%">${v}</span>`).join('')}<em>detik</em></div></div>${c.items.map(row).join('')}${taktX!==null?`<div class="tskk-combo-takt" style="left:calc(${leftLabel}px + (100% - ${leftLabel}px) * ${taktX/100})"><span>Takt ${fmt(c.takt)} dtk</span></div>`:''}<div class="tskk-combo-footer"><span class="tskk-combo-note">Actual Time berasal langsung dari Observation. Type ditampilkan sebagai kolom terpisah.</span><div class="tskk-legend"><span><i class="tskk-dot manual"></i>Manual / Hand</span><span><i class="tskk-dot auto"></i>Auto / Machine = garis putus-putus</span><span><i class="tskk-dot walk"></i>Walk / Walking</span></div></div></div>`;
 }
 function tskkStatusBadge(c){const cls=c.status==='Target tercapai'?'ok':c.status==='Takt belum diisi'?'warn':'bad';return `<span class="badge ${cls}">${esc(c.status)}</span>`}
-function renderTSKK(){
+function renderTSKK(skipCloud=false){
   const renderSeq=++tskkRenderSeq;
   setHeader('TSKK / SWCT','STANDARD WORK COMBINATION TABLE');
   const localStudies=tskkStudies();
@@ -576,20 +576,25 @@ function renderTSKK(){
   $$('.tskk-open').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;const s=localStudies.find(x=>String(x.id)===String(b.dataset.id));if(s){try{open(s)}catch(err){console.error('Buka TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}}});
   $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!confirm('Hapus TSKK ini?'))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
   $$('.tskk-create-from-session').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;if(!ensureWrite())return;const session=sessions.find(x=>String(x.id)===String(b.dataset.session));if(!session){console.error('TSKK session not found:',b.dataset.session,sessions);alert('Observation untuk TSKK tidak ditemukan. Silakan refresh halaman.');return}try{open(tskkDefaultStudyFromSession(session))}catch(err){console.error('Buat TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}});
-  tskkLoadCloud().then(remote=>{
-    // A cloud response from an older TSKK list render must never repaint the UI
-    // after the user has already started opening/creating a TSKK.
-    if(!remote || renderSeq!==tskkRenderSeq || state.tskkEditor)return;
+  if(!skipCloud) tskkLoadCloud().then(remote=>{
+    // Cloud is loaded once for this list render. Never start another cloud-load
+    // render loop: that used to reset the mobile table's horizontal scroll and
+    // could make the Create TSKK button appear to need multiple clicks.
+    // Ignore stale cloud responses after the user has navigated away from TSKK.
+    // Without the view check, a pending TSKK load could finish after a sidebar
+    // click and render the TSKK page again, making other menu items look
+    // unresponsive.
+    if(!remote || renderSeq!==tskkRenderSeq || state.view!=='tskk' || state.tskkEditor)return;
     saveTSKKLocal(remote);
-    if(renderSeq===tskkRenderSeq && !state.tskkEditor)renderTSKK();
+    if(renderSeq===tskkRenderSeq && state.view==='tskk' && !state.tskkEditor)renderTSKK(true);
   }).catch(()=>{});
 }
 
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
 function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.classList.toggle('sidebar-open',!!open); const toggle=$('#sidebarToggle'); if(toggle) toggle.setAttribute('aria-expanded',String(!!open));}
 function render(){if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();}
-$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()});
-document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()}});
+$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;state.tskkEditor=false;tskkRenderSeq++;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()});
+document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;state.tskkEditor=false;tskkRenderSeq++;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()}});
 // Preserve the current browser route on reload. This prevents F5/refresh from
 // sending the user back to Dashboard when they were on Observation or TSKK.
 history.replaceState({...((history.state&&typeof history.state==='object')?history.state:{}),appView:state.view,tskkEditor:state.tskkEditor===true},'',location.href);

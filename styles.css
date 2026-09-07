@@ -821,6 +821,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 
 /* TSKK / SWCT module — responsive Standard Work Combination Table */
 .tskk-content{display:grid;gap:18px}
+.tskk-observation-list .table-wrap,.tskk-list-wrap .table-wrap{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 .tskk-header-card,.tskk-editor-card{overflow:hidden}
 .tskk-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .tskk-meta-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:16px;gap:14px}
