@@ -1180,3 +1180,189 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .analysis-note{font-size:9px;}
   .toolbar .btn{flex:1 1 auto;}
 }
+
+/* V3.0.67 — Final mobile UI/UX compact consistency pass
+   Scope: presentation only. Preserve application logic and desktop layout. */
+@media (max-width:760px){
+  html,body{font-size:14px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  .content{padding:9px 10px 22px!important;}
+  .section{margin-top:10px!important;}
+  .grid,.content>.workspace,.dashboard-content>#dashResults{gap:9px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:11px!important;border-radius:9px!important;}
+  .card h2{font-size:16px!important;line-height:1.18!important;}
+  .card h3,.chart-card h3,.pareto-card h3{font-size:12.5px!important;line-height:1.25!important;margin-bottom:7px!important;}
+  .muted{font-size:9.5px!important;line-height:1.35!important;}
+  .hint,.analysis-note{font-size:9.5px!important;line-height:1.35!important;}
+
+  /* Consistent controls: compact but still finger-friendly. */
+  label{font-size:10px!important;line-height:1.2!important;gap:4px!important;}
+  input,select,textarea{min-height:35px!important;height:35px;box-sizing:border-box!important;padding:7px 8px!important;font-size:13px!important;line-height:1.2!important;border-radius:7px!important;}
+  textarea{height:auto;min-height:52px!important;}
+  .btn{min-height:35px!important;height:35px;padding:7px 9px!important;font-size:11px!important;line-height:1.1!important;border-radius:7px!important;}
+  .toolbar .btn,.top-actions button{min-height:35px!important;height:35px!important;padding:7px 8px!important;font-size:10.5px!important;}
+
+  /* Dashboard: compact filter, KPI and charts without breaking readability. */
+  .dashboard-filter{padding:10px!important;}
+  .dashboard-filter-controls{gap:8px!important;}
+  .dashboard-filter-grid{gap:7px!important;}
+  .dashboard-filter-actions{margin-top:1px!important;}
+  .dashboard-filter-actions .btn{min-height:35px!important;height:35px!important;width:100%!important;}
+  .dashboard-kpis{gap:7px!important;}
+  .kpi{padding:8px!important;}
+  .kpi .label{font-size:8px!important;letter-spacing:.35px!important;}
+  .kpi .value{font-size:17px!important;line-height:1.1!important;margin-top:3px!important;}
+  .kpi .sub{font-size:8.5px!important;line-height:1.2!important;margin-top:3px!important;}
+  .chart-card{overflow:hidden!important;}
+  .pie-chart-wrap{gap:9px!important;padding:3px 0 8px!important;}
+  .pie-chart{width:min(100%,205px)!important;}
+  .chart-legend{gap:4px!important;width:100%!important;max-width:none!important;}
+  .chart-legend>div.chart-legend-item,
+  .chart-legend .chart-legend-item{
+    grid-template-columns:minmax(0,1fr) max-content!important;
+    gap:7px!important;
+    min-height:0!important;
+    padding:6px 0!important;
+  }
+  .chart-legend-label{gap:7px!important;min-width:0!important;}
+  .chart-legend-label span{font-size:10.5px!important;line-height:1.25!important;white-space:normal!important;overflow:visible!important;}
+  .chart-legend-metrics{grid-template-columns:max-content max-content!important;gap:7px!important;justify-content:end!important;align-items:center!important;}
+  .chart-legend-metrics b{font-size:10.5px!important;}
+  .chart-legend-metrics small{font-size:9.5px!important;min-width:0!important;}
+  .pareto-chart{height:250px!important;padding:10px 3px 0!important;gap:5px!important;}
+  .pareto-scale{font-size:8px!important;padding-bottom:34px!important;}
+  .pareto-bars{gap:7px!important;padding:0 4px 0 3px!important;}
+  .pareto-item{grid-template-rows:1fr 34px!important;}
+  .pareto-item>small{font-size:8.5px!important;line-height:1.15!important;}
+  .pareto-table-block{margin-top:10px!important;padding-top:10px!important;}
+  .subtable-title{font-size:11.5px!important;margin-bottom:7px!important;}
+
+  /* Observation: reduce video/control vertical footprint. */
+  .video-wrap{min-height:165px!important;}
+  .dropzone{padding:9px 7px!important;margin-bottom:7px!important;}
+  .dropzone b{font-size:10.5px!important;}
+  .dropzone small{font-size:8.5px!important;}
+  .video-tools{gap:5px!important;}
+  .video-skip{min-height:35px!important;height:35px!important;font-size:9.5px!important;}
+  .time-grid{gap:6px!important;margin:7px 0!important;}
+  .timebox{padding:6px!important;}
+  .timebox span{font-size:8px!important;}
+  .timebox b{font-size:12px!important;}
+  .master-preview{gap:6px!important;margin:7px 0!important;}
+  .master-preview div{padding:6px!important;}
+  .master-preview span{font-size:8px!important;}
+  .master-preview b{font-size:10px!important;}
+  .seg-controls{gap:5px!important;margin:7px 0!important;}
+  .observation-save-action{margin-top:9px!important;padding-top:9px!important;}
+  .observation-save-action .btn{min-height:36px!important;height:36px!important;}
+
+  /* Tables: compact rows while retaining real horizontal scrolling. */
+  .table-wrap,.rating-table-wrap,.user-management-wrap,.tskk-chart-scroll,.tskk-observation-list .table-wrap,.tskk-list-wrap .table-wrap{
+    width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-x pan-y!important;
+  }
+  .data-table{font-size:10px!important;}
+  .data-table th{font-size:7.5px!important;letter-spacing:.15px!important;}
+  .data-table th,.data-table td{padding:6px 7px!important;}
+  .badge{font-size:7.5px!important;padding:3px 5px!important;}
+
+  /* Rating Factor: both setting boxes start their inputs at exactly the same row. */
+  .two-equal{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;align-items:start!important;}
+  .two-equal>label{grid-template-rows:minmax(32px,auto) 35px minmax(27px,auto)!important;align-items:start!important;}
+  .two-equal>label input{width:100%!important;max-width:100%!important;}
+  .two-equal>label small{font-size:8px!important;line-height:1.2!important;min-height:27px!important;}
+  .rating-head{gap:8px!important;padding-bottom:3px!important;}
+  .add-pic-form{gap:6px!important;margin-top:7px!important;}
+  .rating-table{min-width:900px!important;}
+  .rating-table select{font-size:10px!important;min-height:34px!important;height:34px!important;padding:6px 8px!important;}
+  #saveSettings{margin-top:9px!important;}
+
+  /* Classification: prevent long names and metrics from colliding. */
+  .classify-card .form-grid{gap:7px!important;margin-bottom:8px!important;}
+  .classify-card>label{margin-top:8px!important;}
+
+  /* TSKK: consistent typography and compact actions/fields. */
+  .tskk-content{gap:9px!important;}
+  .tskk-content>.card{padding:10px!important;border-radius:9px!important;}
+  .tskk-header-card{overflow:hidden!important;}
+  .tskk-header-card .section-head{gap:6px!important;}
+  .tskk-header-card .section-head h3{font-size:14px!important;margin-bottom:4px!important;}
+  .tskk-header-card .section-head .muted{font-size:9.5px!important;}
+  .tskk-meta-grid{gap:7px!important;margin-top:9px!important;}
+  .tskk-meta-grid label{font-size:10px!important;gap:3px!important;min-width:0!important;}
+  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{
+    width:100%!important;min-width:0!important;max-width:100%!important;height:35px!important;min-height:35px!important;padding:7px 8px!important;font-size:13px!important;line-height:1.15!important;border-radius:7px!important;-webkit-appearance:none;
+  }
+  .tskk-meta-grid input[type="date"]{width:100%!important;inline-size:100%!important;min-inline-size:0!important;max-inline-size:100%!important;display:block!important;}
+  .tskk-meta-grid textarea{height:auto!important;min-height:50px!important;}
+  .tskk-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;width:100%!important;margin-top:6px!important;}
+  .tskk-actions .btn{width:100%!important;min-width:0!important;height:35px!important;min-height:35px!important;padding:6px 5px!important;font-size:10.5px!important;}
+  .tskk-kpis{gap:7px!important;margin:8px 0!important;}
+  .tskk-kpis .kpi{padding:7px!important;}
+  .tskk-kpis .kpi .label{font-size:7.8px!important;}
+  .tskk-kpis .kpi .value{font-size:16px!important;}
+  .tskk-kpis .kpi .sub{font-size:8px!important;}
+  .tskk-table-card,.tskk-chart-card{margin-top:7px!important;padding:9px!important;border-radius:9px!important;}
+  .tskk-table-card h3,.tskk-chart-card h3{font-size:11.5px!important;margin-bottom:4px!important;}
+  .tskk-work-table{min-width:900px!important;}
+  .tskk-work-table th,.tskk-work-table td{padding:6px 7px!important;}
+  .tskk-work-table input,.tskk-work-table select{font-size:10px!important;min-height:32px!important;height:32px!important;padding:5px 6px!important;}
+  .tskk-item-element{min-width:180px!important;}
+  .tskk-item-type{min-width:120px!important;}
+  .tskk-item-time,.tskk-item-start{min-width:82px!important;}
+  .tskk-item-note{min-width:130px!important;}
+  .tskk-combination-chart{min-width:700px!important;}
+  .tskk-combo-header,.tskk-combo-row{grid-template-columns:28px 125px 98px minmax(449px,1fr)!important;}
+  .tskk-combo-heading,.tskk-combo-no-head{min-height:34px!important;padding:0 6px!important;font-size:8.5px!important;}
+  .tskk-combo-row{min-height:36px!important;}
+  .tskk-combo-no,.tskk-combo-name,.tskk-combo-type{padding:5px 6px!important;font-size:9px!important;}
+  .tskk-combo-track{height:36px!important;}
+  .tskk-combo-bar{top:7px!important;height:22px!important;}
+  .tskk-combo-bar span{font-size:8px!important;padding:0 3px!important;}
+  .tskk-combo-axis{height:34px!important;font-size:8px!important;}
+  .tskk-combo-footer{padding:7px!important;gap:6px!important;}
+  .tskk-combo-note,.tskk-legend{font-size:8.5px!important;}
+
+  /* Sidebar/menu and common controls stay compact and consistent. */
+  .sidebar{width:min(80vw,270px)!important;padding:12px 9px!important;}
+  .sidebar button,.import-btn{min-height:34px!important;padding:8px 9px!important;font-size:11px!important;}
+  .nav-label{font-size:8px!important;margin:10px 7px 3px!important;}
+}
+
+@media (max-width:560px){
+  .content{padding:8px 9px 20px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:9px!important;}
+  .grid,.content>.workspace,.dashboard-content>#dashResults{gap:7px!important;}
+  .section{margin-top:8px!important;}
+  .card h2{font-size:15px!important;}
+  .card h3,.chart-card h3,.pareto-card h3{font-size:11.5px!important;}
+  label{font-size:9.5px!important;}
+  input,select,textarea{height:34px!important;min-height:34px!important;font-size:12.5px!important;padding:6px 7px!important;}
+  .btn{height:34px!important;min-height:34px!important;padding:6px 8px!important;font-size:10px!important;}
+  .topbar{height:60px!important;padding:7px 9px!important;}
+  .topbar h1{font-size:15px!important;}
+  .eyebrow{font-size:7px!important;letter-spacing:.9px!important;}
+  .dashboard-kpis{gap:6px!important;}
+  .kpi{padding:7px!important;}
+  .kpi .label{font-size:7.5px!important;}
+  .kpi .value{font-size:16px!important;}
+  .kpi .sub{font-size:8px!important;}
+  .pie-chart{width:min(100%,190px)!important;}
+  .chart-legend>div.chart-legend-item,.chart-legend .chart-legend-item{gap:6px!important;padding:5px 0!important;}
+  .chart-legend-label span{font-size:10px!important;}
+  .chart-legend-metrics{gap:5px!important;}
+  .chart-legend-metrics b{font-size:10px!important;}
+  .chart-legend-metrics small{font-size:9px!important;}
+  .pareto-chart{height:225px!important;}
+  .two-equal{gap:6px!important;}
+  .two-equal>label{grid-template-rows:minmax(34px,auto) 34px minmax(26px,auto)!important;}
+  .two-equal>label small{font-size:7.7px!important;}
+  .tskk-meta-grid{gap:6px!important;}
+  .tskk-meta-grid label{font-size:9.5px!important;}
+  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{font-size:12.5px!important;height:34px!important;min-height:34px!important;}
+  .tskk-actions{gap:5px!important;}
+  .tskk-actions .btn{height:34px!important;min-height:34px!important;font-size:10px!important;padding:6px 4px!important;}
+  .tskk-combination-chart{min-width:660px!important;}
+  .tskk-combo-header,.tskk-combo-row{grid-template-columns:27px 118px 94px minmax(421px,1fr)!important;}
+  .tskk-combo-heading,.tskk-combo-no-head{font-size:8px!important;}
+  .tskk-combo-no,.tskk-combo-name,.tskk-combo-type{font-size:8.5px!important;}
+  .tskk-combo-bar span{font-size:7.5px!important;}
+}
