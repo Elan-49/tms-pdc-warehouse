@@ -1,11 +1,38 @@
 const KEY='tms-pdc-v2-data'; const SETTINGS_KEY='tms-pdc-v2-settings'; const MASTER_KEY='tms-pdc-v2-master';
+const IDB_NAME='tms-pdc-warehouse'; const IDB_STORE='kv'; const PENDING_KEY='tms-pdc-pending-observations';
+function safeRead(key,fallback){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(err){console.warn('Local storage read failed:',key,err);return fallback}}
+function safeWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(err){console.warn('Local storage write failed:',key,err);return false}}
+function idbOpen(){return new Promise((resolve,reject)=>{try{if(!('indexedDB' in window))return reject(new Error('IndexedDB tidak tersedia'));const req=indexedDB.open(IDB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(IDB_STORE))req.result.createObjectStore(IDB_STORE)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB gagal dibuka'))}catch(e){reject(e)}})}
+async function idbGet(key){const db=await idbOpen();return await new Promise((resolve,reject)=>{const tx=db.transaction(IDB_STORE,'readonly'),st=tx.objectStore(IDB_STORE),req=st.get(key);req.onsuccess=()=>resolve(req.result??null);req.onerror=()=>reject(req.error||new Error('IndexedDB read gagal'));tx.oncomplete=()=>db.close();tx.onerror=()=>reject(tx.error||new Error('IndexedDB transaction gagal'))})}
+async function idbSet(key,value){const db=await idbOpen();return await new Promise((resolve,reject)=>{const tx=db.transaction(IDB_STORE,'readwrite'),st=tx.objectStore(IDB_STORE);st.put(value,key);tx.oncomplete=()=>{db.close();resolve(true)};tx.onerror=()=>{const e=tx.error||new Error('IndexedDB write gagal');db.close();reject(e)}})}
+function pendingIds(){return new Set(safeRead(PENDING_KEY,[]))}
+function rememberPending(ids){const set=pendingIds();ids.forEach(id=>set.add(id));safeWrite(PENDING_KEY,[...set])}
+function forgetPending(ids){const set=pendingIds();ids.forEach(id=>set.delete(id));safeWrite(PENDING_KEY,[...set])}
+async function hydrateLocalData(){
+  let localObs=safeRead(KEY,[]), localSettings=safeRead(SETTINGS_KEY,{}), localMaster=safeRead(MASTER_KEY,null);
+  try{const [io,is,im]=await Promise.all([idbGet(KEY),idbGet(SETTINGS_KEY),idbGet(MASTER_KEY)]);
+    if((!Array.isArray(localObs)||!localObs.length)&&Array.isArray(io)) localObs=io;
+    if((!localSettings||!Object.keys(localSettings).length)&&is&&typeof is==='object') localSettings=is;
+    if((!Array.isArray(localMaster)||!localMaster.length)&&Array.isArray(im)) localMaster=im;
+  }catch(e){console.warn('IndexedDB hydration skipped:',e)}
+  if(Array.isArray(localObs)) observations=localObs;
+  if(localSettings&&typeof localSettings==='object') settings={...settings,...localSettings};
+  if(Array.isArray(localMaster)&&localMaster.length) safeWrite(MASTER_KEY,localMaster);
+}
+function mergeObservations(remote,local){
+  const pending=pendingIds(); const map=new Map((remote||[]).map(o=>[o.id,o]));
+  for(const o of (local||[])){ if(pending.has(o.id)||!map.has(o.id)) map.set(o.id,o); }
+  return [...map.values()].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
 const WASTE_TYPES=['Defects','Overproduction','Waiting','Non-Utilized Talent','Transportation','Inventory','Motion','Extra Processing'];
 const CLASSIFICATIONS=['Direct Value-Added','Non-Value-Added','Indirect','Loss'];
-function masterData(){return JSON.parse(localStorage.getItem(MASTER_KEY)||JSON.stringify(MASTER_DATA));}
-function saveMaster(rows){if(!ensureWrite())return false;localStorage.setItem(MASTER_KEY,JSON.stringify(rows));if(window.tmsCloud?.enabled)window.tmsCloud.saveSnapshot({observations,settings,master:rows}).catch(console.error);return true;}
+function masterData(){const v=safeRead(MASTER_KEY,null);return Array.isArray(v)&&v.length?v:MASTER_DATA;}
+function saveMaster(rows){if(!ensureWrite())return false;safeWrite(MASTER_KEY,rows);idbSet(MASTER_KEY,rows).catch(e=>console.warn('Master IndexedDB save failed:',e));if(window.tmsCloud?.enabled)window.tmsCloud.saveSnapshot({observations,settings,master:rows}).catch(console.error);return true;}
 function getMaster(element){return masterData().find(x=>x.element===element);}
-let observations=JSON.parse(localStorage.getItem(KEY)||'[]');
-let settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+let observations=safeRead(KEY,[]);
+// Observation cycle/group is the direct source for TSKK. Legacy rows receive a stable one-row cycle id.
+observations=observations.map(o=>({...o,observationSessionId:o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`}));
+let settings=safeRead(SETTINGS_KEY,{});
 const DEFAULT_OPERATORS=(typeof OPERATORS!=='undefined'&&OPERATORS.length?OPERATORS:['Operator 1']);
 settings.allowance ??= 0.1;
 settings.confidence ??= 95;
@@ -27,8 +54,21 @@ settings.operators.forEach(o=>{
     consistency:Number.isFinite(+w.consistency)?+w.consistency:0
   };
 });
-let state={view:'dashboard',videoUrl:null,start:null,end:null,manualTime:null};
+let state={view:'dashboard',videoUrl:null,start:null,end:null,manualTime:null,observationMethod:'video',observationSessionId:null,videoFileName:'',tskkEditor:false};
+let tskkHistoryGuard=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function newId(){
+  try{
+    if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    if(globalThis.crypto?.getRandomValues){
+      const a=new Uint8Array(16); globalThis.crypto.getRandomValues(a);
+      a[6]=(a[6]&0x0f)|0x40; a[8]=(a[8]&0x3f)|0x80;
+      const h=[...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+      return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+    }
+  }catch(e){}
+  return 'local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
+}
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[m]));
 function role(){return window.tmsAuth?.getRole?.()||null}
 function isAdmin(){return role()==='admin'}
@@ -36,10 +76,30 @@ function canWrite(){return role()==='admin'||role()==='analyst'}
 function canDelete(){return role()==='admin'}
 function ensureWrite(){if(!canWrite()){alert('Akses ini hanya tersedia untuk pengguna Analyst atau Admin.');return false}return true}
 function ensureAdmin(){if(!isAdmin()){alert('Akses ini hanya tersedia untuk Admin.');return false}return true}
-function applyRoleUI(){const r=role();$$('[data-role]').forEach(el=>{el.classList.toggle('hidden',!!r&&el.dataset.role!==r&&!((el.dataset.role==='analyst')&&r==='admin'));});const exp=$('#exportCsv'),imp=$('#importCsv');const expWrap=exp,impWrap=imp?.closest('.import-btn');[expWrap,impWrap].forEach(el=>{if(el)el.classList.toggle('hidden',!canWrite())});}
+function applyRoleUI(){const r=role();$$('[data-role]').forEach(el=>{const required=el.dataset.role;if(required==='admin'){el.classList.toggle('hidden',r!=='admin');return}el.classList.toggle('hidden',!!r&&required!==r&&!((required==='analyst')&&r==='admin'));});const adminGroup=$('.nav-admin-group');if(adminGroup)adminGroup.classList.toggle('hidden',r!=='admin');const exp=$('#exportCsv'),imp=$('#importCsv');const expWrap=exp,impWrap=imp?.closest('.import-btn');[expWrap,impWrap].forEach(el=>{if(el)el.classList.toggle('hidden',!canWrite())});}
 function operatorList(){return [...new Set(settings.operators.filter(Boolean).map(x=>String(x).trim()).filter(x=>!x.startsWith('Kalau menambah operator baru:')))]}
 function westinghouseFactor(r){return 1+(+r.skill||0)+(+r.effort||0)+(+r.condition||0)+(+r.consistency||0)}
-function save(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings)); if(window.tmsCloud?.enabled && canWrite())window.tmsCloud.saveSnapshot({observations,settings,master:masterData()}).catch(console.error); const x=$('#storageStatus');if(x){x.textContent=(window.tmsCloud?.enabled?'Cloud sync ':'Auto-saved ')+new Date().toLocaleTimeString('id-ID');}}
+async function save(){
+  const okObs=safeWrite(KEY,observations);
+  const okSettings=safeWrite(SETTINGS_KEY,settings);
+  try{await Promise.all([idbSet(KEY,observations),idbSet(SETTINGS_KEY,settings)])}catch(err){console.warn('IndexedDB local save failed:',err)}
+  if(!okObs||!okSettings){
+    alert('Data lokal tidak dapat disimpan oleh browser ini. Buka aplikasi melalui localhost (bukan file://) agar penyimpanan lokal stabil.');
+    return false;
+  }
+  // Verify immediately so a failed browser storage operation cannot look like a successful save.
+  const verify=safeRead(KEY,null);
+  if(!Array.isArray(verify)||verify.length<observations.length){
+    alert('Penyimpanan lokal tidak terverifikasi. Data belum dianggap tersimpan. Gunakan localhost untuk pengujian lokal.');
+    return false;
+  }
+  let cloudOk=true;
+  if(window.tmsCloud?.enabled && canWrite()){
+    cloudOk=await window.tmsCloud.saveSnapshot({observations,settings,master:masterData()});
+  }
+  const x=$('#storageStatus');if(x)x.textContent=(window.tmsCloud?.enabled?(cloudOk?'Cloud synced ':'Saved locally • cloud retry pending '):'Auto-saved ')+new Date().toLocaleTimeString('id-ID');
+  return true;
+}
 function fmt(n){return Number(n||0).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function t(sec){if(sec==null||!isFinite(sec))return '—';sec=Math.max(0,Math.round(sec*100)/100);let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),whole=Math.floor(sec%60),cs=Math.round((sec-Math.floor(sec))*100);if(cs===100){whole++;cs=0}if(whole===60){whole=0;m++}if(m===60){m=0;h++}return `${h?String(h).padStart(2,'0')+':':''}${String(m).padStart(2,'0')}:${String(whole).padStart(2,'0')}.${String(cs).padStart(2,'0')}`}
 function unique(a){return [...new Set(a)]}
@@ -113,11 +173,36 @@ function renderDashboard(){
   renderActivity();renderElement();renderResults();
   $('#dashProcess').onchange=e=>{f.process=e.target.value;f.activity='';f.element='';renderActivity();renderElement();renderResults()}; $('#dashActivity').onchange=e=>{f.activity=e.target.value;f.element='';renderElement();renderResults()}; $('#dashElement').onchange=e=>{f.element=e.target.value;renderResults()}; $('#dashSize').onchange=e=>{f.size=e.target.value;renderResults()}; $('#resetDashFilter').onclick=()=>{f.process=f.activity=f.element=f.size='';$('#dashProcess').value='';renderActivity();renderElement();$('#dashSize').value='';renderResults()};
 }
+function ensureObservationSession(){if(!state.observationSessionId)state.observationSessionId=newId();return state.observationSessionId}
+function observationSessionLabel(id, fallbackDate=''){const raw=String(id||'');if(raw.startsWith('LEGACY-'))return 'Legacy Observation';const date=(fallbackDate||'').replaceAll('-','');return `OBS-${date?date.slice(0,8)+'-':''}${raw.slice(0,8).toUpperCase()}`}
+function observationSessions(){
+  const map=new Map();
+  observations.forEach(o=>{const id=o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`;if(!map.has(id))map.set(id,[]);map.get(id).push(o)});
+  return [...map.entries()].map(([id,rows])=>{
+    rows.sort((a,b)=>(a.start??a.createdAt??0)-(b.start??b.createdAt??0)||(a.createdAt??0)-(b.createdAt??0));
+    const first=rows[0]||{};
+    const method=rows.some(r=>r.observationMethod==='video'||r.start!=null||r.end!=null)?'video':'manual';
+    return {id,rows,method,date:first.date||'',process:first.process||'',activity:first.activity||'',operator:first.operator||'',size:first.size||'',count:rows.length,createdAt:Math.min(...rows.map(r=>r.createdAt||Date.now())),label:observationSessionLabel(id,first.date)};
+  }).sort((a,b)=>b.createdAt-a.createdAt);
+}
+
 function renderObserve(){
   setHeader('Observation','RAW DATA CAPTURE');
-  $('#app').innerHTML=`<div class="content"><div class="workspace"><div class="card video-card"><div class="video-card-head"><h3>1. Upload & Segment Video</h3><button class="video-close hidden" id="removeVideo" type="button" title="Tutup video ini" aria-label="Tutup video ini">×</button></div><label class="dropzone">📹 <b>Pilih video pengamatan</b><small>Video tetap lokal di browser. File tidak di-upload ke server.</small><input id="videoInput" type="file" accept="video/*" hidden></label><div class="video-stage"><div class="video-wrap video-pending" id="videoWrap"><video id="video" controls playsinline preload="metadata"></video><div id="emptyVideo" class="video-empty"><div><strong>Belum ada video</strong><span>Pilih file video untuk memulai observasi</span></div></div></div><div class="seek-panel" id="seekPanel"><div class="seek-meta"><span id="seekCurrent">00:00.00</span><span id="seekDuration">00:00.00</span></div><input id="videoSeek" class="video-seek" type="range" min="0" max="0" value="0" step="0.01" aria-label="Geser posisi video"><div class="seek-caption"><span>Tarik garis waktu untuk maju atau mundur ke posisi yang diinginkan</span></div></div><div class="video-tools"><button class="video-skip" id="back5" type="button" title="Mundur 5 detik">↶ Mundur 5 Detik</button><button class="video-skip" id="forward5" type="button" title="Maju 5 detik">Maju 5 Detik ↷</button><button class="video-skip" id="fullVideo" type="button" title="Layar penuh">⛶ Fullscreen</button></div></div><div class="time-grid"><div class="timebox"><span>Current</span><b id="cur">—</b></div><div class="timebox"><span>Start</span><b id="start">—</b></div><div class="timebox"><span>End</span><b id="end">—</b></div><div class="timebox"><span>Observed</span><b id="elapsed">—</b></div><div class="timebox"><span>Duration</span><b id="dur">—</b></div></div><div class="seg-controls"><button class="btn ghost plain-segment-btn" id="setStart"><span class="start-play-icon" aria-hidden="true"></span><span>Set Start</span></button><button class="btn ghost plain-segment-btn" id="setEnd"><span class="end-stop-icon" aria-hidden="true"></span><span>Set End</span></button><button class="btn ghost" id="resetSeg">Reset</button></div><div class="manual-time card-lite"><div class="manual-time-head"><b>Input Waktu Observasi Manual</b><span>Gunakan jika observasi dilakukan tanpa video.</span></div><div class="manual-time-grid manual-single"><label>Total Waktu Pengamatan (detik)<input id="manualObservedTime" type="number" min="0.01" step="0.01" placeholder="Contoh: 8.47"></label><button class="btn primary" id="applyManualTime">Terapkan</button></div></div></div><div class="card classify-card"><h3>2. Classify Segment</h3><div class="form-grid classify-top-grid"><label>Date<input id="date" type="date"></label><label>PIC<select id="operator">${opt(operatorList())}</select></label><label>Size<select id="size"><option>Small</option><option>Medium</option><option>Big</option></select></label></div><div class="form-grid classify-process-grid"><label>Process<select id="process">${opt(unique(masterData().map(x=>x.process)))}</select></label></div><div class="form-grid classify-activity-grid"><label>Activity<select id="activity"><option value="">Pilih Process dahulu</option></select></label></div><div class="form-grid classify-element-grid"><label>Element Kerja<select id="element"><option value="">Pilih Activity dahulu</option></select></label></div><div class="master-preview"><div><span>Classification</span><b id="classification">—</b></div><div><span>Waste</span><b id="waste">—</b></div><div><span>Method</span><b id="method">—</b></div><div><span>Equipment</span><b id="equipment">—</b></div></div><label>Catatan<textarea id="note" rows="3"></textarea></label><div class="observation-save-action"><button class="btn primary full" id="saveObs">＋ Simpan Observasi</button></div></div></div></div>`;
+  $('#app').innerHTML=`<div class="content"><div class="workspace"><div class="card video-card"><div class="video-card-head"><h3 id="observationInputTitle">1. Observation Input</h3><button class="video-close hidden" id="removeVideo" type="button" title="Tutup video ini" aria-label="Tutup video ini">×</button></div><div class="observation-method-switch" role="group" aria-label="Metode observasi"><button type="button" class="method-choice active" id="methodVideo">Video</button><button type="button" class="method-choice" id="methodManual">Manual</button></div><div id="videoObservationPanel"><label class="dropzone">Pilih video pengamatan<small>Video tetap lokal di browser. File tidak di-upload ke server.</small><input id="videoInput" type="file" accept="video/*" hidden></label><div class="video-stage"><div class="video-wrap video-pending" id="videoWrap"><video id="video" controls playsinline preload="metadata"></video><div id="emptyVideo" class="video-empty"><div><strong>Belum ada video</strong><span>Pilih file video untuk memulai observasi</span></div></div></div><div class="seek-panel" id="seekPanel"><div class="seek-meta"><span id="seekCurrent">00:00.00</span><span id="seekDuration">00:00.00</span></div><input id="videoSeek" class="video-seek" type="range" min="0" max="0" value="0" step="0.01" aria-label="Geser posisi video"><div class="seek-caption"><span>Tarik garis waktu untuk maju atau mundur ke posisi yang diinginkan</span></div></div><div class="video-tools"><button class="video-skip" id="back5" type="button" title="Mundur 5 detik">↶ Mundur 5 Detik</button><button class="video-skip" id="forward5" type="button" title="Maju 5 detik">Maju 5 Detik ↷</button><button class="video-skip" id="fullVideo" type="button" title="Layar penuh">⛶ Fullscreen</button></div></div></div><div class="time-grid"><div class="timebox"><span>Current</span><b id="cur">—</b></div><div class="timebox"><span>Start</span><b id="start">—</b></div><div class="timebox"><span>End</span><b id="end">—</b></div><div class="timebox"><span>Observed</span><b id="elapsed">—</b></div><div class="timebox"><span>Duration</span><b id="dur">—</b></div></div><div class="seg-controls" id="videoSegmentControls"><button class="btn ghost plain-segment-btn" id="setStart"><span class="start-play-icon" aria-hidden="true"></span><span>Set Start</span></button><button class="btn ghost plain-segment-btn" id="setEnd"><span class="end-stop-icon" aria-hidden="true"></span><span>Set End</span></button><button class="btn ghost" id="resetSeg">Reset</button></div><div class="manual-time card-lite hidden" id="manualObservationPanel"><div class="manual-time-head"><b>Input Cycle Time Manual</b><span>Masukkan satu Cycle Time untuk satu Observation. Manual tidak memakai Start/End.</span></div><div class="manual-time-grid manual-single"><label>Total Waktu Pengamatan (detik)<input id="manualObservedTime" type="number" min="0.01" step="0.01" placeholder="Contoh: 8.47"></label><button class="btn primary" id="applyManualTime">Terapkan</button></div></div></div><div class="card classify-card"><h3>2. Classify Observation</h3><div class="form-grid classify-top-grid"><label>Date<input id="date" type="date"></label><label>PIC<select id="operator">${opt(operatorList())}</select></label><label>Size<select id="size"><option>Small</option><option>Medium</option><option>Big</option></select></label></div><div class="form-grid classify-process-grid"><label>Process<select id="process">${opt(unique(masterData().map(x=>x.process)))}</select></label></div><div class="form-grid classify-activity-grid"><label>Activity<select id="activity"><option value="">Pilih Process dahulu</option></select></label></div><div class="form-grid classify-element-grid"><label>Element Kerja<select id="element"><option value="">Pilih Activity dahulu</option></select></label></div><div class="observation-cycle-banner"><div><span>Observation Aktif</span><b id="observationSessionId">Belum ada observation</b><small>Satu Observation dapat berasal dari <b>satu video</b> (detail element) atau <b>satu input manual</b> (satu cycle time).</small></div></div><div class="master-preview"><div><span>Classification</span><b id="classification">—</b></div><div><span>Waste</span><b id="waste">—</b></div><div><span>Method</span><b id="method">—</b></div><div><span>Equipment</span><b id="equipment">—</b></div></div><label>Catatan<textarea id="note" rows="3"></textarea></label><div class="observation-save-action"><button class="btn primary full" id="saveObs">＋ Simpan Observasi</button></div></div></div></div>`;
   $('#date').value=new Date().toISOString().slice(0,10);
+  $('#observationSessionId').textContent=state.observationSessionId?observationSessionLabel(state.observationSessionId,$('#date').value):'Belum ada video';
   wireObserve();
+  $('#methodVideo').onclick=()=>setObserveMethodUI('video');
+  $('#methodManual').onclick=()=>setObserveMethodUI('manual');
+  function setObserveMethodUI(method){
+    state.observationMethod=method==='manual'?'manual':'video';
+    const isManual=state.observationMethod==='manual';
+    $('#methodVideo')?.classList.toggle('active',!isManual); $('#methodManual')?.classList.toggle('active',isManual);
+    $('#videoObservationPanel')?.classList.toggle('hidden',isManual); $('#manualObservationPanel')?.classList.toggle('hidden',!isManual); $('#videoSegmentControls')?.classList.toggle('hidden',isManual);
+    if($('#observationInputTitle'))$('#observationInputTitle').textContent=isManual?'1. Manual Observation':'1. Video Observation';
+    if(isManual){state.start=null;state.end=null;refreshObservationDisplay();}
+  }
+  function refreshObservationDisplay(){const el=$('#elapsed');if(el)el.textContent=state.manualTime!=null?fmt(state.manualTime)+' s':'—';}
   if(!canWrite()){
     ['videoInput','setStart','setEnd','resetSeg','applyManualTime','saveObs','note','date','operator','size','process','activity','element','manualObservedTime','fullVideo','back5','forward5','removeVideo','videoSeek'].forEach(id=>{const el=$('#'+id);if(el)el.disabled=true;});
     const saveWrap=$('.observation-save-action'); if(saveWrap) saveWrap.classList.add('hidden');
@@ -129,6 +214,18 @@ function wireObserve(){
   const video=$('#video'), wrap=$('#videoWrap'), seek=$('#videoSeek');
   let seeking=false;
   const hasVideo=()=>!!video.src;
+  const setObservationMethod=(method)=>{
+    state.observationMethod=method==='manual'?'manual':'video';
+    const isManual=state.observationMethod==='manual';
+    $('#methodVideo')?.classList.toggle('active',!isManual);
+    $('#methodManual')?.classList.toggle('active',isManual);
+    $('#videoObservationPanel')?.classList.toggle('hidden',isManual);
+    $('#manualObservationPanel')?.classList.toggle('hidden',!isManual);
+    $('#videoSegmentControls')?.classList.toggle('hidden',isManual);
+    if($('#observationInputTitle'))$('#observationInputTitle').textContent=isManual?'1. Manual Observation':'1. Video Observation';
+    if($('#observationSessionId')&&!state.observationSessionId)$('#observationSessionId').textContent=isManual?'Belum ada observation':'Belum ada video';
+    if(isManual){state.start=null;state.end=null;refreshTimes?.();}
+  };
   const seekBy=(seconds)=>{if(!Number.isFinite(video.duration))return;video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+seconds));};
   const updateSeek=()=>{
     const current=Number.isFinite(video.currentTime)?video.currentTime:0;
@@ -150,11 +247,15 @@ function wireObserve(){
     if(!f)return;
     if(state.videoUrl)URL.revokeObjectURL(state.videoUrl);
     state.videoUrl=URL.createObjectURL(f);
+    state.videoFileName=f.name||'';
+    state.observationSessionId=newId();
+    state.observationMethod='video';
     clearSegment();
     video.src=state.videoUrl;
     video.load();
     $('#emptyVideo').classList.add('hidden');
     $('#removeVideo').classList.remove('hidden');
+    if($('#observationSessionId'))$('#observationSessionId').textContent=observationSessionLabel(state.observationSessionId,$('#date').value);
   };
   const removeVideo=()=>{
     video.pause();
@@ -189,25 +290,33 @@ function wireObserve(){
     updateSeek();
   };
   document.onkeydown=e=>{if(state.view!=='observe')return;if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowLeft'){e.preventDefault();seekBy(-5)}if(e.key==='ArrowRight'){e.preventDefault();seekBy(5)}};
-  $('#setStart').onclick=()=>{if(!hasVideo()){alert('Pilih video terlebih dahulu, atau gunakan Input Waktu Observasi Manual.');return}state.start=+video.currentTime.toFixed(2);state.end=null;state.manualTime=null;$('#manualObservedTime').value='';refreshTimes();video.play().catch(()=>{})};
-  $('#setEnd').onclick=()=>{if(!hasVideo()){alert('Pilih video terlebih dahulu, atau gunakan Input Waktu Observasi Manual.');return}video.pause();state.end=+video.currentTime.toFixed(2);state.manualTime=null;if(state.start!=null&&state.end<state.start){alert('End harus lebih besar dari Start');state.end=null;return}refreshTimes()};
+  $('#setStart').onclick=()=>{if(state.observationMethod==='manual')return;if(!hasVideo()){alert('Pilih video terlebih dahulu.');return}state.start=+video.currentTime.toFixed(2);state.end=null;state.manualTime=null;$('#manualObservedTime').value='';refreshTimes();video.play().catch(()=>{})};
+  $('#setEnd').onclick=()=>{if(state.observationMethod==='manual')return;if(!hasVideo()){alert('Pilih video terlebih dahulu.');return}video.pause();state.end=+video.currentTime.toFixed(2);state.manualTime=null;if(state.start!=null&&state.end<state.start){alert('End harus lebih besar dari Start');state.end=null;return}refreshTimes()};
   $('#applyManualTime').onclick=applyManual;
   $('#resetSeg').onclick=clearSegment;
   $('#process').onchange=e=>{let arr=unique(masterData().filter(x=>x.process===e.target.value).map(x=>x.activity));$('#activity').innerHTML=opt(arr);$('#element').innerHTML='<option value="">Pilih Activity dahulu</option>';updateMaster()};
   $('#activity').onchange=e=>{let arr=masterData().filter(x=>x.process===$('#process').value&&x.activity===e.target.value).map(x=>x.element);$('#element').innerHTML=opt(arr);updateMaster()};
   $('#element').onchange=updateMaster;
   function updateMaster(){let m=getMaster($('#element').value);for(const [id,k] of [['classification','classification'],['waste','waste'],['method','method'],['equipment','equipment']])$('#'+id).textContent=m?m[k]:'—'}
-  $('#saveObs').onclick=()=>{
-    let element=$('#element').value;
-    if(state.manualTime==null&&state.start!=null&&state.end!=null)state.manualTime=+(state.end-state.start).toFixed(2);
-    if(state.manualTime==null&&$('#manualObservedTime').value!=='')applyManual();
-    if(state.manualTime==null||!element||!$('#operator').value){alert('Lengkapi PIC, Element Kerja, dan Total Waktu Pengamatan. Waktu dapat diambil dari video atau diinput langsung secara manual.');return}
-    let m=getMaster(element);
-    observations.push({id:crypto.randomUUID(),date:$('#date').value,study:'',operator:$('#operator').value,process:m.process,activity:m.activity,element,size:$('#size').value,start:state.start==null?null:+state.start.toFixed(2),end:state.end==null?null:+state.end.toFixed(2),time:+state.manualTime.toFixed(2),classification:m.classification,waste:m.waste,method:m.method,equipment:m.equipment,note:$('#note').value,createdAt:Date.now()});
-    save();
-    clearSegment();
-    $('#note').value='';
-    alert('Observasi berhasil disimpan. Video tetap aktif dan siap digunakan untuk observasi berikutnya.');
+  $('#saveObs').onclick=async()=>{
+    try{
+      let element=$('#element').value;
+      if(state.manualTime==null&&state.start!=null&&state.end!=null)state.manualTime=+(state.end-state.start).toFixed(2);
+      if(state.manualTime==null&&$('#manualObservedTime').value!=='')applyManual();
+      if(state.manualTime==null||!element||!$('#operator').value){alert('Lengkapi PIC, Element Kerja, dan Cycle Time / waktu observasi.');return}
+      let m=getMaster(element);
+      if(!m){alert('Element Kerja tidak ditemukan di Master Data. Pilih Element dari daftar Master terlebih dahulu.');return}
+      const sessionId=ensureObservationSession();
+      const savedId=newId();
+      observations.push({id:savedId,observationSessionId:sessionId,observationCycleId:sessionId,observationMethod:state.observationMethod,date:$('#date').value,study:'',operator:$('#operator').value,process:m.process,activity:m.activity,element,size:$('#size').value,start:state.start==null?null:+state.start.toFixed(2),end:state.end==null?null:+state.end.toFixed(2),time:+state.manualTime.toFixed(2),classification:m.classification,waste:m.waste,method:m.method,equipment:m.equipment,note:$('#note').value,createdAt:Date.now()});
+      rememberPending([savedId]); if(!(await save())){observations=observations.filter(o=>o.id!==savedId);forgetPending([savedId]);return;}
+      clearSegment();
+      $('#note').value='';
+      alert('Observasi berhasil disimpan. Video tetap aktif dan siap digunakan untuk observasi berikutnya.');
+    }catch(err){
+      console.error('Save Observation failed:',err);
+      alert('Observasi gagal disimpan: '+(err?.message||String(err)));
+    }
   };
 }
 function renderData(){setHeader('Data Waktu','RAW OBSERVATION MANAGEMENT');let proc=unique(masterData().map(x=>x.process));$('#app').innerHTML=`<div class="content"><div class="card"><div class="filters"><select id="fProc">${opt(proc,'All Process')}</select><select id="fSize"><option value="">All Size</option><option>Small</option><option>Medium</option><option>Big</option></select><input id="search" placeholder="Search element / PIC"></div><div id="dataTable"></div></div></div>`;function draw(){let rows=[...observations].filter(o=>(!$('#fProc').value||o.process===$('#fProc').value)&&(!$('#fSize').value||o.size===$('#fSize').value)&&(`${o.element} ${o.operator}`.toLowerCase().includes($('#search').value.toLowerCase()))).sort((a,b)=>b.createdAt-a.createdAt);$('#dataTable').innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>No</th><th>Date</th><th>PIC</th><th>Process</th><th>Activity</th><th>Element</th><th>Size</th><th>Start</th><th>End</th><th>Time</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.date}</td><td>${esc(r.operator)}</td><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${r.size}</td><td>${t(r.start)}</td><td>${t(r.end)}</td><td><b>${fmt(r.time)} s</b></td><td>${canWrite()?`<button class="btn ghost editObs" data-id="${r.id}">Edit</button>`:''} ${canDelete()?`<button class="btn ghost del" data-id="${r.id}">Hapus</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada data yang sesuai filter.</div>';$$('.del').forEach(b=>b.onclick=async()=>{const id=b.dataset.id;if(!confirm('Hapus observasi ini?'))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteObservation(id);observations=observations.filter(o=>o.id!==id);saveLocalOnly();draw()}catch(err){console.error(err);alert('Observasi gagal dihapus dari cloud: '+(err.message||err));}});$$('.editObs').forEach(b=>b.onclick=()=>{const o=observations.find(x=>x.id===b.dataset.id);if(!o)return;const nt=prompt('Observed Time (detik)',o.time);if(nt==null)return;const ns=prompt('Kategori Ukuran: Small / Medium / Big',o.size);if(ns==null)return;o.time=+nt||o.time;o.size=['Small','Medium','Big'].includes(ns)?ns:o.size;save();draw()})}['fProc','fSize','search'].forEach(id=>$('#'+id).oninput=draw);draw();}
@@ -261,7 +370,7 @@ function renderRating(){
 function renderStandard(){setHeader('Standard Time','NORMAL TIME → ALLOWANCE → STANDARD TIME');let rows=masterData().map(m=>{let sizes=['Small','Medium','Big'];return sizes.map(size=>({m,size,r:standardFor(m.element,size)}))}).flat().filter(x=>x.r);$('#app').innerHTML=`<div class="content"><div class="analysis-note">Jika data kategori memenuhi uniformity + sufficiency, digunakan <b>Category specific</b>. Jika belum, sistem menggunakan <b>Pooled fallback</b> untuk element tersebut.</div><div class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Process</th><th>Element</th><th>Size</th><th>N</th><th>Mean</th><th>RF</th><th>Normal Time</th><th>Allowance</th><th>Standard Time</th><th>Source</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.m.process)}</td><td>${esc(x.m.element)}</td><td>${x.size}</td><td>${x.r.n}</td><td>${fmt(x.r.mean)}</td><td>${fmt(x.r.rf)}</td><td>${fmt(x.r.normal)}</td><td>${fmt(settings.allowance*100)}%</td><td><b>${fmt(x.r.standard)} s</b></td><td><span class="badge ${x.r.source==='Category specific'?'ok':'warn'}">${x.r.source}</span></td></tr>`).join('')||'<tr><td colspan="10">No standard time available. Add observations first.</td></tr>'}</tbody></table></div></div></div>`}
 function renderWaste(){setHeader('Waste & Pareto','LEAN ANALYSIS');const map={};masterData().forEach(m=>{if(!m.waste||m.waste==='-')return;let vals=['Small','Medium','Big'].map(s=>standardFor(m.element,s)).filter(Boolean);if(!vals.length)return;let avg=vals.reduce((a,x)=>a+x.standard,0)/vals.length;map[m.waste]=(map[m.waste]||0)+avg*(m.frequency||0)});let rows=Object.entries(map).sort((a,b)=>b[1]-a[1]);let total=rows.reduce((a,x)=>a+x[1],0),cum=0,max=rows[0]?.[1]||1;$('#app').innerHTML=`<div class="content"><div class="grid cols-3">${kpi('Waste Types',rows.length,'With measurable standard time')}${kpi('ESTIMATED WASTE TIME / DAY',fmt(total)+' s','Standard Time × Frequency/Day (waste elements)')}${kpi('Top Waste',rows[0]?.[0]||'—',rows[0]?fmt(rows[0][1])+' s/day':'')}</div><div class="card section"><h3>Pareto Waste</h3>${rows.length?rows.map(([k,v])=>{cum+=v;return `<div class="chart-row"><div class="chart-label">${esc(k)}</div><div class="bar" style="width:${Math.max(8,v/max*100)}%"><i style="width:100%"></i><small>${fmt(v)} s</small></div></div>`}).join(''):'<div class="empty">Waste master belum memiliki kategori yang dapat dianalisis atau belum ada data observasi.</div>'}</div><div class="card section"><h3>Contribution Detail</h3><div class="table-wrap"><table class="data-table"><thead><tr><th>Waste</th><th>Time / Day</th><th>%</th><th>Cumulative %</th></tr></thead><tbody>${rows.map(([k,v])=>{cum=(cum||0);return ''}).join('')}${(()=>{let c=0;return rows.map(([k,v])=>{c+=v;return `<tr><td>${esc(k)}</td><td>${fmt(v)} s</td><td>${fmt(v/total*100)}%</td><td>${fmt(c/total*100)}%</td></tr>`}).join('')})()}</tbody></table></div></div></div>`}
 function exportCsv(){const headers=['No','Tanggal','PIC','Process','Activity','Element Kerja','Klasifikasi','Waste','Waktu Detik','Kategori Ukuran','Metode','Peralatan','RF PIC','Start','End','Catatan'];const rows=observations.map((o,i)=>[i+1,o.date,o.operator,o.process,o.activity,o.element,o.classification,o.waste,o.time,o.size,o.method,o.equipment,settings.ratings[o.operator]||1,o.start,o.end,o.note]);const csv=[headers,...rows].map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='TMS_PDC_Warehouse_Data_Waktu.csv';a.click();URL.revokeObjectURL(a.href)}
-function importCsv(file){if(!ensureWrite())return;const reader=new FileReader();reader.onload=e=>{let lines=e.target.result.split(/\r?\n/).filter(Boolean),head=lines.shift().split(',').map(x=>x.replace(/^"|"$/g,''));let added=0;lines.forEach(line=>{let cols=[],re=/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g,m;while(m=re.exec(line))cols.push(m[1].replace(/^"|"$/g,'').replace(/""/g,'"'));let get=n=>cols[head.indexOf(n)]||'';let el=get('Element Kerja'),master=getMaster(el);if(master){observations.push({id:crypto.randomUUID(),date:get('Tanggal'),operator:get('PIC'),process:master.process,activity:master.activity,element:el,size:get('Kategori Ukuran')||'Small',time:+get('Waktu Detik'),start:+get('Start')||0,end:+get('End')||0,classification:master.classification,waste:master.waste,method:master.method,equipment:master.equipment,note:get('Catatan'),createdAt:Date.now()});added++}});save();alert(added+' observations imported.');render();};reader.readAsText(file)}
+function importCsv(file){if(!ensureWrite())return;const reader=new FileReader();reader.onload=e=>{let lines=e.target.result.split(/\r?\n/).filter(Boolean),head=lines.shift().split(',').map(x=>x.replace(/^"|"$/g,''));let added=0;lines.forEach(line=>{let cols=[],re=/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g,m;while(m=re.exec(line))cols.push(m[1].replace(/^"|"$/g,'').replace(/""/g,'"'));let get=n=>cols[head.indexOf(n)]||'';let el=get('Element Kerja'),master=getMaster(el);if(master){observations.push({id:newId(),date:get('Tanggal'),operator:get('PIC'),process:master.process,activity:master.activity,element:el,size:get('Kategori Ukuran')||'Small',time:+get('Waktu Detik'),start:+get('Start')||0,end:+get('End')||0,classification:master.classification,waste:master.waste,method:master.method,equipment:master.equipment,note:get('Catatan'),createdAt:Date.now()});added++}});save();alert(added+' observations imported.');render();};reader.readAsText(file)}
 
 function renderMaster(){
  setHeader('Master Process & Lean','MASTER DATA • EDITABLE');
@@ -286,7 +395,7 @@ function renderUsers(){
   if(!ensureAdmin()){state.view='dashboard';return renderDashboard();}
   const sb=window.tmsAuth?.getClient?.();
   if(!sb){$('#app').innerHTML='<div class="content"><div class="card"><div class="analysis-note">Supabase client belum siap.</div></div></div>';return;}
-  $('#app').innerHTML='<div class="content"><div class="card"><div class="section-head"><div><h3>Pengguna Aplikasi</h3><p class="muted">Akun baru masuk dengan status Pending untuk ditinjau oleh admin.</p></div></div><div id="userTable"><div class="empty">Memuat pengguna...</div></div></div></div>';
+  $('#app').innerHTML='<div class="content"><div class="card user-management-page"><div class="section-head user-management-title"><div><h2>User Management</h2><h3>Pengguna Aplikasi</h3><p class="muted">Akun baru masuk sebagai Pending. Admin menentukan status dan role.</p></div></div><div id="userTable"><div class="empty">Memuat pengguna...</div></div></div></div>';
   (async()=>{
     const {data,error}=await sb.from('user_profiles').select('id,email,full_name,role,status,created_at,approved_at').order('created_at',{ascending:false});
     if(error){$('#userTable').innerHTML='<div class="analysis-note">Gagal memuat user: '+esc(error.message)+'</div>';return;}
@@ -302,11 +411,182 @@ function renderUsers(){
   })();
 }
 
-const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
+
+/* ========================================================================
+   TSKK / SWCT — Observation-driven Standard Work Combination Table
+   Source = saved observation cycles. Master Data remains the single source
+   for Process / Activity / Element during observation capture.
+   ======================================================================== */
+const TSKK_KEY='tms-pdc-tskk-studies';
+const TSKK_TYPES=[
+  {value:'manual',label:'Manual / Hand'},
+  {value:'auto',label:'Auto / Machine'},
+  {value:'walk',label:'Walk / Walking'}
+];
+function tskkStudies(){try{return JSON.parse(localStorage.getItem(TSKK_KEY)||'[]')}catch(e){return []}}
+function saveTSKKLocal(rows){localStorage.setItem(TSKK_KEY,JSON.stringify(rows))}
+function tskkTypeLabel(v){return TSKK_TYPES.find(x=>x.value===v)?.label||'Pilih Type'}
+function tskkCalc(study){
+  const rawItems=Array.isArray(study.items)?study.items:[];
+  const isManual=study.observationMethod==='manual';
+  const items=rawItems.map((x,i)=>{const start=Number.isFinite(+x.start)?Math.max(0,+x.start):0;const dur=Math.max(0,Number(x.time)||0);return {...x,seq:i+1,start,end:(Number.isFinite(+x.end)?Math.max(start,+x.end):start+dur),time:dur};});
+  const manual=items.filter(x=>x.type==='manual').reduce((a,x)=>a+x.time,0);
+  const auto=items.filter(x=>x.type==='auto').reduce((a,x)=>a+x.time,0);
+  const walk=items.filter(x=>x.type==='walk').reduce((a,x)=>a+x.time,0);
+  const cycle=isManual?Math.max(0,Number(study.manualCycleTime)||Number(study.actualCycleTime)||Number(rawItems.find(x=>Number(x.time)>0)?.time)||0):items.reduce((m,x)=>Math.max(m,x.end),0);
+  const takt=Math.max(0,Number(study.taktTime)||0);const gap=takt-cycle;const status=takt<=0?'Takt belum diisi':cycle<=takt+0.0001?'Target tercapai':'Cycle Time > Takt Time';
+  return {items,manual,auto,walk,cycle,takt,gap,status,operatorWork:manual+walk,operatorLoad:takt?(manual+walk)/takt*100:0,machineShare:cycle?auto/cycle*100:0,typeComplete:isManual||items.every(x=>!!x.type)};
+}
+function tskkDefaultStudyFromSession(session){
+  const method=session?.method==='manual'?'manual':'video';
+  const sourceRows=(session?.rows||[]).sort((a,b)=>(a.start??a.createdAt??0)-(b.start??b.createdAt??0));
+  const manualCycleTime=method==='manual'?Math.max(0,Number(sourceRows.find(o=>Number(o.time)>0)?.time)||0):0;
+  const rows=sourceRows.map(o=>({id:newId(),sourceObservationId:o.id,element:o.element||'',type:'',time:method==='video'?Math.max(0,+o.time||0):0,start:method==='video'&&o.start!=null?Math.max(0,+o.start):null,end:method==='video'&&o.end!=null?Math.max(0,+o.end):null,note:o.note||''}));
+  if(method==='video'){let cursor=0;rows.forEach(x=>{if(x.start==null)x.start=cursor;if(x.end==null)x.end=x.start+x.time;cursor=Math.max(cursor,x.end)})}
+  return {id:newId(),tskkNo:'TSKK-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+String(Date.now()).slice(-4),observationSessionId:session?.id||null,observationCycleId:session?.id||null,observationMethod:method,manualCycleTime,sourceObservationIds:sourceRows.map(o=>o.id),partName:'',area:'',process:session?.process||'',activity:session?.activity||'',operator:session?.operator||'',sizeCategory:session?.size||'Small',studyDate:session?.date||tskkEscDate(),shift:'Shift 1',availableMinutes:480,requiredUnits:0,taktTime:0,fromPoint:'',toPoint:'',machine:'',notes:'',items:rows};
+}
+function tskkEscDate(v){return v||new Date().toISOString().slice(0,10)}
+async function tskkLoadCloud(){
+  const sb=window.tmsAuth?.getClient?.();if(!sb)return null;
+  try{
+    const q=await sb.from('tskk_studies').select('id,tskk_no,observation_session_id,observation_cycle_id,source_observation_ids,part_name,area,process,activity,operator_name,study_date,size_category,shift,available_minutes,required_units,takt_time,from_point,to_point,machine_name,notes,created_at,updated_at').order('created_at',{ascending:false});
+    if(q.error){if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return null;throw q.error;}
+    const data=q.data||[],ids=data.map(x=>x.id);let itemRows=[];
+    if(ids.length){const iq=await sb.from('tskk_items').select('id,study_id,seq,element_name,work_type,time_seconds,start_seconds,end_seconds,notes').in('study_id',ids).order('seq',{ascending:true});if(iq.error)throw iq.error;itemRows=iq.data||[]}
+    const by=new Map();itemRows.forEach(x=>{if(!by.has(x.study_id))by.set(x.study_id,[]);by.get(x.study_id).push({id:x.id,element:x.element_name,type:x.work_type||'',time:+x.time_seconds||0,start:+x.start_seconds||0,end:+x.end_seconds||0,note:x.notes||''});});
+    return data.map(x=>{const loadedItems=by.get(x.id)||[];const loadedManualCycle=loadedItems.find(it=>Number(it.time)>0)?.time||0;return ({id:x.id,tskkNo:x.tskk_no||'',observationSessionId:x.observation_session_id||x.observation_cycle_id||null,observationCycleId:x.observation_cycle_id||x.observation_session_id||null,sourceObservationIds:Array.isArray(x.source_observation_ids)?x.source_observation_ids:[],manualCycleTime:loadedManualCycle,partName:x.part_name||'',area:x.area||'',process:x.process||'',activity:x.activity||'',operator:x.operator_name||'',studyDate:x.study_date||'',sizeCategory:x.size_category||'Small',shift:x.shift||'',availableMinutes:+x.available_minutes||0,requiredUnits:+x.required_units||0,taktTime:+x.takt_time||0,fromPoint:x.from_point||'',toPoint:x.to_point||'',machine:x.machine_name||'',notes:x.notes||'',items:loadedItems});});
+  }catch(err){console.warn('TSKK cloud load skipped:',err);return null}
+}
+async function tskkPersistCloud(study){
+  const sb=window.tmsAuth?.getClient?.();if(!sb||!canWrite())return false;
+  const row={id:study.id,tskk_no:study.tskkNo||null,observation_session_id:study.observationSessionId||study.observationCycleId||null,observation_cycle_id:study.observationCycleId||study.observationSessionId||null,source_observation_ids:study.sourceObservationIds||[],part_name:study.partName||null,area:study.area||null,process:study.process||null,activity:study.activity||null,operator_name:study.operator||null,study_date:study.studyDate||null,size_category:study.sizeCategory||'Small',shift:study.shift||null,available_minutes:+study.availableMinutes||0,required_units:+study.requiredUnits||0,takt_time:+study.taktTime||0,from_point:study.fromPoint||null,to_point:study.toPoint||null,machine_name:study.machine||null,notes:study.notes||null,updated_at:new Date().toISOString()};
+  try{const q=await sb.from('tskk_studies').upsert(row,{onConflict:'id'});if(q.error){if(/column .*observation_session_id.*does not exist/i.test(q.error.message||'')){alert('TSKK cloud perlu migration terbaru: supabase/tskk_observation_source_migration.sql');return false;}if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return false;throw q.error;}const d=await sb.from('tskk_items').delete().eq('study_id',study.id);if(d.error)throw d.error;const items=(study.items||[]).map((x,i)=>({id:x.id||newId(),study_id:study.id,seq:i+1,element_name:x.element||'',work_type:x.type||'manual',time_seconds:study.observationMethod==='manual'?(i===0?(+study.manualCycleTime||+x.time||0):0):(+x.time||0),start_seconds:+x.start||0,end_seconds:study.observationMethod==='manual'?0:(+x.end||((+x.start||0)+(+x.time||0))),notes:x.note||null}));if(items.length){const ins=await sb.from('tskk_items').insert(items);if(ins.error)throw ins.error;}return true;}catch(err){console.error('TSKK cloud save failed:',err);alert('TSKK tersimpan lokal, tetapi sinkronisasi cloud gagal: '+(err.message||err));return false}
+}
+async function tskkDeleteCloud(id){const sb=window.tmsAuth?.getClient?.();if(!sb||!canDelete())return false;const q=await sb.from('tskk_studies').delete().eq('id',id);if(q.error)throw q.error;return true}
+function tskkGraphVisual(type,left,width,timeLabel){
+  const t=String(type||'').toLowerCase();
+  if(t==='auto') return `<svg class="tskk-line-svg auto-line" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><path class="tskk-line-path dashed" d="M0 10 L100 10"/></svg>`;
+  if(t==='walk') return `<svg class="tskk-wave-svg walk-wave" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><path class="tskk-wave-path solid" d="M0 10 C 5 2, 10 18, 15 10 S 25 2, 30 10 S 40 18, 45 10 S 55 2, 60 10 S 70 18, 75 10 S 85 2, 90 10 S 97 18, 100 10"/></svg>`;
+  return `<span class="tskk-solid-line" aria-hidden="true"></span>`;
+}
+function tskkPrintGraph(type,duration){
+  const t=String(type||'').toLowerCase();
+  if(t==='auto') return `<svg class="print-line auto-line" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><path class="dashed" d="M0 10 L100 10"/></svg>`;
+  if(t==='walk') return `<svg class="print-wave walk-wave" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><path class="solid" d="M0 10 C 5 2, 10 18, 15 10 S 25 2, 30 10 S 40 18, 45 10 S 55 2, 60 10 S 70 18, 75 10 S 85 2, 90 10 S 97 18, 100 10"/></svg>`;
+  return `<span class="print-solid-line" aria-hidden="true"></span>`;
+}
+function tskkTimeline(study){
+  const c=tskkCalc(study),scale=Math.max(c.cycle,c.takt,1);
+  const leftLabel=340;
+  const secCount=Math.max(1,Math.ceil(scale));
+  const axis=Array.from({length:secCount+1},(_,i)=>i).filter(v=>v<=scale);
+  const row=(x,i)=>{
+    const left=(Number(x.start)||0)/scale*100;
+    const width=Math.max(.7,(Number(x.time)||0)/scale*100);
+    const type=x.type||'';
+    const klass=type||'unassigned';
+    const label=type?tskkTypeLabel(type):'Pilih Type';
+    const graph=tskkGraphVisual(type,left,width,fmt(x.time));
+    return `<div class="tskk-combo-row"><div class="tskk-combo-no">${i+1}</div><div class="tskk-combo-name">${esc(x.element||'—')}</div><div class="tskk-combo-type ${klass}">${esc(label)}</div><div class="tskk-combo-track"><div class="tskk-combo-bar ${klass}" style="left:${left}%;width:${width}%" title="${esc(x.element||'—')} • ${esc(label)} • ${fmt(x.time)} dtk">${graph}<span>${fmt(x.time)} dtk</span></div></div></div>`;
+  };
+  const taktX=c.takt?Math.min(100,c.takt/scale*100):null;
+  return `<div class="tskk-combination-chart"><div class="tskk-combo-header"><div class="tskk-combo-no-head">No</div><div class="tskk-combo-heading">Work Element</div><div class="tskk-combo-heading tskk-type-heading">Type</div><div class="tskk-combo-axis">${axis.map(v=>`<span style="left:${(v/scale)*100}%">${v}</span>`).join('')}<em>detik</em></div></div>${c.items.map(row).join('')}${taktX!==null?`<div class="tskk-combo-takt" style="left:calc(${leftLabel}px + (100% - ${leftLabel}px) * ${taktX/100})"><span>Takt ${fmt(c.takt)} dtk</span></div>`:''}<div class="tskk-combo-footer"><span class="tskk-combo-note">Actual Time berasal langsung dari Observation. Type ditampilkan sebagai kolom terpisah.</span><div class="tskk-legend"><span><i class="tskk-dot manual"></i>Manual / Hand</span><span><i class="tskk-dot auto"></i>Auto / Machine = garis putus-putus</span><span><i class="tskk-dot walk"></i>Walk / Walking</span></div></div></div>`;
+}
+function tskkStatusBadge(c){const cls=c.status==='Target tercapai'?'ok':c.status==='Takt belum diisi'?'warn':'bad';return `<span class="badge ${cls}">${esc(c.status)}</span>`}
+function renderTSKK(){
+  setHeader('TSKK / SWCT','STANDARD WORK COMBINATION TABLE');
+  const localStudies=tskkStudies();
+  const sessions=observationSessions();
+  const savedBySession=new Map(localStudies.filter(s=>s.observationSessionId||s.observationCycleId).map(s=>[s.observationSessionId||s.observationCycleId,s]));
+  $('#app').innerHTML=`<div class="content tskk-content"><div class="card tskk-header-card">
+  <div class="tskk-observation-list"><div class="section-head"><div><h3>Daftar Observation</h3></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Observation</th><th>Metode</th><th>Tanggal</th><th>Process</th><th>Activity</th><th>PIC</th><th>Size</th><th>Element</th><th>Status TSKK</th><th>Aksi</th></tr></thead><tbody>${sessions.length?sessions.map(s=>{const saved=savedBySession.get(s.id);return `<tr><td><b>${esc(s.label)}</b></td><td><span class="badge ${s.method==='video'?'ok':'warn'}">${s.method==='video'?'Video':'Manual'}</span></td><td>${esc(s.date||'—')}</td><td>${esc(s.process||'—')}</td><td>${esc(s.activity||'—')}</td><td>${esc(s.operator||'—')}</td><td>${esc(s.size||'—')}</td><td>${s.count}</td><td>${saved?'<span class="badge ok">Sudah dibuat</span>':'<span class="badge warn">Belum dibuat</span>'}</td><td>${saved?`<button class="btn ghost tskk-open" data-id="${saved.id}">Buka TSKK</button>`:(canWrite()?`<button class="btn primary tskk-create-from-session" data-session="${esc(s.id)}">Buat TSKK</button>`:'<span class="muted">View only</span>')}</td></tr>`}).join(''):'<tr><td colspan="9" class="empty">Belum ada Observation yang tersimpan.</td></tr>'}</tbody></table></div></div>
+  <div class="tskk-list-wrap"><div class="section-head"><div><h3>TSKK Tersimpan</h3><p class="muted">Daftar TSKK yang sudah dibuat. Satu record TSKK berisi seluruh Work Element dari satu Observation.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>No TSKK</th><th>Observation</th><th>Process</th><th>Activity</th><th>PIC</th><th>Takt</th><th>Cycle</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${localStudies.length?localStudies.map(s=>{const c=tskkCalc(s);const sid=s.observationSessionId||s.observationCycleId||'';const sess=sessions.find(x=>x.id===sid);return `<tr><td>${esc(s.tskkNo)}</td><td>${esc(sess?.label||observationSessionLabel(sid,s.studyDate))}</td><td>${esc(s.process||'—')}</td><td>${esc(s.activity||'—')}</td><td>${esc(s.operator||'—')}</td><td>${fmt(s.taktTime)}</td><td>${fmt(c.cycle)}</td><td>${tskkStatusBadge(c)}</td><td><button class="btn ghost tskk-open" data-id="${s.id}">Buka</button>${canDelete()?` <button class="btn ghost tskk-delete" data-id="${s.id}">Hapus</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">Belum ada TSKK tersimpan.</td></tr>'}</tbody></table></div></div></div></div>`;
+  const open=selected=>{if(!selected)return;state.tskkEditor=true;history.pushState({appView:'tskk',tskkEditor:true},'',location.href);const readOnly=!canWrite();const sourceSession=sessions.find(x=>x.id===(selected.observationSessionId||selected.observationCycleId));selected.observationMethod=selected.observationMethod||sourceSession?.method||'video';if(sourceSession?.rows?.length && (selected.items||[]).length < sourceSession.rows.length){const oldByElement=new Map((selected.items||[]).map(x=>[x.element,{type:x.type||'',note:x.note||''}]));selected.items=sourceSession.rows.map(o=>{const old=oldByElement.get(o.element)||{};return {id:newId(),sourceObservationId:o.id,element:o.element||'',type:old.type||'',time:selected.observationMethod==='video'?Math.max(0,+o.time||0):0,start:selected.observationMethod==='video'&&o.start!=null?Math.max(0,+o.start):null,end:selected.observationMethod==='video'&&o.end!=null?Math.max(0,+o.end):null,note:old.note||o.note||''};});if(selected.observationMethod==='manual'&&(!selected.manualCycleTime||selected.manualCycleTime<=0)){selected.manualCycleTime=Math.max(0,Number(sourceSession.rows.find(o=>Number(o.time)>0)?.time)||0);}}const isManualObservation=selected.observationMethod==='manual';$('#app').innerHTML=`<div class="content tskk-content"><div class="card tskk-header-card"><div class="section-head"><div><h3>${esc(selected.tskkNo||'TSKK')}</h3><p class="muted">Source: ${esc(observationSessionLabel(selected.observationSessionId||selected.observationCycleId||'',selected.studyDate))}. ${isManualObservation?'Manual Observation memakai satu Actual Cycle Time; detail Start/End per Work Element tidak tersedia.':'Actual Time dan Start/End berasal langsung dari Observation video.'}</p></div><div class="tskk-actions"><button class="btn ghost" id="tskkBack">← Kembali</button>${!readOnly?'<button class="btn primary" id="tskkSave">Simpan TSKK</button>':''}<button class="btn ghost" id="tskkPrint">Cetak</button></div></div>
+  <div class="form-grid tskk-meta-grid"><label>No TSKK<input id="tskkNo" value="${esc(selected.tskkNo)}" ${readOnly?'disabled':''}></label><label>Part / Job<input id="tskkPart" value="${esc(selected.partName)}" ${readOnly?'disabled':''}></label><label>Area / Section<input id="tskkArea" value="${esc(selected.area)}" ${readOnly?'disabled':''}></label><label>PIC<input id="tskkOperator" value="${esc(selected.operator)}" readonly></label><label>Date<input id="tskkDate" type="date" value="${esc(selected.studyDate)}" ${readOnly?'disabled':''}></label><label>Size<select id="tskkSize" ${readOnly?'disabled':''}><option>Small</option><option>Medium</option><option>Big</option></select></label><label>Process<input id="tskkProcess" value="${esc(selected.process)}" readonly></label><label>Activity<input id="tskkActivity" value="${esc(selected.activity)}" readonly></label><label>Shift<input id="tskkShift" value="${esc(selected.shift)}" ${readOnly?'disabled':''}></label><label>Available Time (min)<input id="tskkAvailable" type="number" min="0" step="0.01" value="${selected.availableMinutes||0}" ${readOnly?'disabled':''}></label><label>Required Units<input id="tskkUnits" type="number" min="0" step="1" value="${selected.requiredUnits||0}" ${readOnly?'disabled':''}></label><label>Takt Time (dtk)<input id="tskkTakt" type="number" min="0" step="0.01" value="${selected.taktTime||0}" ${readOnly?'disabled':''}></label><label>Machine / Equipment<input id="tskkMachine" value="${esc(selected.machine)}" ${readOnly?'disabled':''}></label><label>From<input id="tskkFrom" value="${esc(selected.fromPoint)}" ${readOnly?'disabled':''}></label><label>To<input id="tskkTo" value="${esc(selected.toPoint)}" ${readOnly?'disabled':''}></label><label class="full">Catatan<textarea id="tskkNotes" rows="2" ${readOnly?'disabled':''}>${esc(selected.notes)}</textarea></label></div>
+  <div class="tskk-meta-helper"><span><b>Source:</b> satu Observation/video. Work Element, Start, End, dan Actual Time tidak diinput ulang. Type wajib dikonfirmasi manual.</span>${!readOnly?'<button class="btn ghost" id="calcTakt">Hitung Takt dari Demand</button>':''}</div>
+  <div class="tskk-kpis" id="tskkKpis"></div>
+  <div class="tskk-table-card"><div class="section-head"><div><h3>${isManualObservation?'Observation Summary':'Work Elements / Actual Observation'}</h3><p class="muted">${isManualObservation?'Manual Observation hanya menyimpan satu Cycle Time total. Element dipertahankan sebagai konteks Master, bukan sebagai waktu per-element.':'Satu baris = satu Work Element hasil segment video. Nama element dan waktunya berasal dari Observation.'}</p></div></div><div class="table-wrap"><table class="data-table tskk-work-table ${isManualObservation?'manual-tskk-table':''}"><thead>${isManualObservation?'<tr><th>No</th><th>Work Element</th><th>Type</th><th>Actual Cycle (dtk)</th></tr>':'<tr><th>No</th><th>Work Element</th><th>Type</th><th>Actual Time (dtk)</th><th>Start (dtk)</th><th>End (dtk)</th><th>Keterangan</th></tr>'}</thead><tbody id="tskkWorkBody"></tbody></table></div></div>
+  <div class="tskk-chart-card ${isManualObservation?'manual-tskk-summary':''}"><div class="section-head"><div><h3>${isManualObservation?'Actual Cycle Summary':'Standard Work Combination Chart'}</h3><p class="muted">${isManualObservation?'Manual Observation hanya menghasilkan satu Cycle Time total. Tidak dibuat batang Start/End per Work Element.':'Satu baris = satu Work Element. Type berada setelah Work Element; batang menunjukkan Actual Time pada Start–End aktual.'}</p></div></div><div id="tskkTimeline"></div></div><div class="tskk-insight" id="tskkInsight"></div></div>`;
+  $('#tskkSize').value=selected.sizeCategory||'Small';
+  const syncInputs=()=>{if(isManualObservation&&(!selected.manualCycleTime||selected.manualCycleTime<=0)){selected.manualCycleTime=Math.max(0,Number(selected.items.find(x=>Number(x.time)>0)?.time)||0)}selected.tskkNo=$('#tskkNo').value.trim();selected.partName=$('#tskkPart').value.trim();selected.area=$('#tskkArea').value.trim();selected.studyDate=$('#tskkDate').value;selected.sizeCategory=$('#tskkSize').value;selected.shift=$('#tskkShift').value.trim();selected.availableMinutes=+$('#tskkAvailable').value||0;selected.requiredUnits=+$('#tskkUnits').value||0;selected.taktTime=+$('#tskkTakt').value||0;selected.machine=$('#tskkMachine').value.trim();selected.fromPoint=$('#tskkFrom').value.trim();selected.toPoint=$('#tskkTo').value.trim();selected.notes=$('#tskkNotes').value.trim();};
+  const draw=()=>{selected.items=selected.items.map(x=>{const start=Number.isFinite(+x.start)?Math.max(0,+x.start):0;const time=Math.max(0,+x.time||0);const safeType=['manual','auto','walk'].includes(x.type)?x.type:'';return {...x,type:safeType,start,end:(Number.isFinite(+x.end)?Math.max(start,+x.end):start+time),time}});const cc=tskkCalc(selected);$('#tskkWorkBody').innerHTML=isManualObservation?(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><select class="tskk-item-type" data-i="${i}" ${readOnly?'disabled':''}><option value="" ${!x.type?'selected':''}>Pilih Type</option>${TSKK_TYPES.map(y=>`<option value="${y.value}" ${x.type===y.value?'selected':''}>${y.label}</option>`).join('')}</select></td><td>${i===0?`<div class="tskk-readonly-number"><b>${fmt(cc.cycle)} dtk</b></div>`:'<span class="muted">Satu cycle untuk seluruh observation</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Observation belum memiliki element context.</td></tr>'):(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><select class="tskk-item-type" data-i="${i}" ${readOnly?'disabled':''}><option value="" ${!x.type?'selected':''}>Pilih Type</option>${TSKK_TYPES.map(y=>`<option value="${y.value}" ${x.type===y.value?'selected':''}>${y.label}</option>`).join('')}</select></td><td><div class="tskk-readonly-number">${fmt(x.time)}</div></td><td><div class="tskk-readonly-number">${fmt(x.start)}</div></td><td><div class="tskk-readonly-number">${fmt(x.end)}</div></td><td><input class="tskk-item-note" data-i="${i}" value="${esc(x.note||'')}" ${readOnly?'disabled':''}></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Observation belum memiliki element.</td></tr>');$('#tskkKpis').innerHTML=`${kpi('TAKT TIME',fmt(cc.takt)+' dtk','Target pace')}${kpi('ACTUAL CYCLE TIME',fmt(cc.cycle)+' dtk',cc.gap>=0?'Masih di bawah takt':'Melebihi takt')}${isManualObservation?'':kpi('MANUAL + WALK',fmt(cc.operatorWork)+' dtk',`Load operator ${fmt(cc.operatorLoad)}%`)}${isManualObservation?'':kpi('AUTO / MACHINE',fmt(cc.auto)+' dtk',`Proporsi ${fmt(cc.machineShare)}%`)}`;$('#tskkTimeline').innerHTML=isManualObservation?`<div class="manual-cycle-summary"><div><span>ACTUAL CYCLE</span><b>${fmt(cc.cycle)} dtk</b></div><div><span>TAKT TIME</span><b>${fmt(cc.takt)} dtk</b></div><div><span>VARIANCE</span><b>${fmt(cc.gap)} dtk</b></div><div><span>STATUS</span><b>${esc(cc.status)}</b></div></div>`:tskkTimeline(selected);$('#tskkInsight').innerHTML=`<b>Evaluasi:</b> ${tskkStatusBadge(cc)} <span>${cc.walk>0?`Walking ${fmt(cc.walk)} detik.`:'Belum ada aktivitas walking.'}</span>`;$$('.tskk-item-type').forEach(el=>el.onchange=()=>{selected.items[+el.dataset.i].type=el.value;draw()});$$('.tskk-item-note').forEach(el=>el.oninput=()=>selected.items[+el.dataset.i].note=el.value)};
+  $('#calcTakt')?.addEventListener('click',()=>{syncInputs();const av=+$('#tskkAvailable').value||0,units=+$('#tskkUnits').value||0;if(av>0&&units>0){selected.taktTime=+(av*60/units).toFixed(2);$('#tskkTakt').value=selected.taktTime;draw()}else alert('Isi Available Time dan Required Units terlebih dahulu.')});
+  if(!readOnly)$('#tskkSave').onclick=async()=>{if(!ensureWrite())return;syncInputs();if(!selected.items.length){alert('Tidak ada Work Element dari Observation.');return}if(!isManualObservation&&selected.items.some(x=>!x.type)){alert('Konfirmasi Type untuk semua Work Element terlebih dahulu: Manual / Auto / Walk.');return}selected.items=selected.items.map(x=>({...x,time:Math.max(0,+x.time||0),start:Math.max(0,+x.start||0),end:Math.max(Math.max(0,+x.start||0),Number.isFinite(+x.end)?+x.end:(Math.max(0,+x.start||0)+Math.max(0,+x.time||0)))}));const rows=tskkStudies();const idx=rows.findIndex(x=>x.id===selected.id);if(idx>=0)rows[idx]=selected;else rows.unshift(selected);saveTSKKLocal(rows);const ok=await tskkPersistCloud(selected);if(!ok&&window.tmsAuth?.getClient?.())return;alert('TSKK berhasil disimpan.');state.tskkEditor=false;history.replaceState({appView:'tskk',tskkEditor:false},'',location.href);renderTSKK()};
+  $('#tskkBack').onclick=()=>{state.tskkEditor=false;history.back()};$('#tskkPrint').onclick=()=>{
+    syncInputs();
+    const cc=tskkCalc(selected);
+    const isManualPrint=selected.observationMethod==='manual';
+    const scale=Math.max(cc.cycle,cc.takt,1);
+    const axisStep=scale<=10?1:(scale<=60?5:(scale<=200?10:(scale<=600?20:Math.ceil(scale/10))));
+    const ticks=[]; for(let v=0;v<=scale+0.0001;v+=axisStep) ticks.push(Math.min(scale,Number(v.toFixed(4))));
+    if(ticks[ticks.length-1]!==scale) ticks.push(scale);
+    const graphStart=0, graphEnd=scale;
+    const taktPct=cc.takt?Math.min(100,(cc.takt/scale)*100):null;
+    const typeLabel=x=>tskkTypeLabel(x.type||'manual');
+    const typeClass=x=>x.type||'manual';
+    const bars=cc.items.map((x,i)=>{
+      const st=Math.max(0,Number(x.start)||0);
+      const en=Math.max(st,Number(x.end)||st+(Number(x.time)||0));
+      const dur=Math.max(0,Number(x.time)||0);
+      const left=Math.min(100,(st/scale)*100);
+      const width=Math.max(dur>0?0.8:0,(dur/scale)*100);
+      return `<div class="p-row"><div class="p-no">${i+1}</div><div class="p-element">${esc(x.element||'—')}</div><div class="p-type">${esc(typeLabel(x))}</div><div class="p-time">${isManualPrint?'—':fmt(dur)}</div><div class="p-graph"><div class="p-grid">${ticks.map(v=>`<i style="left:${(v/scale)*100}%"></i>`).join('')}</div>${!isManualPrint&&dur>0?`<div class="p-bar ${typeClass(x)}" style="left:${left}%;width:${width}%">${tskkPrintGraph(x.type,dur)}<span class="p-bar-label">${fmt(dur)} dtk</span></div>`:''}</div></div>`;
+    }).join('');
+    const manualTotal=isManualPrint?0:cc.manual, autoTotal=isManualPrint?0:cc.auto, walkTotal=isManualPrint?0:cc.walk;
+    const totalType=(v)=>isManualPrint?'—':fmt(v)+' dtk';
+    const w=window.open('','_blank','width=1400,height=1000');
+    if(!w)return;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>TSKK ${esc(selected.tskkNo||'')}</title><style>
+      *{box-sizing:border-box} @page{size:A4 landscape;margin:8mm} body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#111;background:#fff;font-size:10px} .sheet{width:100%;border:1px solid #222;padding:0;background:#fff} .title{height:34px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:.2px}.brand-row{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;border-bottom:1px solid #222}.brand{min-height:70px;padding:8px 12px;border-right:1px solid #222;display:flex;align-items:center;gap:10px}.brand img{width:110px;max-height:48px;object-fit:contain}.meta{min-height:70px;padding:7px 9px;border-right:1px solid #222}.meta:last-child{border-right:0}.meta-row{display:grid;grid-template-columns:72px 8px 1fr;line-height:1.55}.meta-row b{font-weight:700}.section-title{font-size:12px;font-weight:800;border:1px solid #222;margin-top:8px;padding:4px 6px;background:#fff}.table{position:relative;border-left:1px solid #222;border-right:1px solid #222}.p-head,.p-row{display:grid;grid-template-columns:30px minmax(180px,1.45fr) 75px 60px minmax(360px,2.8fr)}.p-head{min-height:38px;background:#d9d9d9;border-top:1px solid #222;border-bottom:1px solid #222;font-weight:800;text-align:center}.p-head>div{display:flex;align-items:center;justify-content:center;border-right:1px solid #222;padding:3px}.p-head>div:last-child{border-right:0}.p-head .graph-head{position:relative;display:block;padding:0}.graph-title{height:17px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #999}.axis{height:20px;position:relative;font-size:8px;font-weight:400}.axis span{position:absolute;top:3px;transform:translateX(-50%);white-space:nowrap}.axis em{position:absolute;right:3px;top:3px;font-style:normal;font-weight:700}.p-row{min-height:29px;border-bottom:1px solid #777}.p-row>div{border-right:1px solid #777;display:flex;align-items:center;padding:3px 5px}.p-row>div:last-child{border-right:0}.p-no{justify-content:center;font-weight:700}.p-element{font-weight:700;line-height:1.15}.p-type{justify-content:center;text-align:center;font-size:8px;line-height:1.1}.p-time{justify-content:center;font-weight:700}.p-graph{position:relative;overflow:hidden;padding:0!important;background:#fff}.p-grid{position:absolute;inset:0}.p-grid i{position:absolute;top:0;bottom:0;border-left:1px dotted #aaa}.p-bar{position:absolute;top:6px;height:17px;background:transparent !important;border:0;border-radius:0;display:flex;align-items:center;justify-content:center;overflow:visible;min-width:3px}.p-bar-label{font-size:8px;font-weight:700;color:#111;position:absolute;left:calc(100% + 4px);white-space:nowrap}.print-solid-line{position:absolute;left:0;right:0;top:7px;height:3px;background:#000;border:1px solid #000}.print-wave{position:absolute;left:0;right:0;top:0;width:100%;height:17px;overflow:visible}.print-wave path{fill:none;stroke:#000;stroke-width:2;vector-effect:non-scaling-stroke}.print-wave path.dashed{stroke-dasharray:5 3}.print-wave path.solid{stroke-dasharray:none}.print-line{position:absolute;inset:0;width:100%;height:17px;overflow:visible}.print-line path{fill:none;stroke:#000;stroke-width:2;vector-effect:non-scaling-stroke}.print-line path.dashed{stroke-dasharray:5 3}.p-bar.walk .print-solid-line{height:2px}.p-bar.wait .print-solid-line{height:2px;border-style:dashed;background:transparent}.tskk-wave-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.tskk-wave-path{fill:none;stroke:#111;stroke-width:2;vector-effect:non-scaling-stroke}.tskk-wave-path.dashed{stroke-dasharray:5 3}.tskk-wave-path.solid{stroke-dasharray:none}.tskk-solid-line{position:absolute;left:0;right:0;top:50%;height:3px;background:#111;transform:translateY(-50%);border-radius:2px}.takt-line{position:absolute;top:0;bottom:0;border-left:2px dashed #d21f1f;z-index:5}.takt-label{position:absolute;top:1px;left:4px;color:#b51515;background:#fff;font-size:8px;font-weight:800;padding:1px 3px;white-space:nowrap}.note{font-size:8px;color:#555;padding:4px 6px;border:1px solid #222;border-top:0}.print-legend{display:flex;align-items:center;gap:16px;padding:5px 7px;border:1px solid #222;border-top:0;font-size:8px;font-weight:700}.print-legend-item{display:flex;align-items:center;gap:4px;white-space:nowrap}.print-legend-item b{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border:1px solid #222;border-radius:50%;font-size:8px}.legend-symbol{display:inline-block;flex:0 0 auto;width:32px}.legend-symbol-solid{height:3px;background:#000;border:1px solid #000}.legend-symbol-dashed{height:0;border-top:2px dashed #000}.legend-symbol-wave{height:13px}.legend-symbol-wave path{fill:none;stroke:#000;stroke-width:2;vector-effect:non-scaling-stroke}.summary-title{font-size:12px;font-weight:800;border:1px solid #222;border-bottom:0;margin-top:8px;padding:4px 6px}.summary{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #222}.sum{min-height:58px;border-right:1px solid #777;padding:4px 5px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}.sum:last-child{border-right:0}.sum b{display:block;font-size:9px;margin-bottom:7px}.sum strong{font-size:10px;line-height:1.2}.status{margin-top:7px;display:inline-block;padding:3px 8px;border:1px solid #222;font-weight:800}.status.ok{background:#e8f4e8}.status.bad{background:#f8e5e5}.sign{display:grid;grid-template-columns:repeat(3,1fr);gap:25px;margin-top:18px;padding:0 25px 18px}.sig{text-align:center;min-height:54px;display:flex;flex-direction:column;justify-content:space-between}.sig-line{margin:18px auto 0;width:100%;border:0;text-align:center;white-space:pre;font-size:12px}.footer{font-size:7px;text-align:right;color:#777;padding:0 6px 3px}@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{background:#fff}.sheet{border:1px solid #222}.print-solid-line{background:#000!important;border-color:#000!important}.print-wave path{stroke:#000!important}.takt-line{border-left-color:#d21f1f!important}}
+    </style></head><body><div class="sheet">
+      <div class="title">TABEL STANDAR KERJA KOMBINATIF (TSKK)</div>
+      <div class="brand-row">
+        <div class="brand">${selected.observationMethod==='video'&&selected.videoName?'':`<img src="ut-logo.png" alt="Logo">`}<div><b>TMS PDC Warehouse</b><br><span style="font-size:8px">Time &amp; Motion Study</span></div></div>
+        <div class="meta"><div class="meta-row"><b>TSKK No</b><span>:</span><span>${esc(selected.tskkNo||'—')}</span></div><div class="meta-row"><b>Observation</b><span>:</span><span>${esc(selected.observationSessionId||'—')}</span></div><div class="meta-row"><b>Tanggal</b><span>:</span><span>${esc(selected.studyDate||'—')}</span></div></div>
+        <div class="meta"><div class="meta-row"><b>PIC</b><span>:</span><span>${esc(selected.operator||'—')}</span></div><div class="meta-row"><b>Process</b><span>:</span><span>${esc(selected.process||'—')}</span></div><div class="meta-row"><b>Activity</b><span>:</span><span>${esc(selected.activity||'—')}</span></div></div>
+        <div class="meta"><div class="meta-row"><b>Method</b><span>:</span><span>${esc(isManualPrint?'Manual':'Video')}</span></div><div class="meta-row"><b>Size</b><span>:</span><span>${esc(selected.sizeCategory||'—')}</span></div><div class="meta-row"><b>Takt</b><span>:</span><span>${fmt(cc.takt)} dtk</span></div></div>
+      </div>
+      <div class="section-title">GRAFIK STANDARD WORK COMBINATION</div>
+      <div class="table">
+        <div class="p-head"><div>NO</div><div>URUTAN KERJA / WORK ELEMENT</div><div>TYPE</div><div>WAKTU<br>(dtk)</div><div class="graph-head"><div class="graph-title">SWCT / ACTUAL OBSERVATION</div><div class="axis">${ticks.map(v=>`<span style="left:${(v/scale)*100}%">${fmt(v)}</span>`).join('')}<em>detik</em></div></div></div>
+        ${bars}
+        ${taktPct!==null&&!isManualPrint?`<div class="takt-line" style="left:calc(30px + 180px + 75px + 60px + (100% - 345px) * ${taktPct/100})"><span class="takt-label">Takt ${fmt(cc.takt)} dtk</span></div>`:''}
+      </div>
+      <div class="note">Batang menunjukkan Actual Time berdasarkan Start–End hasil Observation Video. Garis merah menunjukkan Takt Time. ${isManualPrint?'Manual Observation menyimpan satu Actual Cycle keseluruhan sehingga tidak dibuatkan batang per Work Element.':''}</div>
+      <div class="print-legend"><span style="font-weight:800">Keterangan Simbol:</span><span class="print-legend-item"><i class="legend-symbol legend-symbol-solid"></i> Manual / Hand</span><span class="print-legend-item"><i class="legend-symbol legend-symbol-dashed"></i> Auto / Machine</span><span class="print-legend-item"><svg class="legend-symbol legend-symbol-wave" viewBox="0 0 40 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 7 C 4 1, 8 13, 12 7 S 20 1, 24 7 S 32 13, 36 7 S 38 4, 40 7"/></svg> Walk / Walking</span></div>
+      <div class="summary-title">RINGKASAN</div>
+      <div class="summary"><div class="sum"><b>Manual / Hand</b><strong>${totalType(manualTotal)}</strong></div><div class="sum"><b>Auto / Machine</b><strong>${totalType(autoTotal)}</strong></div><div class="sum"><b>Walk / Walking</b><strong>${totalType(walkTotal)}</strong></div><div class="sum"><b>Actual Cycle</b><strong>${fmt(cc.cycle)} dtk</strong></div><div class="sum"><b>Takt Time</b><strong>${fmt(cc.takt)} dtk</strong><span class="status ${cc.status==='Target tercapai'?'ok':'bad'}">${esc(cc.status)}</span></div></div>
+      <div class="sign"><div class="sig"><b>Mengetahui,</b><div class="sig-line">(                                  )</div></div><div class="sig"><b>Diperiksa,</b><div class="sig-line">(                                  )</div></div><div class="sig"><b>Dibuat,</b><div class="sig-line">(                                  )</div></div></div>
+      <div class="footer">Generated from TMS PDC Warehouse • ${new Date().toLocaleString('id-ID')}</div>
+      </div><script>window.onload=()=>setTimeout(()=>window.print(),150)</script></body></html>`);
+    w.document.close();
+  };
+  draw();
+  };
+  $$('.tskk-open').forEach(b=>b.onclick=()=>{const s=localStudies.find(x=>x.id===b.dataset.id);if(s)open(s)});
+  $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!confirm('Hapus TSKK ini?'))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
+  $$('.tskk-create-from-session').forEach(b=>b.onclick=()=>{if(!ensureWrite())return;const session=sessions.find(x=>x.id===b.dataset.session);if(session)open(tskkDefaultStudyFromSession(session))});
+  tskkLoadCloud().then(remote=>{if(remote){saveTSKKLocal(remote);renderTSKK()}}).catch(()=>{});
+}
+
+const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
 function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.classList.toggle('sidebar-open',!!open); const toggle=$('#sidebarToggle'); if(toggle) toggle.setAttribute('aria-expanded',String(!!open));}
 function render(){if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();}
-$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;setSidebar(false);render()});
-document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;setSidebar(false);render()}});
+$$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()});
+document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()}});
+history.replaceState({appView:state.view,tskkEditor:false},'',location.href);
+window.addEventListener('popstate',()=>{
+  if(state.tskkEditor){
+    state.tskkEditor=false;
+    renderTSKK();
+    return;
+  }
+  if(history.state?.appView && history.state.appView!==state.view){
+    state.view=history.state.appView;
+    render();
+  }
+});
 $('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open'));
 $('#sidebarBackdrop').onclick=()=>setSidebar(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});
@@ -314,22 +594,23 @@ $('#exportCsv').onclick=()=>{if(ensureWrite())exportCsv()};
 $('#importCsv').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);
 async function bootCloud(){
   try{
+    await hydrateLocalData();
     if(window.tmsCloud?.enabled){
       if(window.tmsAuthMiddleware?.waitUntilReady) await window.tmsAuthMiddleware.waitUntilReady();
       if(window.tmsAuthMiddleware?.requireSession) await window.tmsAuthMiddleware.requireSession();
       const cloud=await window.tmsCloud.loadState();
       if(cloud){
         // Jangan pernah menimpa cache/data yang ada dengan respons cloud kosong.
-        if(Array.isArray(cloud.observations) && cloud.observations.length) observations=cloud.observations;
+        if(Array.isArray(cloud.observations)) observations=mergeObservations(cloud.observations,observations);
         settings={...settings,...(cloud.settings||{})};
-        if(Array.isArray(cloud.master)&&cloud.master.length) localStorage.setItem(MASTER_KEY,JSON.stringify(cloud.master));
+        if(Array.isArray(cloud.master)&&cloud.master.length){safeWrite(MASTER_KEY,cloud.master);idbSet(MASTER_KEY,cloud.master).catch(()=>{});}
         saveLocalOnly();
       }
       window.tmsCloud.subscribe(async(remote)=>{
         if(!remote)return;
-        if(Array.isArray(remote.observations) && remote.observations.length) observations=remote.observations;
+        if(Array.isArray(remote.observations)) observations=mergeObservations(remote.observations,observations);
         settings={...settings,...(remote.settings||{})};
-        if(Array.isArray(remote.master)&&remote.master.length)localStorage.setItem(MASTER_KEY,JSON.stringify(remote.master));
+        if(Array.isArray(remote.master)&&remote.master.length){safeWrite(MASTER_KEY,remote.master);idbSet(MASTER_KEY,remote.master).catch(()=>{});}
         saveLocalOnly();
         // Saat halaman Observation sedang aktif, jangan re-render seluruh halaman akibat
         // event realtime. Re-render akan membuat elemen <video> dibuat ulang sehingga
@@ -342,7 +623,7 @@ async function bootCloud(){
   }catch(err){console.error(err);alert(err?.code==='AUTH_ACCESS_DENIED'?'Akun belum memiliki akses aktif. Hubungi administrator.':(err?.message||'Backend cloud belum dapat dimuat.'));$('#loginScreen').classList.remove('hidden');$('#appShell').classList.add('hidden');return;}
   render();
 }
-function saveLocalOnly(){localStorage.setItem(KEY,JSON.stringify(observations));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
+async function saveLocalOnly(){safeWrite(KEY,observations);safeWrite(SETTINGS_KEY,settings);try{await Promise.all([idbSet(KEY,observations),idbSet(SETTINGS_KEY,settings)])}catch(e){console.warn('Local-only save failed:',e)}}
 function startAppCloud(){
   // Jika memakai Supabase, jangan load tabel sebelum login berhasil.
   // Pada mode lokal aplikasi dapat langsung berjalan seperti biasa.

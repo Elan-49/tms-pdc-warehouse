@@ -3,7 +3,7 @@
    Supabase menjadi sumber data bersama dan perubahan dipantau secara realtime. */
 (function(){
   const configured=typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL&&typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY;
-  let client=null, channel=null, timer=null, applying=false;
+  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tms-pdc-pending-observations';
   async function sdk(){
     if(window.supabase)return window.supabase;
     await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});
@@ -64,12 +64,13 @@
     (rfs.data||[]).forEach(r=>{const op=opById.get(r.operator_id);if(!op)return;ratings[op.name]=n(r.rating_factor)||1;westinghouse[op.name]={skill:n(r.skill_value)||0,effort:n(r.effort_value)||0,condition:n(r.condition_value)||0,consistency:n(r.consistency_value)||0};});
     const settings={allowance:n(st.data?.allowance_percent??10)/100,confidence:95,minInitialN:+(st.data?.n_min_observations??5),operators,operatorDepartments,ratings,westinghouse};
     const master=(masters.data||[]).map(x=>({id:x.id,process:x.process,activity:x.activity,element:x.element_name,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,frequency:n(x.frequency_per_day)||0,notes:x.notes||''}));
-    const observations=(obs.data||[]).map(x=>({id:x.id,date:(x.observed_at||'').slice(0,10),study:x.study||'',operator:opById.get(x.operator_id)?.name||x.operator_name||'',process:x.process,activity:x.activity,element:x.element_name,size:x.size_category,start:n(x.start_time),end:n(x.end_time),time:n(x.observed_time)||0,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,note:x.notes||'',createdAt:Date.parse(x.created_at||Date.now())}));
+    const observations=(obs.data||[]).map(x=>({id:x.id,observationSessionId:x.observation_session_id||x.observation_cycle_id||`LEGACY-${x.id}`,observationCycleId:x.observation_cycle_id||x.observation_session_id||`LEGACY-${x.id}`,date:(x.observed_at||'').slice(0,10),study:x.study||'',operator:opById.get(x.operator_id)?.name||x.operator_name||'',process:x.process,activity:x.activity,element:x.element_name,size:x.size_category,start:n(x.start_time),end:n(x.end_time),time:n(x.observed_time)||0,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,note:x.notes||'',createdAt:Date.parse(x.created_at||Date.now())}));
     return {observations,settings,master};
   }
   async function saveSnapshot(state){
-    if(!configured||applying)return;
-    clearTimeout(timer);timer=setTimeout(()=>write(state).catch(err=>console.error('Cloud sync failed',err)),250);
+    if(!configured||applying)return false;
+    clearTimeout(timer);
+    return await new Promise(resolve=>{timer=setTimeout(async()=>{try{await write(state);resolve(true)}catch(err){console.error('Cloud sync failed',err);resolve(false)}},150)});
   }
   async function write(state){
     const authState=await ensureAuthSession();
@@ -88,7 +89,7 @@
     if(ratings.length){const {error}=await sb.from('rating_factors').upsert(ratings,{onConflict:'operator_id'});if(error)throw error;}
     const setRow={id:1,n_min_observations:+state.settings.minInitialN||5,allowance_percent:(+state.settings.allowance||0)*100,updated_at:new Date().toISOString()};
     if(currentRole==='admin'){const {error}=await sb.from('study_settings').upsert(setRow);if(error)throw error;}
-    const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
+    const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observation_session_id:o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`,observation_cycle_id:o.observationCycleId||o.observationSessionId||`LEGACY-${o.id}`,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
     if(obs.length){const {error}=await sb.from('observations').upsert(obs,{onConflict:'id'});if(error)throw error;}
   }
   async function subscribe(cb){
