@@ -54,7 +54,8 @@ settings.operators.forEach(o=>{
     consistency:Number.isFinite(+w.consistency)?+w.consistency:0
   };
 });
-let state={view:'dashboard',videoUrl:null,start:null,end:null,manualTime:null,observationMethod:'video',observationSessionId:null,videoFileName:'',tskkEditor:false};
+const initialHistoryState=(history.state&&typeof history.state==='object')?history.state:null;
+let state={view:['dashboard','observe','data','master','tskk','quality','uniformity','sufficiency','rating','standard','waste','users'].includes(initialHistoryState?.appView)?initialHistoryState.appView:'dashboard',videoUrl:null,start:null,end:null,manualTime:null,observationMethod:'video',observationSessionId:null,videoFileName:'',tskkEditor:initialHistoryState?.appView==='tskk'&&initialHistoryState?.tskkEditor===true};
 let tskkHistoryGuard=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function newId(){
@@ -513,7 +514,13 @@ function renderTSKK(){
   const draw=()=>{selected.items=selected.items.map(x=>{const start=Number.isFinite(+x.start)?Math.max(0,+x.start):0;const time=Math.max(0,+x.time||0);const safeType=['manual','auto','walk'].includes(x.type)?x.type:'';return {...x,type:safeType,start,end:(Number.isFinite(+x.end)?Math.max(start,+x.end):start+time),time}});const cc=tskkCalc(selected);$('#tskkWorkBody').innerHTML=isManualObservation?(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><select class="tskk-item-type" data-i="${i}" ${readOnly?'disabled':''}><option value="" ${!x.type?'selected':''}>Pilih Type</option>${TSKK_TYPES.map(y=>`<option value="${y.value}" ${x.type===y.value?'selected':''}>${y.label}</option>`).join('')}</select></td><td>${i===0?`<div class="tskk-readonly-number"><b>${fmt(cc.cycle)} dtk</b></div>`:'<span class="muted">Satu cycle untuk seluruh observation</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Observation belum memiliki element context.</td></tr>'):(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><select class="tskk-item-type" data-i="${i}" ${readOnly?'disabled':''}><option value="" ${!x.type?'selected':''}>Pilih Type</option>${TSKK_TYPES.map(y=>`<option value="${y.value}" ${x.type===y.value?'selected':''}>${y.label}</option>`).join('')}</select></td><td><div class="tskk-readonly-number">${fmt(x.time)}</div></td><td><div class="tskk-readonly-number">${fmt(x.start)}</div></td><td><div class="tskk-readonly-number">${fmt(x.end)}</div></td><td><input class="tskk-item-note" data-i="${i}" value="${esc(x.note||'')}" ${readOnly?'disabled':''}></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Observation belum memiliki element.</td></tr>');$('#tskkKpis').innerHTML=`${kpi('TAKT TIME',fmt(cc.takt)+' dtk','Target pace')}${kpi('ACTUAL CYCLE TIME',fmt(cc.cycle)+' dtk',cc.gap>=0?'Masih di bawah takt':'Melebihi takt')}${isManualObservation?'':kpi('MANUAL + WALK',fmt(cc.operatorWork)+' dtk',`Load operator ${fmt(cc.operatorLoad)}%`)}${isManualObservation?'':kpi('AUTO / MACHINE',fmt(cc.auto)+' dtk',`Proporsi ${fmt(cc.machineShare)}%`)}`;$('#tskkTimeline').innerHTML=isManualObservation?`<div class="manual-cycle-summary"><div><span>ACTUAL CYCLE</span><b>${fmt(cc.cycle)} dtk</b></div><div><span>TAKT TIME</span><b>${fmt(cc.takt)} dtk</b></div><div><span>VARIANCE</span><b>${fmt(cc.gap)} dtk</b></div><div><span>STATUS</span><b>${esc(cc.status)}</b></div></div>`:tskkTimeline(selected);$('#tskkInsight').innerHTML=`<b>Evaluasi:</b> ${tskkStatusBadge(cc)} <span>${cc.walk>0?`Walking ${fmt(cc.walk)} detik.`:'Belum ada aktivitas walking.'}</span>`;$$('.tskk-item-type').forEach(el=>el.onchange=()=>{selected.items[+el.dataset.i].type=el.value;draw()});$$('.tskk-item-note').forEach(el=>el.oninput=()=>selected.items[+el.dataset.i].note=el.value)};
   $('#calcTakt')?.addEventListener('click',()=>{syncInputs();const av=+$('#tskkAvailable').value||0,units=+$('#tskkUnits').value||0;if(av>0&&units>0){selected.taktTime=+(av*60/units).toFixed(2);$('#tskkTakt').value=selected.taktTime;draw()}else alert('Isi Available Time dan Required Units terlebih dahulu.')});
   if(!readOnly)$('#tskkSave').onclick=async()=>{if(!ensureWrite())return;syncInputs();if(!selected.items.length){alert('Tidak ada Work Element dari Observation.');return}if(!isManualObservation&&selected.items.some(x=>!x.type)){alert('Konfirmasi Type untuk semua Work Element terlebih dahulu: Manual / Auto / Walk.');return}selected.items=selected.items.map(x=>({...x,time:Math.max(0,+x.time||0),start:Math.max(0,+x.start||0),end:Math.max(Math.max(0,+x.start||0),Number.isFinite(+x.end)?+x.end:(Math.max(0,+x.start||0)+Math.max(0,+x.time||0)))}));const rows=tskkStudies();const idx=rows.findIndex(x=>x.id===selected.id);if(idx>=0)rows[idx]=selected;else rows.unshift(selected);saveTSKKLocal(rows);const ok=await tskkPersistCloud(selected);if(!ok&&window.tmsAuth?.getClient?.())return;alert('TSKK berhasil disimpan.');state.tskkEditor=false;history.replaceState({appView:'tskk',tskkEditor:false},'',location.href);renderTSKK()};
-  $('#tskkBack').onclick=()=>{state.tskkEditor=false;history.back()};$('#tskkPrint').onclick=()=>{
+  $('#tskkBack').onclick=()=>{
+  if(!state.tskkEditor)return;
+  // Use the browser history so Chrome, Safari and mobile back gestures
+  // follow the same route as the in-app Kembali button.
+  if(history.length>1){history.back();}
+  else{state.tskkEditor=false;history.replaceState({appView:'tskk',tskkEditor:false},'',location.href);renderTSKK();}
+};$('#tskkPrint').onclick=()=>{
     syncInputs();
     const cc=tskkCalc(selected);
     const isManualPrint=selected.observationMethod==='manual';
@@ -575,15 +582,24 @@ function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.cl
 function render(){if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();}
 $$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()});
 document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()}});
-history.replaceState({appView:state.view,tskkEditor:false},'',location.href);
+// Preserve the current browser route on reload. This prevents F5/refresh from
+// sending the user back to Dashboard when they were on Observation or TSKK.
+history.replaceState({...((history.state&&typeof history.state==='object')?history.state:{}),appView:state.view,tskkEditor:state.tskkEditor===true},'',location.href);
 window.addEventListener('popstate',()=>{
+  const hs=history.state||{};
   if(state.tskkEditor){
     state.tskkEditor=false;
+    // Back from the TSKK editor returns to the TSKK list without creating
+    // another history entry, so Chrome/Safari back and the in-app button agree.
     renderTSKK();
     return;
   }
-  if(history.state?.appView && history.state.appView!==state.view){
-    state.view=history.state.appView;
+  if(hs.appView){
+    state.view=hs.appView;
+    state.tskkEditor=hs.appView==='tskk'&&hs.tskkEditor===true;
+    render();
+  }else{
+    state.tskkEditor=false;
     render();
   }
 });
