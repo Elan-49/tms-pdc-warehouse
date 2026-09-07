@@ -567,7 +567,7 @@ function renderTSKK(){
   $$('.tskk-open').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopPropagation();const s=localStudies.find(x=>String(x.id)===String(b.dataset.id));if(s){try{open(s)}catch(err){console.error('Buka TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}}});
   $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!confirm('Hapus TSKK ini?'))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
   $$('.tskk-create-from-session').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopPropagation();if(!ensureWrite())return;const session=sessions.find(x=>String(x.id)===String(b.dataset.session));if(!session){console.error('TSKK session not found:',b.dataset.session,sessions);alert('Observation untuk TSKK tidak ditemukan. Silakan refresh halaman.');return}try{open(tskkDefaultStudyFromSession(session))}catch(err){console.error('Buat TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}});
-  tskkLoadCloud().then(remote=>{if(remote){saveTSKKLocal(remote);renderTSKK()}}).catch(()=>{});
+  tskkLoadCloud().then(remote=>{if(remote){saveTSKKLocal(remote);if(!state.tskkEditor)renderTSKK()}}).catch(()=>{});
 }
 
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,quality:renderQuality,uniformity:renderUniformity,sufficiency:renderSufficiency,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
