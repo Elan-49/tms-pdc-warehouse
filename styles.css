@@ -1366,3 +1366,86 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-combo-no,.tskk-combo-name,.tskk-combo-type{font-size:8.5px!important;}
   .tskk-combo-bar span{font-size:7.5px!important;}
 }
+
+
+/* V3.0.68 — Mobile UI consistency + Master Method → TSKK Type */
+@media (max-width:760px){
+  /* Time Classification: reserve a full row for long labels, then metrics. */
+  .chart-card .chart-legend-item,
+  .chart-card .chart-legend>div.chart-legend-item{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:4px!important;
+    align-items:start!important;
+  }
+  .chart-card .chart-legend-label{width:100%!important;min-width:0!important;align-items:flex-start!important;}
+  .chart-card .chart-legend-label span{display:block!important;min-width:0!important;max-width:100%!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.25!important;}
+  .chart-card .chart-legend-metrics{width:100%!important;display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:12px!important;white-space:nowrap!important;}
+  .chart-card .chart-legend-metrics b,.chart-card .chart-legend-metrics small{font-size:10px!important;white-space:nowrap!important;text-align:left!important;}
+
+  /* One typography system for TSKK metadata controls. */
+  .tskk-meta-grid label{font:700 10px/1.2 Inter,Segoe UI,Arial,sans-serif!important;color:#53657a!important;}
+  .tskk-meta-grid input,
+  .tskk-meta-grid select,
+  .tskk-meta-grid textarea,
+  .tskk-meta-grid input[type="date"]{
+    font-family:Inter,Segoe UI,Arial,sans-serif!important;
+    font-size:13px!important;
+    font-weight:600!important;
+    line-height:1.2!important;
+    color:#172033!important;
+    height:35px!important;
+    min-height:35px!important;
+    max-height:35px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .tskk-meta-grid textarea{height:auto!important;min-height:50px!important;max-height:none!important;}
+  .tskk-meta-helper{font-size:9px!important;line-height:1.3!important;padding:8px 9px!important;margin-top:8px!important;}
+  .tskk-meta-helper .btn{height:33px!important;min-height:33px!important;font-size:10px!important;}
+
+  /* TSKK actions: smaller and equal-width. */
+  .tskk-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;}
+  .tskk-actions .btn{height:33px!important;min-height:33px!important;font:700 10px/1 Inter,Segoe UI,Arial,sans-serif!important;padding:5px 4px!important;}
+  .tskk-content>.card{padding:9px!important;}
+  .tskk-content .section-head h3{font-size:13px!important;line-height:1.2!important;}
+  .tskk-content .section-head .muted{font-size:9px!important;line-height:1.3!important;}
+  .tskk-kpis .kpi .label{font-size:7.5px!important;}
+  .tskk-kpis .kpi .value{font-size:15px!important;}
+  .tskk-kpis .kpi .sub{font-size:7.8px!important;}
+
+  /* TSKK table Type is derived from Master, so render it as a compact read-only badge. */
+  .tskk-readonly-type{
+    min-width:0!important;width:100%!important;box-sizing:border-box!important;
+    padding:6px 7px!important;border:1px solid #e1e7ed!important;border-radius:7px!important;
+    font:700 10px/1.15 Inter,Segoe UI,Arial,sans-serif!important;text-align:center!important;
+    white-space:normal!important;overflow-wrap:anywhere!important;
+  }
+  .tskk-readonly-type.manual{background:#e4f4df!important;color:#2e6631!important;border-color:#c5e3bb!important;}
+  .tskk-readonly-type.auto{background:#e2efff!important;color:#2e5f96!important;border-color:#bfd7f5!important;}
+  .tskk-readonly-type.walk{background:#fff0d6!important;color:#8a5d1d!important;border-color:#f3d8aa!important;}
+
+  /* Compact generic action buttons on every mobile page. */
+  .btn{height:34px!important;min-height:34px!important;padding:6px 8px!important;font-size:10.5px!important;line-height:1.1!important;}
+  .section-head .btn,.toolbar .btn,.top-actions button{height:34px!important;min-height:34px!important;}
+
+  /* Rating Factor: labels may wrap, but both input boxes remain aligned. */
+  .two-equal{align-items:start!important;}
+  .two-equal>label{display:grid!important;grid-template-rows:minmax(24px,auto) 35px minmax(28px,auto)!important;align-content:start!important;gap:4px!important;}
+  .two-equal>label input{height:35px!important;min-height:35px!important;max-height:35px!important;font-size:13px!important;}
+  .two-equal>label small{display:block!important;min-height:28px!important;font-size:8px!important;line-height:1.2!important;}
+
+  /* Master method is a select now; keep its height aligned with Equipment/Frequency. */
+  #mMethod{height:35px!important;min-height:35px!important;font-size:13px!important;}
+}
+
+@media (max-width:560px){
+  .chart-card .chart-legend-item,.chart-card .chart-legend>div.chart-legend-item{padding:5px 0!important;}
+  .chart-card .chart-legend-label span{font-size:10px!important;}
+  .chart-card .chart-legend-metrics b,.chart-card .chart-legend-metrics small{font-size:9.5px!important;}
+  .tskk-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .tskk-meta-grid label{font-size:9.5px!important;}
+  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea,.tskk-meta-grid input[type="date"]{font-size:12px!important;}
+  .tskk-actions .btn{font-size:9.5px!important;}
+}

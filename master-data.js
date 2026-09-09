@@ -49,7 +49,7 @@ const MASTER_DATA = [
     "element": "Melakukan scanning/input penerimaan",
     "classification": "Indirect",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "PDT",
     "frequency": 40.0,
     "notes": "Contoh - tinjau ulang sesuai proses aktual"
@@ -60,7 +60,7 @@ const MASTER_DATA = [
     "element": "Memindahkan barang ke area receiving/staging",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Mesin",
+    "method": "Auto / Machine",
     "equipment": "Conveyor",
     "frequency": 40.0,
     "notes": "Contoh - tinjau ulang sesuai proses aktual"
@@ -71,7 +71,7 @@ const MASTER_DATA = [
     "element": "Menempatkan barang untuk proses selanjutnya",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 40.0,
     "notes": "Contoh - tinjau ulang sesuai proses aktual"
@@ -148,7 +148,7 @@ const MASTER_DATA = [
     "element": "Memindahkan barang ke area proses berikutnya",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 120.0,
     "notes": "Contoh - tinjau ulang sesuai proses aktual"
@@ -181,7 +181,7 @@ const MASTER_DATA = [
     "element": "Menuju lokasi bin",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 0.0,
     "notes": ""
@@ -203,7 +203,7 @@ const MASTER_DATA = [
     "element": "Melakukan scanning/update lokasi",
     "classification": "Indirect",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "PDT",
     "frequency": 0.0,
     "notes": ""
@@ -247,7 +247,7 @@ const MASTER_DATA = [
     "element": "Menuju lokasi part",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 0.0,
     "notes": ""
@@ -269,7 +269,7 @@ const MASTER_DATA = [
     "element": "Melakukan scanning/verifikasi part",
     "classification": "Indirect",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "PDT",
     "frequency": 0.0,
     "notes": ""
@@ -280,7 +280,7 @@ const MASTER_DATA = [
     "element": "Menempatkan part ke trolley/container",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 0.0,
     "notes": ""
@@ -291,7 +291,7 @@ const MASTER_DATA = [
     "element": "Membawa hasil picking ke area staging",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Hand Pallet",
     "frequency": 0.0,
     "notes": ""
@@ -335,7 +335,7 @@ const MASTER_DATA = [
     "element": "Memindahkan barang ke area shipping",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Mesin",
+    "method": "Auto / Machine",
     "equipment": "Forklift",
     "frequency": 0.0,
     "notes": ""
@@ -533,7 +533,7 @@ const MASTER_DATA = [
     "element": "Menyiapkan/mengambil part",
     "classification": "Direct Value-Added",
     "waste": "-",
-    "method": "Alat Bantu",
+    "method": "Auto / Machine",
     "equipment": "Trolley",
     "frequency": 0.0,
     "notes": ""
