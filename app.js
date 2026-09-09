@@ -570,7 +570,7 @@ function renderTSKK(skipCloud=false){
     </style></head><body><div class="sheet">
       <div class="title">TABEL STANDAR KERJA KOMBINATIF (TSKK)</div>
       <div class="brand-row">
-        <div class="brand">${selected.observationMethod==='video'&&selected.videoName?'':`<img src="ut-logo.png" alt="Logo">`}<div><b>TMS PDC Warehouse</b><br><span style="font-size:8px">Time &amp; Motion Study</span></div></div>
+        <div class="brand">${selected.observationMethod==='video'&&selected.videoName?'':`<img src="ut-logo-2" alt="Logo">`}<div><b>TMS PDC Warehouse</b><br><span style="font-size:8px">Time &amp; Motion Study</span></div></div>
         <div class="meta"><div class="meta-row"><b>TSKK No</b><span>:</span><span>${esc(selected.tskkNo||'—')}</span></div><div class="meta-row"><b>Observation</b><span>:</span><span>${esc(selected.observationSessionId||'—')}</span></div><div class="meta-row"><b>Tanggal</b><span>:</span><span>${esc(selected.studyDate||'—')}</span></div></div>
         <div class="meta"><div class="meta-row"><b>PIC</b><span>:</span><span>${esc(selected.operator||'—')}</span></div><div class="meta-row"><b>Process</b><span>:</span><span>${esc(selected.process||'—')}</span></div><div class="meta-row"><b>Activity</b><span>:</span><span>${esc(selected.activity||'—')}</span></div></div>
         <div class="meta"><div class="meta-row"><b>Method</b><span>:</span><span>${esc(isManualPrint?'Manual':'Video')}</span></div><div class="meta-row"><b>Size</b><span>:</span><span>${esc(selected.sizeCategory||'—')}</span></div><div class="meta-row"><b>Takt</b><span>:</span><span>${fmt(cc.takt)} dtk</span></div></div>
