@@ -1449,3 +1449,20 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea,.tskk-meta-grid input[type="date"]{font-size:12px!important;}
   .tskk-actions .btn{font-size:9.5px!important;}
 }
+
+
+/* V3.0.69 — Mobile dashboard spacing + TSKK print overflow fix */
+@media (max-width:760px){
+  /* TOP 5 LEAN / WASTE: give row 5 breathing room before the next section/footer. */
+  .pareto-card{padding-bottom:18px!important;}
+  .pareto-table-block{padding-bottom:10px!important;margin-bottom:4px!important;}
+  .pareto-table-block .table-wrap{padding-bottom:4px!important;}
+}
+
+/* TSKK print: keep the graph axis labels fully inside the graph header. */
+@media print{
+  .graph-head{overflow:hidden!important;}
+  .axis{overflow:hidden!important;padding-right:24px!important;}
+  .axis em{right:3px!important;background:#d9d9d9!important;padding-left:2px!important;z-index:2;}
+  .axis span:last-of-type{left:calc(100% - 28px)!important;transform:translateX(-50%)!important;}
+}
