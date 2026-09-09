@@ -848,7 +848,10 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .tskk-combo-heading,.tskk-combo-no-head{min-height:48px;display:flex;align-items:center;padding:0 12px;background:#f7f9fc;border-bottom:1px solid #e2e8ee;font-weight:800;color:#29445c;font-size:13px}
 .tskk-combo-no-head{justify-content:center;color:#738396}
 .tskk-combo-axis{position:relative;height:48px;border-bottom:1px solid #e2e8ee;background:repeating-linear-gradient(to right,#fff 0,#fff calc(1% - 1px),#e9eef3 1%);color:#738396;font-size:10.5px}
+.tskk-combo-axis{padding-right:42px;box-sizing:border-box}
 .tskk-combo-axis span{position:absolute;bottom:17px;transform:translateX(-50%);white-space:nowrap}
+.tskk-combo-axis span.axis-start{left:0!important;transform:none!important}
+.tskk-combo-axis span.axis-end{left:auto!important;right:42px!important;transform:none!important}
 .tskk-combo-axis em{position:absolute;right:10px;bottom:17px;font-style:normal;font-weight:700}
 .tskk-combo-row{min-height:50px}
 .tskk-combo-no,.tskk-combo-name,.tskk-combo-type{display:flex;align-items:center;padding:8px 12px;background:#fbfcfd;border-bottom:1px solid #edf1f4}
@@ -1021,6 +1024,9 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-combo-bar span{font-size:9px!important;padding:0 4px!important;}
   .tskk-combo-axis{height:38px!important;font-size:9px!important;}
   .tskk-combo-axis span{bottom:12px!important;}
+  .tskk-combo-axis{padding-right:34px!important;}
+  .tskk-combo-axis span.axis-end{right:34px!important;}
+  .tskk-combo-axis span.axis-start{left:0!important;}
   .tskk-combo-axis em{bottom:12px!important;right:7px!important;}
   .tskk-combo-footer{padding:8px 9px!important;gap:8px!important;}
   .tskk-combo-note,.tskk-legend{font-size:9.5px!important;}
@@ -1466,3 +1472,9 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .axis em{right:3px!important;background:#d9d9d9!important;padding-left:2px!important;z-index:2;}
   .axis span:last-of-type{left:calc(100% - 28px)!important;transform:translateX(-50%)!important;}
 }
+
+/* Dynamic duration inputs: display/input may use seconds or minutes without changing stored seconds. */
+.time-input-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:8px;align-items:stretch}
+.time-input-row input,.time-input-row select{min-width:0}
+.input-help{display:block;font-size:10px!important;font-weight:500!important;color:#7b879b!important;margin-top:-2px}
+@media(max-width:760px){.time-input-row{grid-template-columns:minmax(0,1fr) 82px}}
