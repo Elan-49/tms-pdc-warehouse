@@ -137,7 +137,7 @@
     isLoggedIn,
     getClient: () => supabaseClient,
     getProfile: () => currentProfile,
-    getRole: () => currentProfile?.role || (localModeAllowed ? 'admin' : null),
+    getRole: () => { const r=currentProfile?.role; return r ? String(r).trim().toLowerCase() : (localModeAllowed ? 'admin' : null); },
     isApproved: () => currentProfile?.status === 'approved'
   };
 
@@ -153,6 +153,10 @@
     signupForm.classList.toggle('hidden', !signup);
     showLoginBtn.classList.toggle('active', !signup);
     showSignupBtn.classList.toggle('active', signup);
+    const authTitle = $('#authTitle');
+    const authSubtitle = $('#authSubtitle');
+    if (authTitle) authTitle.textContent = signup ? 'Buat Akun Baru' : 'Selamat Datang';
+    if (authSubtitle) authSubtitle.textContent = signup ? 'Lengkapi data berikut' : 'Masukkan username dan password';
     $('#loginError').classList.add('hidden');
     $('#loginError').textContent = '';
   }

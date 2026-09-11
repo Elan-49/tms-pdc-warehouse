@@ -1478,3 +1478,2105 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .time-input-row input,.time-input-row select{min-width:0}
 .input-help{display:block;font-size:10px!important;font-weight:500!important;color:#7b879b!important;margin-top:-2px}
 @media(max-width:760px){.time-input-row{grid-template-columns:minmax(0,1fr) 82px}}
+
+
+/* =========================================================
+   V4.5.0 — UT PREMIUM COMMAND CENTER UI
+   Presentation-only refactor. Application logic preserved.
+   ========================================================= */
+:root{
+  --ut-yellow:#FFD100;
+  --ut-gold:#D4AF37;
+  --ut-navy-dark:#0A192F;
+  --ut-navy-light:#1E293B;
+  --ut-black:#111827;
+  --ut-grey-bg:#F8FAFC;
+  --ut-grey-border:#E2E8F0;
+  --ut-blue:#1D4F91;
+  --ut-blue-2:#3478BD;
+  --ut-red:#D84A4A;
+  --ut-charcoal:#374151;
+  --ui-shadow:0 12px 30px -12px rgba(10,25,47,.18),0 4px 12px rgba(10,25,47,.06);
+  --ui-shadow-hover:0 18px 36px -14px rgba(10,25,47,.25),0 7px 16px rgba(10,25,47,.08);
+}
+
+/* Clean white application canvas */
+html,body{background:#fff!important;color:var(--ut-black)}
+.app-shell,.main,#app,.content,.dashboard-content{background:#fff!important}
+.card,.dashboard-filter,.chart-card,.classify-card,.video-card,.tskk-table-card,.tskk-chart-card{
+  background:#fff!important;
+  border:1px solid var(--ut-grey-border)!important;
+  box-shadow:var(--ui-shadow)!important;
+  border-radius:16px!important;
+}
+.card:hover,.dashboard-filter:hover,.chart-card:hover{box-shadow:var(--ui-shadow-hover)!important}
+
+/* Header: page identity left, UT logo + menu control together on right */
+.ut-topbar{
+  height:96px!important;
+  min-height:96px!important;
+  padding:12px 30px!important;
+  background:#fff!important;
+  border-bottom:3px solid var(--ut-yellow)!important;
+  box-shadow:0 6px 18px rgba(10,25,47,.06)!important;
+  z-index:100;
+}
+.page-heading{flex:1 1 auto;min-width:0}
+.page-heading h1{color:var(--ut-black)!important}
+.ut-header-actions{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:14px;
+  flex:0 0 auto;
+}
+.ut-header-logo-2{
+  margin:0!important;
+  width:min(29vw,350px)!important;
+  max-width:350px!important;
+  padding:0!important;
+}
+.ut-header-logo-2 img{
+  width:100%!important;
+  max-width:350px!important;
+  max-height:52px!important;
+  object-fit:contain!important;
+  object-position:right center!important;
+}
+.sidebar-toggle{
+  width:48px!important;height:48px!important;min-height:48px!important;
+  border:1px solid var(--ut-grey-border)!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  box-shadow:0 6px 16px rgba(10,25,47,.10)!important;
+  gap:5px!important;
+}
+.sidebar-toggle:hover{
+  background:#fff!important;
+  border-color:var(--ut-yellow)!important;
+  box-shadow:0 10px 22px rgba(10,25,47,.14),0 0 0 3px rgba(255,209,0,.10)!important;
+  transform:translateY(-1px);
+}
+.sidebar-toggle span{background:var(--ut-navy-dark)!important;width:21px!important;height:2.5px!important}
+
+/* =========================================================
+   Floating Command Center menu — matches supplied reference
+   ========================================================= */
+.sidebar{
+  position:fixed!important;
+  z-index:120!important;
+  left:50%!important;
+  top:50%!important;
+  bottom:auto!important;
+  width:min(1180px,calc(100vw - 64px))!important;
+  height:min(760px,calc(100vh - 72px))!important;
+  max-height:calc(100vh - 72px)!important;
+  padding:24px!important;
+  transform:translate(-50%,-50%) scale(.965)!important;
+  transform-origin:center!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  background:rgba(255,255,255,.97)!important;
+  color:var(--ut-black)!important;
+  border:1px solid rgba(226,232,240,.95)!important;
+  border-radius:24px!important;
+  box-shadow:0 30px 80px rgba(10,25,47,.25),0 8px 25px rgba(10,25,47,.10)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+  overflow:hidden!important;
+  transition:transform .25s ease,opacity .2s ease,visibility .2s ease!important;
+}
+.app-shell.sidebar-open .sidebar{
+  transform:translate(-50%,-50%) scale(1)!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  box-shadow:0 30px 80px rgba(10,25,47,.25),0 8px 25px rgba(10,25,47,.10)!important;
+}
+.sidebar-backdrop{
+  z-index:110!important;
+  background:rgba(10,25,47,.34)!important;
+  backdrop-filter:blur(7px)!important;
+  -webkit-backdrop-filter:blur(7px)!important;
+}
+
+/* Hide legacy sidebar branding; command-center heading replaces it */
+.sidebar>.brand{display:none!important}
+.menu-panel-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+  padding:2px 2px 18px;
+  margin-bottom:18px;
+  border-bottom:1px solid var(--ut-grey-border);
+}
+.menu-eyebrow{
+  color:#8A6500;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.menu-panel-head h2{
+  margin:0!important;
+  color:var(--ut-black)!important;
+  font-size:22px!important;
+  line-height:1.1!important;
+  text-transform:uppercase;
+  letter-spacing:.2px;
+}
+.menu-close{
+  width:44px;height:44px;min-height:44px;
+  border:0!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#344054!important;
+  font-size:28px!important;
+  line-height:1!important;
+  display:grid!important;
+  place-items:center!important;
+  cursor:pointer;
+  box-shadow:0 6px 16px rgba(10,25,47,.08)!important;
+  transition:all .2s ease;
+}
+.menu-close:hover{
+  background:#f8fafc!important;
+  color:var(--ut-navy-dark)!important;
+  transform:rotate(90deg);
+}
+.sidebar nav{
+  height:calc(100% - 150px);
+  overflow:auto;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-content:start;
+  gap:10px!important;
+  padding:0 2px 12px!important;
+  scrollbar-width:thin;
+  scrollbar-color:#D4AF37 transparent;
+}
+.sidebar nav::-webkit-scrollbar{width:7px}
+.sidebar nav::-webkit-scrollbar-thumb{background:#D4AF37;border-radius:99px}
+.nav-label{
+  grid-column:1/-1!important;
+  margin:8px 4px 0!important;
+  padding:2px 0 0!important;
+  color:#8A6500!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  letter-spacing:2px!important;
+}
+.nav-admin-group{display:contents!important}
+.sidebar button,.import-btn{
+  min-height:56px!important;
+  width:100%!important;
+  padding:12px 15px!important;
+  border:1px solid var(--ut-grey-border)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  color:#303945!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  letter-spacing:.05px;
+  text-align:left!important;
+  box-shadow:0 5px 12px rgba(10,25,47,.055)!important;
+  transition:all .22s ease!important;
+}
+.sidebar button:hover,.import-btn:hover{
+  background:#fff!important;
+  color:var(--ut-navy-dark)!important;
+  border-color:#cbd5e1!important;
+  box-shadow:0 10px 20px rgba(10,25,47,.11)!important;
+  transform:translateY(-2px);
+}
+.sidebar button.active{
+  background:linear-gradient(135deg,var(--ut-navy-dark) 0%,var(--ut-navy-light) 100%)!important;
+  color:#fff!important;
+  border-color:var(--ut-navy-dark)!important;
+  box-shadow:0 10px 22px rgba(10,25,47,.20),inset 0 1px 0 rgba(255,255,255,.10)!important;
+  transform:translateY(-1px);
+}
+.sidebar .import-btn{display:flex!important;align-items:center!important;cursor:pointer!important}
+.menu-panel-foot{
+  position:absolute;
+  left:24px;right:24px;bottom:18px;
+  min-height:54px;
+  padding:12px 2px 0;
+  border-top:1px solid var(--ut-grey-border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  background:rgba(255,255,255,.94);
+}
+.menu-panel-foot>span{
+  color:#8A6500;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.7px;
+}
+.menu-panel-foot .btn{
+  min-height:42px!important;
+  padding:9px 16px!important;
+  border-radius:12px!important;
+}
+
+/* Dashboard cards: distinct KPI identity strips */
+.dashboard-kpis>.kpi{
+  position:relative;
+  overflow:hidden;
+  min-height:146px;
+  border-left-width:5px!important;
+  border-left-style:solid!important;
+}
+.dashboard-kpis>.kpi:nth-child(1){border-left-color:#38A9E8!important}
+.dashboard-kpis>.kpi:nth-child(2){border-left-color:var(--ut-yellow)!important}
+.dashboard-kpis>.kpi:nth-child(3){border-left-color:var(--ut-red)!important}
+.dashboard-kpis>.kpi:nth-child(4){border-left-color:var(--ut-charcoal)!important}
+.dashboard-kpis>.kpi .value{color:#202B35!important}
+
+/* Smooth single gradient across every table header */
+.data-table{
+  border-collapse:separate!important;
+  border-spacing:0!important;
+  overflow:hidden;
+  border-radius:14px 14px 0 0!important;
+}
+.data-table thead{
+  background:linear-gradient(90deg,#0F3F78 0%,#1E5A9C 48%,#3478BD 100%)!important;
+}
+.data-table thead tr{background:transparent!important}
+.data-table th{
+  background:transparent!important;
+  color:#fff!important;
+  border-bottom:0!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.12);
+}
+.data-table thead tr:first-child th:first-child{border-top-left-radius:14px!important}
+.data-table thead tr:first-child th:last-child{border-top-right-radius:14px!important}
+.data-table thead tr:first-child th{border-top:0!important}
+.data-table tbody tr:last-child td{border-bottom:0!important}
+
+/* Manual observation Apply alignment */
+.manual-time-grid.manual-single{
+  align-items:stretch!important;
+  grid-template-columns:minmax(260px,1fr) minmax(140px,160px)!important;
+}
+.manual-time-grid.manual-single>#applyManualTime{
+  align-self:stretch!important;
+  height:100%!important;
+  min-height:44px!important;
+  margin:0!important;
+}
+#applyManualTime{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:11px!important;
+}
+
+/* Segment controls: clear Start vs End visual language */
+#setStart{
+  background:var(--ut-yellow)!important;
+  color:var(--ut-navy-dark)!important;
+  border-color:#E3B900!important;
+  box-shadow:0 8px 18px rgba(255,209,0,.25)!important;
+}
+#setEnd{
+  background:var(--ut-navy-dark)!important;
+  color:#fff!important;
+  border-color:var(--ut-navy-dark)!important;
+  box-shadow:0 8px 18px rgba(10,25,47,.18)!important;
+}
+#setStart:hover{background:#F2C700!important}
+#setEnd:hover{background:#172F4E!important}
+.start-play-icon{
+  width:0!important;height:0!important;
+  border-top:7px solid transparent!important;
+  border-bottom:7px solid transparent!important;
+  border-left:12px solid currentColor!important;
+}
+.end-stop-icon{
+  width:13px!important;height:13px!important;
+  background:currentColor!important;
+  border-radius:3px!important;
+}
+
+/* =========================================================
+   Session restore screen
+   ========================================================= */
+body.auth-booting #loginScreen,
+body.auth-booting #appShell{visibility:hidden!important}
+body.auth-booting::before{content:none!important;display:none!important}
+.session-loader{
+  display:none;
+}
+body.auth-booting .session-loader{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(52,120,189,.20),transparent 34%),
+    rgba(10,25,47,.88);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.session-loader-card{
+  width:min(300px,82vw);
+  min-height:235px;
+  padding:30px 24px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:22px;
+  background:rgba(255,255,255,.08);
+  box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.session-loader-logo{
+  width:82px!important;
+  height:82px!important;
+  object-fit:contain!important;
+  border-radius:50%;
+  margin-bottom:18px;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.22));
+}
+.session-loader-title{
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.35px;
+  margin-bottom:17px;
+}
+.session-loader-dots{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  height:24px;
+}
+.session-loader-dots span{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--ut-yellow);
+  box-shadow:0 0 14px rgba(255,209,0,.38);
+  animation:session-dot-bounce .8s ease-in-out infinite;
+}
+.session-loader-dots span:nth-child(1){animation-delay:0s}
+.session-loader-dots span:nth-child(2){animation-delay:.16s}
+.session-loader-dots span:nth-child(3){animation-delay:.32s}
+@keyframes session-dot-bounce{
+  0%,60%,100%{transform:translateY(0);opacity:.72}
+  30%{transform:translateY(-9px);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-dots span{animation:none!important;opacity:1!important}
+  .sidebar,.sidebar-backdrop,.sidebar-toggle,.sidebar button,.card,.btn{transition:none!important}
+}
+
+/* Responsive command center */
+@media(max-width:900px){
+  .sidebar{
+    width:min(760px,calc(100vw - 36px))!important;
+    height:min(720px,calc(100vh - 44px))!important;
+    max-height:calc(100vh - 44px)!important;
+    padding:20px!important;
+    border-radius:20px!important;
+  }
+  .sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ut-header-actions{gap:9px}
+  .ut-header-logo-2{width:min(34vw,280px)!important}
+}
+@media(max-width:560px){
+  .ut-topbar{
+    height:72px!important;min-height:72px!important;
+    padding:8px 12px!important;
+  }
+  .page-heading h1{font-size:18px!important}
+  .page-heading .eyebrow{font-size:7px!important}
+  .ut-header-logo-2{width:112px!important}
+  .ut-header-logo-2 img{max-height:32px!important}
+  .sidebar-toggle{width:42px!important;height:42px!important;min-height:42px!important}
+  .sidebar{
+    width:calc(100vw - 20px)!important;
+    height:calc(100vh - 24px)!important;
+    max-height:calc(100vh - 24px)!important;
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+  .menu-panel-head{padding-bottom:14px;margin-bottom:12px}
+  .menu-panel-head h2{font-size:19px!important}
+  .sidebar nav{grid-template-columns:1fr!important;gap:8px!important;height:calc(100% - 132px)}
+  .sidebar button,.import-btn{min-height:48px!important;padding:10px 12px!important}
+  .nav-label{margin-top:8px!important}
+  .menu-panel-foot{left:16px;right:16px;bottom:12px;min-height:48px}
+  .menu-panel-foot .btn{min-height:38px!important}
+  .dashboard-kpis>.kpi{min-height:118px}
+  .manual-time-grid.manual-single{grid-template-columns:1fr!important}
+  .manual-time-grid.manual-single>#applyManualTime{min-height:42px!important}
+}
+
+/* =========================================================
+   V4.5.1 — Command Center precision cleanup
+   ========================================================= */
+
+/* Keep the command-center itself perfectly crisp: no blur/filter on the panel. */
+.sidebar{
+  background:#fff!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  will-change:auto!important;
+  transform:translate(-50%,-50%)!important;
+  transition:opacity .20s ease,visibility .20s ease!important;
+}
+.app-shell.sidebar-open .sidebar{
+  transform:translate(-50%,-50%)!important;
+}
+
+/* The dimmed application behind the panel may blur; the menu stays HD. */
+.sidebar-backdrop{
+  background:rgba(10,25,47,.30)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+
+/* Upper-left page title and every Command Center menu label are uppercase. */
+.page-heading h1,
+.sidebar nav button,
+.sidebar nav .import-btn{
+  text-transform:uppercase!important;
+}
+
+/* Prevent the generic .sidebar button width rule from stretching X and Logout. */
+.menu-panel-head .menu-close{
+  flex:0 0 40px!important;
+  width:40px!important;
+  min-width:40px!important;
+  max-width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0!important;
+  margin:0!important;
+  border:1px solid #fecaca!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#dc2626!important;
+  font-size:22px!important;
+  line-height:1!important;
+  display:grid!important;
+  place-items:center!important;
+  text-align:center!important;
+  box-shadow:0 4px 12px rgba(220,38,38,.10)!important;
+}
+.menu-panel-head .menu-close:hover{
+  background:#fef2f2!important;
+  border-color:#ef4444!important;
+  color:#b91c1c!important;
+  transform:none!important;
+}
+
+/* Small, correctly proportioned Exit button. */
+.menu-panel-foot .btn,
+.menu-panel-foot #menuLogout{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:max-content!important;
+  min-height:38px!important;
+  height:38px!important;
+  padding:8px 13px!important;
+  border:1px solid #fecaca!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#dc2626!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  box-shadow:0 4px 12px rgba(220,38,38,.09)!important;
+}
+.menu-panel-foot .btn:hover,
+.menu-panel-foot #menuLogout:hover{
+  background:#fef2f2!important;
+  border-color:#ef4444!important;
+  color:#b91c1c!important;
+  transform:translateY(-1px)!important;
+}
+
+/* Crisp menu cards; only the selected item uses the dark UT treatment. */
+.sidebar nav button,
+.sidebar nav .import-btn{
+  transform:translateZ(0);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Desktop Command Center: preserve four-column layout and compact action controls. */
+@media(min-width:901px){
+  .menu-panel-head .menu-close{margin-left:auto!important}
+}
+
+/* Mobile/tablet action controls remain compact. */
+@media(max-width:900px){
+  .menu-panel-head .menu-close{
+    width:40px!important;min-width:40px!important;max-width:40px!important;
+    height:40px!important;min-height:40px!important;
+  }
+  .menu-panel-foot .btn,
+  .menu-panel-foot #menuLogout{
+    width:auto!important;min-width:0!important;max-width:max-content!important;
+  }
+}
+
+/* Keep reduced-motion accessibility while retaining crisp rendering. */
+@media(prefers-reduced-motion:reduce){
+  .sidebar,.sidebar-backdrop,.sidebar-toggle,.sidebar button,.card,.btn{transition:none!important}
+}
+
+
+/* =========================================================
+   V4.5.2 — Command Center action/footer cleanup
+   ========================================================= */
+/* Keep all Command Center content above its footer; TOOLS can never hide behind it. */
+.sidebar{
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+.sidebar nav{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  align-content:start!important;
+  padding-bottom:16px!important;
+}
+.menu-panel-foot{
+  position:static!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-height:54px!important;
+  margin-top:10px!important;
+  padding:12px 2px 0!important;
+  background:#fff!important;
+  z-index:3!important;
+}
+/* Red action shape — white icon/text, not red typography. */
+.menu-panel-head .menu-close{
+  background:#dc2626!important;
+  border-color:#dc2626!important;
+  color:#fff!important;
+  box-shadow:0 6px 14px rgba(220,38,38,.18)!important;
+}
+.menu-panel-head .menu-close:hover{
+  background:#b91c1c!important;
+  border-color:#b91c1c!important;
+  color:#fff!important;
+}
+.menu-panel-foot .btn,
+.menu-panel-foot #menuLogout{
+  background:#dc2626!important;
+  border-color:#dc2626!important;
+  color:#fff!important;
+  box-shadow:0 6px 14px rgba(220,38,38,.16)!important;
+}
+.menu-panel-foot .btn:hover,
+.menu-panel-foot #menuLogout:hover{
+  background:#b91c1c!important;
+  border-color:#b91c1c!important;
+  color:#fff!important;
+}
+
+/* Remove the old bottom-footer logout control completely; motto stays clean. */
+.ut-bottom-footer{
+  grid-template-columns:1fr!important;
+  grid-template-rows:auto 3px!important;
+  min-height:74px!important;
+  padding:16px 34px 12px!important;
+}
+.ut-footer-motto{
+  grid-column:1!important;
+  grid-row:1!important;
+  justify-self:end!important;
+  width:auto!important;
+}
+.ut-footer-line{
+  grid-column:1!important;
+  grid-row:2!important;
+  height:3px!important;
+  background:#FFD100!important;
+}
+
+/* Refresh/session screen: blue → white, minimal, no card box. */
+body.auth-booting .session-loader{
+  background:
+    linear-gradient(135deg,#0A5BA8 0%,#2F80C9 34%,#EAF4FC 72%,#FFFFFF 100%)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+}
+.session-loader-card{
+  width:auto!important;
+  min-height:0!important;
+  padding:22px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.session-loader-logo{
+  width:86px!important;
+  height:86px!important;
+  margin-bottom:16px!important;
+  filter:drop-shadow(0 8px 16px rgba(10,25,47,.18))!important;
+}
+.session-loader-title{
+  color:#0A192F!important;
+  font-size:17px!important;
+  font-weight:800!important;
+  letter-spacing:.25px!important;
+}
+.session-loader-dots span{
+  background:#0A5BA8!important;
+  box-shadow:0 0 12px rgba(10,91,168,.24)!important;
+}
+
+@media(max-width:560px){
+  .ut-bottom-footer{grid-template-columns:1fr!important;grid-template-rows:auto 2px!important;padding:14px 16px 10px!important;min-height:62px!important}
+  .ut-footer-motto{grid-column:1!important;grid-row:1!important;justify-self:end!important}
+  .ut-footer-line{grid-column:1!important;grid-row:2!important;height:2px!important}
+}
+
+
+/* =========================================================
+   V4.5.3 — Manual Apply + Minimal White Session Loader
+   ========================================================= */
+/* Manual Observation: compact Apply button, centered and consistent with controls. */
+.manual-time-grid.manual-single{
+  grid-template-columns:minmax(260px,1fr) 120px!important;
+  align-items:center!important;
+}
+.manual-time-grid.manual-single>#applyManualTime{
+  width:120px!important;
+  min-width:120px!important;
+  max-width:120px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:9px 12px!important;
+  margin:0 auto!important;
+  align-self:center!important;
+  justify-self:center!important;
+  border-radius:10px!important;
+  box-shadow:0 4px 12px rgba(10,25,47,.08)!important;
+}
+
+/* Pure-white, minimal refresh/session screen. No title, no card, no blue background. */
+body.auth-booting::before{display:none!important;content:none!important}
+body.auth-booting .session-loader{
+  position:fixed!important;
+  inset:0!important;
+  z-index:9999!important;
+  display:grid!important;
+  place-items:center!important;
+  background:#fff!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.session-loader-card{
+  width:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.session-loader-orbit{
+  position:relative!important;
+  width:112px!important;
+  height:112px!important;
+  display:grid!important;
+  place-items:center!important;
+}
+.session-loader-logo{
+  position:absolute!important;
+  z-index:2!important;
+  width:78px!important;
+  height:78px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 5px 12px rgba(10,25,47,.12))!important;
+}
+.session-loader-orbit-dots{
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  animation:sessionOrbit 1.7s linear infinite!important;
+}
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  width:8px!important;
+  height:8px!important;
+  border-radius:50%!important;
+  background:#FFD100!important;
+  box-shadow:0 2px 8px rgba(212,175,55,.28)!important;
+}
+.session-loader-orbit-dots span:nth-child(1){top:5px!important;left:calc(50% - 4px)!important}
+.session-loader-orbit-dots span:nth-child(2){right:10px!important;bottom:20px!important}
+.session-loader-orbit-dots span:nth-child(3){left:10px!important;bottom:20px!important}
+@keyframes sessionOrbit{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+.session-loader-title,.session-loader-dots{display:none!important}
+@media(max-width:760px){
+  .manual-time-grid.manual-single{grid-template-columns:1fr!important}
+  .manual-time-grid.manual-single>#applyManualTime{
+    width:120px!important;
+    min-width:120px!important;
+    max-width:120px!important;
+    margin:0 auto!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important}
+}
+
+/* =========================================================
+   V4.5.4 — Proportional UI & 6-Dot Loader Refinement
+   Balanced dimensions, symmetric rhythm and centered controls.
+   ========================================================= */
+
+/* Global visual rhythm: avoid oversized cards while keeping comfortable breathing room. */
+:root{
+  --ui-card-radius:14px;
+  --ui-card-pad:20px;
+  --ui-grid-gap:16px;
+  --ui-section-gap:22px;
+}
+
+.content{
+  padding:26px 30px 34px!important;
+  max-width:1440px!important;
+}
+.grid{gap:var(--ui-grid-gap)!important}
+.section{margin-top:var(--ui-section-gap)!important}
+.card,
+.dashboard-filter,
+.chart-card,
+.classify-card,
+.video-card,
+.tskk-table-card,
+.tskk-chart-card{
+  border-radius:var(--ui-card-radius)!important;
+}
+.card{padding:var(--ui-card-pad)!important}
+.dashboard-filter{padding:20px 22px!important}
+.chart-card{padding:20px!important}
+.classify-card,.video-card{padding:20px!important}
+
+/* Dashboard: four KPI cards stay compact and visually balanced. */
+.dashboard-kpis{gap:16px!important}
+.dashboard-kpis>.kpi{
+  min-height:132px!important;
+  padding:20px!important;
+  border-left-width:4px!important;
+}
+.kpi .label{font-size:10.5px!important}
+.kpi .value{font-size:26px!important;line-height:1.15!important;margin-top:7px!important}
+.kpi .sub{font-size:11.5px!important;line-height:1.4!important;margin-top:5px!important}
+
+/* Dashboard filter: symmetric fields and a compact centered action. */
+.dashboard-filter-controls{gap:16px!important}
+.dashboard-filter-grid{gap:14px!important}
+.dashboard-filter-actions{min-width:126px!important;align-items:center!important;justify-content:center!important}
+.dashboard-filter-actions .btn{
+  width:126px!important;
+  min-width:126px!important;
+  min-height:42px!important;
+  height:42px!important;
+  padding:9px 12px!important;
+  margin:0 auto!important;
+  border-radius:10px!important;
+}
+
+/* Forms: consistent field height and alignment. */
+input,select,textarea{
+  min-height:40px;
+  padding:9px 10px!important;
+  border-radius:9px!important;
+}
+textarea{min-height:84px}
+.form-grid{gap:14px!important}
+label{gap:6px!important}
+
+/* Tables: proportional rows, centered numeric columns and consistent header height. */
+.table-wrap{border-radius:10px!important}
+.data-table{font-size:12.5px!important}
+.data-table th,
+.data-table td{
+  padding:10px 12px!important;
+  line-height:1.3!important;
+  vertical-align:middle!important;
+}
+.data-table th{text-align:left!important}
+.data-table td.num,
+.data-table th.num,
+.data-table td:nth-child(n+2):has(.tskk-readonly-number){text-align:center!important}
+.data-table tbody tr{height:40px}
+
+/* Command Center: more breathing room and symmetric menu cards. */
+.sidebar{
+  width:min(1160px,calc(100vw - 72px))!important;
+  height:min(720px,calc(100vh - 72px))!important;
+  padding:22px!important;
+  border-radius:22px!important;
+}
+.menu-panel-head{padding-bottom:16px!important;margin-bottom:16px!important}
+.menu-panel-head h2{font-size:21px!important}
+.sidebar nav{gap:9px!important;padding-bottom:12px!important}
+.sidebar nav button,
+.sidebar nav .import-btn{
+  min-height:52px!important;
+  padding:11px 14px!important;
+  border-radius:12px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.nav-label{margin:7px 4px 1px!important}
+.menu-panel-foot{
+  min-height:50px!important;
+  margin-top:8px!important;
+  padding:10px 2px 0!important;
+}
+.menu-panel-foot .btn,
+.menu-panel-foot #menuLogout{
+  min-height:36px!important;
+  height:36px!important;
+  padding:7px 12px!important;
+  border-radius:9px!important;
+}
+.menu-panel-head .menu-close{
+  width:38px!important;
+  min-width:38px!important;
+  max-width:38px!important;
+  height:38px!important;
+  min-height:38px!important;
+  border-radius:9px!important;
+  font-size:20px!important;
+}
+
+/* Manual Observation Apply: same visual weight as adjacent controls, centered. */
+.manual-time-grid.manual-single{
+  grid-template-columns:minmax(0,1fr) 116px!important;
+  gap:14px!important;
+  align-items:center!important;
+}
+.manual-time-grid.manual-single>#applyManualTime{
+  width:116px!important;
+  min-width:116px!important;
+  max-width:116px!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:8px 11px!important;
+  margin:0 auto!important;
+  justify-self:center!important;
+  align-self:center!important;
+  border-radius:9px!important;
+  font-size:12px!important;
+}
+
+/* Six-dot UT loader orbit: evenly spaced around the circular logo. */
+.session-loader-orbit{width:118px!important;height:118px!important}
+.session-loader-logo{width:76px!important;height:76px!important}
+.session-loader-orbit-dots{inset:0!important}
+.session-loader-orbit-dots span{
+  width:7px!important;
+  height:7px!important;
+  left:auto!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:auto!important;
+  transform-origin:59px 59px!important;
+}
+.session-loader-orbit-dots span:nth-child(1){top:4px!important;left:calc(50% - 3.5px)!important}
+.session-loader-orbit-dots span:nth-child(2){top:29px!important;right:11px!important}
+.session-loader-orbit-dots span:nth-child(3){bottom:29px!important;right:11px!important}
+.session-loader-orbit-dots span:nth-child(4){bottom:4px!important;left:calc(50% - 3.5px)!important}
+.session-loader-orbit-dots span:nth-child(5){bottom:29px!important;left:11px!important}
+.session-loader-orbit-dots span:nth-child(6){top:29px!important;left:11px!important}
+
+/* Symmetric desktop/tablet spacing. */
+@media(max-width:1200px){
+  .content{padding:24px 26px 32px!important}
+  .dashboard-kpis{gap:14px!important}
+}
+@media(max-width:900px){
+  .content{padding:20px 20px 28px!important}
+  .card{padding:18px!important}
+  .dashboard-filter{padding:18px!important}
+  .dashboard-kpis>.kpi{min-height:124px!important;padding:18px!important}
+  .dashboard-filter-actions{width:100%!important;min-width:0!important}
+  .dashboard-filter-actions .btn{width:126px!important;min-width:126px!important}
+  .sidebar{width:min(92vw,760px)!important;height:min(720px,calc(100vh - 40px))!important;padding:20px!important}
+}
+@media(max-width:760px){
+  .content{padding:16px 14px 24px!important}
+  .grid{gap:14px!important}
+  .section{margin-top:18px!important}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:16px!important;border-radius:12px!important}
+  .dashboard-kpis{gap:12px!important}
+  .dashboard-kpis>.kpi{min-height:116px!important;padding:16px!important}
+  .kpi .value{font-size:24px!important}
+  .data-table th,.data-table td{padding:9px 10px!important}
+  .sidebar{width:min(94vw,420px)!important;height:calc(100vh - 28px)!important;padding:16px!important;border-radius:18px!important}
+  .sidebar nav{grid-template-columns:1fr!important;gap:8px!important}
+  .sidebar nav button,.sidebar nav .import-btn{min-height:46px!important}
+  .menu-panel-foot{padding-top:9px!important}
+  .manual-time-grid.manual-single{grid-template-columns:1fr!important}
+  .manual-time-grid.manual-single>#applyManualTime{width:116px!important;min-width:116px!important;max-width:116px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important}
+}
+
+/* =========================================================
+   V4.5.5 — Final Alignment / Six-Dot / Rating Table Cleanup
+   ========================================================= */
+.ut-topbar{display:flex!important;align-items:center!important;gap:14px!important;}
+.ut-header-logo-1{flex:0 0 52px!important;width:52px!important;height:52px!important;display:grid!important;place-items:center!important;margin:0!important;}
+.ut-header-logo-1 img{display:block!important;width:48px!important;height:48px!important;object-fit:contain!important;}
+.ut-header-logo-2 img{box-shadow:none!important;}
+
+.manual-time-grid.manual-single{display:block!important;max-width:700px!important;}
+.manual-time-grid.manual-single>label{display:block!important;min-width:0!important;}
+.manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 92px 116px!important;gap:8px!important;align-items:stretch!important;}
+.manual-time-grid.manual-single .time-input-row input,
+.manual-time-grid.manual-single .time-input-row select,
+.manual-time-grid.manual-single .time-input-row #applyManualTime{height:42px!important;min-height:42px!important;box-sizing:border-box!important;}
+.manual-time-grid.manual-single .time-input-row #applyManualTime{width:116px!important;min-width:116px!important;max-width:116px!important;margin:0!important;padding:8px 12px!important;justify-self:center!important;align-self:stretch!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:9px!important;}
+
+/* Rating Factor: continuous separators; the RF column has no broken blank cell. */
+.rating-table-wrap{overflow-x:auto!important;overflow-y:hidden!important;}
+.rating-table{border-collapse:separate!important;border-spacing:0!important;}
+.rating-table tbody tr{background:#fff!important;}
+.rating-table tbody td{border-bottom:1px solid #E2E8F0!important;border-top:0!important;vertical-align:middle!important;}
+.rating-table tbody tr:last-child td{border-bottom:0!important;}
+.rating-table td.rf-result{display:table-cell!important;width:118px!important;min-width:118px!important;padding-left:12px!important;padding-right:12px!important;text-align:center!important;vertical-align:middle!important;white-space:nowrap!important;color:#0A192F!important;font-weight:800!important;border-left:1px solid #E2E8F0!important;border-right:1px solid #E2E8F0!important;}
+.rating-table th:nth-child(7),.rating-table td:nth-child(7){min-width:118px!important;width:118px!important;text-align:center!important;}
+.rating-table th:nth-child(7){border-left:1px solid rgba(255,255,255,.10)!important;border-right:1px solid rgba(255,255,255,.10)!important;}
+
+.ut-footer-motto img{width:min(28vw,300px)!important;min-width:0!important;max-width:300px!important;height:auto!important;max-height:42px!important;object-fit:contain!important;}
+
+/* Exactly six evenly spaced dots around the UT logo. */
+.session-loader-orbit{width:122px!important;height:122px!important;}
+.session-loader-logo{width:76px!important;height:76px!important;z-index:2!important;}
+.session-loader-orbit-dots{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;animation:sessionOrbit 1.65s linear infinite!important;}
+.session-loader-orbit-dots span{position:absolute!important;top:50%!important;left:50%!important;width:8px!important;height:8px!important;margin:-4px!important;border-radius:50%!important;background:#FFD100!important;box-shadow:0 2px 8px rgba(212,175,55,.28)!important;}
+.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-55px)!important;}
+.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-55px)!important;}
+.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-55px)!important;}
+.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-55px)!important;}
+.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-55px)!important;}
+.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-55px)!important;}
+@keyframes sessionOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+@media(max-width:760px){
+ .ut-header-logo-1{flex-basis:42px!important;width:42px!important;height:42px!important}.ut-header-logo-1 img{width:40px!important;height:40px!important}
+ .manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 82px 110px!important}.manual-time-grid.manual-single .time-input-row #applyManualTime{width:110px!important;min-width:110px!important;max-width:110px!important}
+ .ut-footer-motto img{width:min(42vw,230px)!important;max-height:38px!important}
+}
+@media(max-width:520px){
+ .manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 82px!important}.manual-time-grid.manual-single .time-input-row #applyManualTime{grid-column:1/-1!important;width:110px!important;min-width:110px!important;max-width:110px!important;justify-self:center!important}
+}
+@media(prefers-reduced-motion:reduce){.session-loader-orbit-dots{animation:none!important;}}
+
+
+/* =========================================================
+   V4.5.6 — Final Visual QA / Rating Grid / Header Branding
+   ========================================================= */
+.ut-header-logo-1{
+  text-decoration:none!important;
+  cursor:pointer!important;
+}
+.ut-header-logo-1:focus-visible{
+  outline:2px solid #FFD100!important;
+  outline-offset:3px!important;
+  border-radius:8px!important;
+}
+
+/* Rating Factor: every column owns the same separator; no broken vertical gaps. */
+.rating-table{
+  width:100%!important;
+  border-collapse:collapse!important;
+  border-spacing:0!important;
+  table-layout:auto!important;
+}
+.rating-table th,
+.rating-table td{
+  border-right:1px solid #E2E8F0!important;
+  border-left:0!important;
+  box-sizing:border-box!important;
+}
+.rating-table th:last-child,
+.rating-table td:last-child{border-right:0!important;}
+.rating-table th:nth-child(1),.rating-table td:nth-child(1){min-width:120px!important;}
+.rating-table th:nth-child(2),.rating-table td:nth-child(2){min-width:180px!important;}
+.rating-table th:nth-child(3),.rating-table td:nth-child(3),
+.rating-table th:nth-child(4),.rating-table td:nth-child(4),
+.rating-table th:nth-child(5),.rating-table td:nth-child(5),
+.rating-table th:nth-child(6),.rating-table td:nth-child(6){min-width:94px!important;text-align:center!important;}
+.rating-table th:nth-child(7),.rating-table td:nth-child(7){min-width:125px!important;width:125px!important;text-align:center!important;}
+.rating-table th:nth-child(8),.rating-table td:nth-child(8){min-width:82px!important;text-align:center!important;}
+.rating-table td.rf-result{
+  width:125px!important;min-width:125px!important;
+  border-left:0!important;border-right:1px solid #E2E8F0!important;
+  text-align:center!important;
+}
+.rating-table tbody tr:last-child td{border-bottom:1px solid #E2E8F0!important;}
+.rating-table tbody tr:last-child td:first-child{border-bottom-left-radius:0!important;}
+.rating-table tbody tr:last-child td:last-child{border-bottom-right-radius:0!important;}
+
+/* Six dots: fixed six-point orbit, no accidental gaps or overlapping transforms. */
+.session-loader-orbit{width:132px!important;height:132px!important;position:relative!important;}
+.session-loader-logo{width:78px!important;height:78px!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;}
+.session-loader-orbit-dots{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  animation:sessionOrbit 1.7s linear infinite!important;
+}
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  width:8px!important;height:8px!important;margin:0!important;
+  left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;
+  transform:none!important;
+  border-radius:50%!important;background:#FFD100!important;
+}
+.session-loader-orbit-dots span:nth-child(1){left:calc(50% - 4px)!important;top:2px!important;}
+.session-loader-orbit-dots span:nth-child(2){right:12px!important;top:calc(25% - 2px)!important;}
+.session-loader-orbit-dots span:nth-child(3){right:12px!important;bottom:calc(25% - 2px)!important;}
+.session-loader-orbit-dots span:nth-child(4){left:calc(50% - 4px)!important;bottom:2px!important;}
+.session-loader-orbit-dots span:nth-child(5){left:12px!important;bottom:calc(25% - 2px)!important;}
+.session-loader-orbit-dots span:nth-child(6){left:12px!important;top:calc(25% - 2px)!important;}
+
+/* Header/footer branding: restrained and visually balanced. */
+.ut-header-logo-1 img{width:44px!important;height:44px!important;object-fit:contain!important;}
+.ut-header-logo-2{width:min(25vw,300px)!important;padding-left:10px!important;}
+.ut-header-logo-2 img{width:100%!important;max-width:300px!important;max-height:46px!important;object-fit:contain!important;}
+.ut-footer-motto img{width:min(22vw,250px)!important;max-width:250px!important;min-width:0!important;max-height:38px!important;object-fit:contain!important;}
+.menu-panel-foot{justify-content:flex-start!important;}
+
+@media(max-width:760px){
+  .ut-header-logo-1 img{width:38px!important;height:38px!important;}
+  .ut-header-logo-2{width:min(30vw,190px)!important;}
+  .ut-header-logo-2 img{max-height:36px!important;}
+  .ut-footer-motto img{width:min(42vw,210px)!important;max-height:34px!important;}
+}
+@media(max-width:480px){
+  .ut-header-logo-1{flex-basis:40px!important;width:40px!important;}
+  .ut-header-logo-1 img{width:36px!important;height:36px!important;}
+  .ut-header-logo-2{width:110px!important;}
+  .ut-header-logo-2 img{max-height:30px!important;}
+}
+@media(prefers-reduced-motion:reduce){.session-loader-orbit-dots{animation:none!important;}}
+
+/* =========================================================
+   V4.5.7 — Visual QA: Rating Grid / True 6-Point Loader / Compact Header
+   ========================================================= */
+
+/* Rating Factor: match the other table columns — no special vertical cage
+   around Rating Factor. Keep only the same horizontal row separators. */
+.rating-table{
+  border-collapse:collapse!important;
+  border-spacing:0!important;
+  table-layout:auto!important;
+}
+.rating-table th,
+.rating-table td{
+  border-left:0!important;
+  border-right:0!important;
+  border-top:0!important;
+  box-sizing:border-box!important;
+}
+.rating-table tbody td{
+  border-bottom:1px solid #E2E8F0!important;
+}
+.rating-table tbody tr:last-child td{
+  border-bottom:0!important;
+}
+.rating-table td.rf-result{
+  border-left:0!important;
+  border-right:0!important;
+  background:#fff!important;
+  text-align:center!important;
+}
+.rating-table th:nth-child(7),
+.rating-table td:nth-child(7){
+  border-left:0!important;
+  border-right:0!important;
+}
+
+/* Header: compact, balanced like the supplied reference. */
+.ut-topbar{
+  height:74px!important;
+  min-height:74px!important;
+  padding:7px 16px 7px 30px!important;
+  gap:14px!important;
+  border-bottom:2px solid var(--ut-yellow,#FFD100)!important;
+}
+.ut-header-logo-1{
+  flex:0 0 48px!important;
+  width:48px!important;
+  height:48px!important;
+}
+.ut-header-logo-1 img{
+  width:46px!important;
+  height:46px!important;
+}
+.page-heading{
+  min-width:0!important;
+  line-height:1!important;
+}
+.page-heading .eyebrow{
+  margin:0 0 3px!important;
+  font-size:9px!important;
+  line-height:1.1!important;
+  letter-spacing:1.25px!important;
+}
+.page-heading h1{
+  margin:0!important;
+  font-size:23px!important;
+  line-height:1.05!important;
+  letter-spacing:.15px!important;
+}
+.ut-header-actions{
+  margin-left:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.ut-header-logo-2{
+  width:min(25vw,260px)!important;
+  padding-left:0!important;
+}
+.ut-header-logo-2 img{
+  max-width:260px!important;
+  max-height:40px!important;
+}
+.sidebar-toggle{
+  width:46px!important;
+  height:46px!important;
+  border-radius:12px!important;
+}
+
+/* True mathematical six-point orbit. Every dot is anchored from the exact
+   center at 60-degree intervals, so there can be no missing/random point. */
+.session-loader-orbit{
+  width:132px!important;
+  height:132px!important;
+  position:relative!important;
+}
+.session-loader-logo{
+  width:78px!important;
+  height:78px!important;
+  left:50%!important;
+  top:50%!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:3!important;
+}
+.session-loader-orbit-dots{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  z-index:2!important;
+  animation:sessionOrbit 1.7s linear infinite!important;
+}
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:8px!important;
+  height:8px!important;
+  margin:-4px!important;
+  border-radius:50%!important;
+  background:#FFD100!important;
+  box-shadow:0 2px 8px rgba(212,175,55,.28)!important;
+  transform-origin:center!important;
+}
+.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-57px)!important;}
+.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-57px)!important;}
+.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-57px)!important;}
+.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-57px)!important;}
+.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-57px)!important;}
+.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-57px)!important;}
+
+@media(max-width:760px){
+  .ut-topbar{
+    height:66px!important;
+    min-height:66px!important;
+    padding:6px 12px 6px 14px!important;
+    gap:9px!important;
+  }
+  .ut-header-logo-1{
+    flex-basis:40px!important;
+    width:40px!important;
+    height:40px!important;
+  }
+  .ut-header-logo-1 img{width:38px!important;height:38px!important;}
+  .page-heading .eyebrow{font-size:8px!important;letter-spacing:1px!important;}
+  .page-heading h1{font-size:19px!important;}
+  .ut-header-actions{gap:7px!important;}
+  .ut-header-logo-2{width:min(30vw,180px)!important;}
+  .ut-header-logo-2 img{max-height:31px!important;}
+  .sidebar-toggle{width:40px!important;height:40px!important;border-radius:10px!important;}
+}
+@media(max-width:480px){
+  .ut-topbar{padding-left:10px!important;padding-right:10px!important;}
+  .ut-header-logo-2{width:105px!important;}
+  .ut-header-logo-2 img{max-height:28px!important;}
+  .page-heading .eyebrow{font-size:7.5px!important;}
+  .page-heading h1{font-size:17px!important;}
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important;}
+}
+
+
+/* V4.5.8 — Loader: 7-dot tight orbit around the round UT logo.
+   Seven dots are mathematically spaced at 360/7 degrees and sit directly
+   against the logo edge. The ring rotates as one unit; the logo stays still. */
+.session-loader-orbit{
+  width:112px!important;
+  height:112px!important;
+  position:relative!important;
+  overflow:visible!important;
+}
+.session-loader-logo{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:78px!important;
+  height:78px!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:3!important;
+}
+.session-loader-orbit-dots{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  z-index:4!important;
+  animation:sessionOrbit 1.25s linear infinite!important;
+  transform-origin:50% 50%!important;
+}
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:8px!important;
+  height:8px!important;
+  margin:-4px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#FFD100!important;
+  box-shadow:0 1px 5px rgba(212,175,55,.24)!important;
+  transform-origin:50% 50%!important;
+}
+.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(2){transform:rotate(51.428571deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(3){transform:rotate(102.857143deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(4){transform:rotate(154.285714deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(5){transform:rotate(205.714286deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(6){transform:rotate(257.142857deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(7){transform:rotate(308.571429deg) translateY(-43px)!important;}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important;}
+}
+
+
+/* V4.5.9 — Loader: 4-dot true circular orbit around UT logo */
+.session-loader-orbit{
+  width:132px!important;
+  height:132px!important;
+  position:relative!important;
+  display:block!important;
+}
+.session-loader-logo{
+  width:78px!important;
+  height:78px!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:2!important;
+}
+.session-loader-orbit-dots{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  animation:sessionOrbit 1.35s linear infinite!important;
+  transform-origin:50% 50%!important;
+  z-index:3!important;
+}
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:8px!important;
+  height:8px!important;
+  margin:-4px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#FFD100!important;
+  box-shadow:none!important;
+  transform-origin:50% 50%!important;
+}
+.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(2){transform:rotate(90deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(3){transform:rotate(180deg) translateY(-43px)!important;}
+.session-loader-orbit-dots span:nth-child(4){transform:rotate(270deg) translateY(-43px)!important;}
+@media (prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important;}
+}
+
+
+/* V4.5.10 — Loader: true 4-dot orbit, SVG geometry
+   One circular path, four equally spaced dots, logo fixed at center. */
+.session-loader-orbit{
+  width:132px!important;
+  height:132px!important;
+  position:relative!important;
+  overflow:visible!important;
+}
+.session-loader-logo{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:78px!important;
+  height:78px!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:2!important;
+}
+.session-loader-orbit-dots{
+  position:absolute!important;
+  inset:0!important;
+  width:132px!important;
+  height:132px!important;
+  margin:0!important;
+  padding:0!important;
+  z-index:3!important;
+  animation:sessionOrbitTrue 1.35s linear infinite!important;
+  transform-origin:66px 66px!important;
+}
+.session-loader-orbit-svg{
+  display:block!important;
+  width:132px!important;
+  height:132px!important;
+  overflow:visible!important;
+}
+.session-loader-orbit-ring{
+  transform-origin:66px 66px;
+}
+.session-loader-orbit-ring circle{
+  fill:#FFD100!important;
+  stroke:none!important;
+}
+@keyframes sessionOrbitTrue{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important;}
+}
+
+/* V4.5.11 — Restore Command Center logout only */
+.menu-panel-foot{
+  justify-content:space-between!important;
+  align-items:center!important;
+}
+.menu-panel-foot .menu-logout{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  min-height:36px!important;
+  height:36px!important;
+  padding:7px 12px!important;
+  border:0!important;
+  border-radius:9px!important;
+  background:#DC2626!important;
+  color:#fff!important;
+  font:800 12px/1 Inter,system-ui,sans-serif!important;
+  cursor:pointer!important;
+  box-shadow:0 5px 12px rgba(220,38,38,.18)!important;
+}
+.menu-panel-foot .menu-logout span{font-size:16px!important;line-height:1!important;}
+.menu-panel-foot .menu-logout:hover{background:#B91C1C!important;transform:translateY(-1px);}
+.menu-panel-foot .menu-logout:active{transform:translateY(0);}
+@media(max-width:760px){
+  .menu-panel-foot .menu-logout{min-height:36px!important;height:36px!important;padding:7px 11px!important;}
+}
+
+/* V4.5.12 — Clean White Authentication Layout */
+.login-screen{
+  background:#fff!important;
+  color:#111827!important;
+}
+.login-panel{
+  min-height:100vh!important;
+  min-height:100dvh!important;
+  padding:28px 18px!important;
+  background:#fff!important;
+}
+.login-card{
+  width:100%!important;
+  max-width:430px!important;
+  background:#fff!important;
+  border:1px solid #E2E8F0!important;
+  border-radius:18px!important;
+  padding:34px 32px 28px!important;
+  box-shadow:0 14px 40px rgba(15,23,42,.10)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.login-badge{
+  width:116px!important;
+  height:auto!important;
+  max-height:116px!important;
+  object-fit:contain!important;
+  margin:0 auto 20px!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.login-card h1{
+  color:#0A192F!important;
+  font-size:25px!important;
+  line-height:1.2!important;
+  margin:0!important;
+  letter-spacing:-.2px!important;
+  font-weight:800!important;
+}
+.auth-subtitle{
+  color:#64748B!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+  margin:7px 0 22px!important;
+}
+.login-card form{gap:14px!important}
+.login-card label{color:#334155!important}
+.login-card input{
+  background:#fff!important;
+  border:1px solid #CBD5E1!important;
+  color:#111827!important;
+  border-radius:9px!important;
+}
+.login-card input::placeholder{color:#94A3B8!important}
+.login-card input:focus{outline:2px solid rgba(255,209,0,.25)!important;border-color:#D4AF37!important}
+.login-switch{
+  background:#F8FAFC!important;
+  border:1px solid #E2E8F0!important;
+}
+.login-link{color:#64748B!important}
+.login-link.active{color:#0A192F!important}
+.login-error{color:#B91C1C!important}
+@media(max-width:600px){
+  .login-panel{padding:20px 14px!important}
+  .login-card{max-width:420px!important;padding:28px 20px 24px!important}
+  .login-badge{width:96px!important;max-height:96px!important;margin-bottom:17px!important}
+  .login-card h1{font-size:22px!important}
+}
+
+/* V4.5.14 — Login building background with dedicated right-side login space */
+.login-screen{
+  background-color:#fff!important;
+  background-image:url('login-building-bg.webp')!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+  background-position:center center!important;
+}
+.login-panel{
+  min-height:100vh!important;
+  min-height:100dvh!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  padding:28px clamp(28px,7vw,110px) 28px 28px!important;
+  background:transparent!important;
+}
+.login-card{
+  width:min(430px,100%)!important;
+  max-width:430px!important;
+  margin:0!important;
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid rgba(226,232,240,.95)!important;
+  border-radius:18px!important;
+  padding:34px 32px 28px!important;
+  box-shadow:0 18px 50px rgba(15,23,42,.12)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+}
+.login-badge{
+  width:112px!important;
+  max-height:112px!important;
+  margin:0 auto 18px!important;
+}
+.login-card h1{font-size:25px!important;line-height:1.2!important}
+.auth-subtitle{margin:7px 0 22px!important}
+@media(max-width:900px){
+  .login-panel{padding-right:34px!important}
+}
+@media(max-width:700px){
+  .login-screen{
+    background-size:auto 100%!important;
+    background-position:left center!important;
+  }
+  .login-panel{
+    justify-content:center!important;
+    padding:22px 14px!important;
+    background:rgba(255,255,255,.10)!important;
+  }
+  .login-card{
+    max-width:430px!important;
+    padding:28px 20px 24px!important;
+    background:rgba(255,255,255,.97)!important;
+  }
+  .login-badge{width:96px!important;max-height:96px!important;margin-bottom:17px!important}
+  .login-card h1{font-size:22px!important}
+}
+
+/* V4.5.15 — Tighten authentication heading spacing */
+.login-card h1{
+  margin:0!important;
+  line-height:1.15!important;
+}
+.auth-subtitle{
+  margin:3px 0 16px!important;
+  line-height:1.35!important;
+}
+@media(max-width:700px){
+  .login-card h1{line-height:1.15!important}
+  .auth-subtitle{margin:3px 0 15px!important;line-height:1.35!important}
+}
+
+/* =========================================================
+   V4.5.16 — Layout & Chart Polish / Responsive QA
+   Scope: spacing, alignment, chart readability, overflow and
+   responsive behavior. No application/data logic changed.
+   ========================================================= */
+
+/* ---------- Global rhythm ---------- */
+html{scroll-behavior:smooth;}
+html,body{max-width:100%;overflow-x:hidden;}
+body{line-height:1.45;}
+.main{min-width:0;overflow-x:clip;}
+#app{min-width:0;}
+.content{
+  width:100%!important;
+  max-width:1480px!important;
+  margin:0 auto!important;
+  padding:26px 32px 42px!important;
+}
+.grid{gap:18px!important;}
+.section{margin-top:22px!important;}
+.card,
+.dashboard-filter,
+.chart-card,
+.classify-card,
+.video-card,
+.tskk-table-card,
+.tskk-chart-card{
+  min-width:0!important;
+}
+.card h3,.chart-card h3{
+  margin:0 0 16px!important;
+  line-height:1.25!important;
+}
+.muted{line-height:1.45!important;}
+
+/* ---------- Dashboard filter ---------- */
+.dashboard-filter{
+  padding:20px 22px!important;
+  margin-bottom:0!important;
+}
+.dashboard-filter-controls{
+  gap:16px!important;
+  align-items:end!important;
+}
+.dashboard-filter-grid{
+  gap:14px!important;
+  min-width:0!important;
+}
+.dashboard-filter-actions{
+  min-width:126px!important;
+}
+.dashboard-filter-actions .btn{
+  height:42px!important;
+  min-height:42px!important;
+}
+
+/* ---------- KPI rhythm ---------- */
+.dashboard-kpis{
+  gap:18px!important;
+  align-items:stretch!important;
+}
+.dashboard-kpis>.kpi{
+  min-width:0!important;
+  min-height:136px!important;
+  padding:20px 20px 18px!important;
+}
+.dashboard-kpis>.kpi .value{
+  overflow-wrap:anywhere;
+}
+.dashboard-kpis>.kpi .sub{
+  max-width:100%;
+}
+
+/* ---------- Time Classification chart ---------- */
+.chart-card{
+  padding:20px!important;
+  overflow:hidden!important;
+}
+.chart-card .pie-chart-wrap{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:minmax(210px,.85fr) minmax(260px,1.15fr)!important;
+  gap:26px!important;
+  align-items:center!important;
+  padding:8px 4px 18px!important;
+}
+.chart-card .pie-chart{
+  width:min(100%,250px)!important;
+  height:auto!important;
+  justify-self:center!important;
+}
+.chart-card .chart-legend{
+  width:100%!important;
+  min-width:0!important;
+  display:grid!important;
+  gap:0!important;
+}
+.chart-card .chart-legend-item{
+  min-height:42px!important;
+  padding:9px 0!important;
+  border-bottom:1px solid #edf0f4!important;
+}
+.chart-card .chart-legend-item:last-child{border-bottom:0!important;}
+.chart-card .chart-legend-label{
+  min-width:0!important;
+}
+.chart-card .chart-legend-label span{
+  line-height:1.3!important;
+}
+.chart-card .chart-legend-metrics{
+  gap:12px!important;
+}
+
+/* Keep the detail table visually separated from the graphic. */
+.chart-card .compact-table{
+  margin-top:4px!important;
+  border-top:1px solid #eef2f6!important;
+  padding-top:8px!important;
+}
+
+/* ---------- Pareto chart ---------- */
+.pareto-card{min-width:0!important;}
+.pareto-chart{
+  width:100%!important;
+  height:320px!important;
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr)!important;
+  gap:10px!important;
+  padding:14px 4px 0!important;
+  min-width:0!important;
+}
+.pareto-scale{
+  padding-bottom:44px!important;
+  font-size:10px!important;
+}
+.pareto-bars{
+  min-width:0!important;
+  gap:16px!important;
+  padding:0 10px 0 8px!important;
+}
+.pareto-item{
+  min-width:0!important;
+  grid-template-rows:minmax(0,1fr) 44px!important;
+}
+.pareto-bar{
+  width:min(48px,72%)!important;
+}
+.pareto-bar b{
+  max-width:90px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.pareto-item>small{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:normal!important;
+  text-align:center!important;
+  line-height:1.2!important;
+}
+.chart-note{
+  margin:6px 0 14px!important;
+  line-height:1.45!important;
+}
+.pareto-table-block{
+  margin-top:12px!important;
+  padding-top:14px!important;
+  border-top:1px solid #edf0f4!important;
+}
+.pareto-table-block .subtable-title{
+  margin:0 0 10px!important;
+}
+
+/* ---------- Generic waste chart ---------- */
+.chart-row{
+  width:100%!important;
+  min-width:0!important;
+  gap:14px!important;
+  margin:12px 0!important;
+  align-items:center!important;
+}
+.chart-label{
+  flex:0 0 clamp(130px,24%,220px)!important;
+  width:auto!important;
+  min-width:0!important;
+}
+.chart-row .bar{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.chart-row .bar small{
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* ---------- TSKK / timeline ---------- */
+.tskk-chart-card,
+.tskk-table-card{
+  overflow:hidden!important;
+}
+.tskk-chart-scroll{
+  width:100%!important;
+  min-width:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.tskk-combination-chart{
+  margin:2px 0!important;
+}
+.tskk-kpis{
+  gap:16px!important;
+  margin:0 0 18px!important;
+}
+.tskk-table-card .table-wrap{
+  margin-top:4px!important;
+}
+.tskk-chart-card .section-head{
+  margin-bottom:14px!important;
+}
+
+/* ---------- Forms / toolbars ---------- */
+.form-grid,
+.form-grid.four{
+  column-gap:16px!important;
+  row-gap:16px!important;
+}
+.toolbar{
+  gap:10px!important;
+}
+.filters{
+  gap:12px!important;
+  margin-bottom:16px!important;
+}
+.filters select,.filters input{
+  min-width:160px!important;
+  max-width:260px!important;
+}
+.modal-actions{
+  gap:10px!important;
+}
+
+/* ---------- Tables ---------- */
+.table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.data-table{
+  min-width:100%!important;
+}
+.data-table th,.data-table td{
+  padding:10px 12px!important;
+}
+
+/* ---------- Command Center: predictable columns ---------- */
+.sidebar nav{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.sidebar nav .nav-label{
+  margin-top:10px!important;
+}
+.sidebar nav button,.sidebar nav .import-btn{
+  min-width:0!important;
+}
+.menu-panel-foot{
+  gap:12px!important;
+}
+.menu-panel-foot>span{
+  white-space:nowrap!important;
+}
+
+/* ---------- Tablet ---------- */
+@media(max-width:1100px){
+  .content{padding:24px 24px 36px!important;}
+  .dashboard-kpis{gap:14px!important;}
+  .chart-card .pie-chart-wrap{
+    grid-template-columns:minmax(180px,.8fr) minmax(230px,1.2fr)!important;
+    gap:18px!important;
+  }
+  .chart-card .pie-chart{max-width:220px!important;}
+  .pareto-bars{gap:12px!important;}
+  .sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media(max-width:900px){
+  .content{padding:20px 20px 32px!important;}
+  .grid{gap:16px!important;}
+  .section{margin-top:20px!important;}
+  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .dashboard-filter-controls{align-items:stretch!important;}
+  .dashboard-filter-actions{width:100%!important;}
+  .dashboard-filter-actions .btn{margin:0!important;}
+  .chart-card .pie-chart-wrap{
+    grid-template-columns:1fr!important;
+    gap:18px!important;
+    justify-items:center!important;
+  }
+  .chart-card .chart-legend{
+    width:100%!important;
+    max-width:560px!important;
+  }
+  .chart-card .pie-chart{max-width:230px!important;}
+  .pareto-chart{height:300px!important;}
+  .sidebar{
+    width:min(92vw,760px)!important;
+    height:min(720px,calc(100vh - 40px))!important;
+  }
+}
+
+/* ---------- Mobile ---------- */
+@media(max-width:760px){
+  .content{
+    padding:16px 14px 28px!important;
+  }
+  .grid{gap:14px!important;}
+  .section{margin-top:18px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,
+  .tskk-table-card,.tskk-chart-card{
+    padding:16px!important;
+    border-radius:13px!important;
+  }
+  .card h3,.chart-card h3{
+    margin-bottom:13px!important;
+    font-size:14px!important;
+  }
+
+  /* KPI: two columns on larger phones, one column on narrow phones. */
+  .dashboard-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  .dashboard-kpis>.kpi{
+    min-height:112px!important;
+    padding:15px!important;
+  }
+  .kpi .label{font-size:9.5px!important;}
+  .kpi .value{font-size:21px!important;}
+  .kpi .sub{font-size:10.5px!important;line-height:1.35!important;}
+
+  /* Classification legend remains readable instead of becoming tiny. */
+  .chart-card .pie-chart-wrap{
+    gap:14px!important;
+    padding:4px 0 12px!important;
+  }
+  .chart-card .pie-chart{width:min(100%,210px)!important;}
+  .chart-card .chart-legend{
+    max-width:none!important;
+  }
+  .chart-card .chart-legend-item{
+    min-height:40px!important;
+    padding:8px 0!important;
+    grid-template-columns:minmax(0,1fr) max-content!important;
+    gap:8px!important;
+  }
+  .chart-card .chart-legend-label{gap:8px!important;}
+  .chart-card .chart-legend-label span{
+    font-size:11px!important;
+    line-height:1.25!important;
+  }
+  .chart-card .chart-legend-metrics{
+    gap:8px!important;
+  }
+  .chart-card .chart-legend-metrics b{font-size:10.5px!important;}
+  .chart-card .chart-legend-metrics small{font-size:9.5px!important;}
+
+  /* Pareto gets enough horizontal breathing room without overflowing the card. */
+  .pareto-chart{
+    height:270px!important;
+    grid-template-columns:34px minmax(0,1fr)!important;
+    gap:7px!important;
+    padding:10px 0 0!important;
+  }
+  .pareto-scale{font-size:8px!important;padding-bottom:40px!important;}
+  .pareto-bars{
+    gap:7px!important;
+    padding:0 5px 0 4px!important;
+  }
+  .pareto-item{grid-template-rows:minmax(0,1fr) 40px!important;}
+  .pareto-bar{width:min(34px,70%)!important;}
+  .pareto-bar b{font-size:8.5px!important;max-width:58px!important;}
+  .pareto-item>small{font-size:8.5px!important;}
+  .chart-note{font-size:10px!important;}
+
+  /* Generic waste chart: prevent labels from crushing the bars. */
+  .chart-row{
+    gap:9px!important;
+    margin:10px 0!important;
+  }
+  .chart-label{
+    flex-basis:clamp(92px,31vw,145px)!important;
+    font-size:10.5px!important;
+  }
+  .chart-row .bar{height:22px!important;}
+  .chart-row .bar small{font-size:9px!important;}
+
+  /* TSKK remains horizontally scrollable where its chart/table genuinely needs width. */
+  .tskk-kpis{
+    gap:10px!important;
+    margin-bottom:14px!important;
+  }
+  .tskk-chart-card .section-head{
+    margin-bottom:10px!important;
+  }
+  .tskk-chart-scroll{
+    margin:0 -2px!important;
+    width:calc(100% + 4px)!important;
+  }
+
+  .filters{
+    gap:9px!important;
+    margin-bottom:12px!important;
+  }
+  .filters select,.filters input{
+    min-width:0!important;
+    max-width:none!important;
+    flex:1 1 100%!important;
+  }
+  .toolbar{gap:8px!important;}
+  .toolbar .btn{flex:0 1 auto!important;}
+
+  .table-wrap{
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+  .data-table th,.data-table td{
+    padding:9px 10px!important;
+  }
+
+  /* Command Center: one clean column on phones. */
+  .sidebar{
+    width:min(94vw,420px)!important;
+    height:calc(100vh - 28px)!important;
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+  .sidebar nav{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  .sidebar nav button,.sidebar nav .import-btn{
+    min-height:44px!important;
+  }
+  .menu-panel-head{margin-bottom:12px!important;padding-bottom:12px!important;}
+  .menu-panel-foot{
+    left:16px!important;
+    right:16px!important;
+    bottom:12px!important;
+  }
+}
+
+/* ---------- Narrow mobile ---------- */
+@media(max-width:520px){
+  .content{padding:14px 11px 24px!important;}
+  .grid{gap:12px!important;}
+  .section{margin-top:16px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,
+  .tskk-table-card,.tskk-chart-card{padding:14px!important;}
+  .dashboard-kpis{grid-template-columns:1fr!important;gap:10px!important;}
+  .dashboard-kpis>.kpi{min-height:100px!important;padding:14px!important;}
+  .kpi .value{font-size:20px!important;}
+  .chart-card .pie-chart{width:min(100%,190px)!important;}
+  .chart-card .chart-legend-item{
+    grid-template-columns:minmax(0,1fr) max-content!important;
+    gap:7px!important;
+  }
+  .chart-card .chart-legend-label span{font-size:10.5px!important;}
+  .chart-card .chart-legend-metrics{
+    grid-template-columns:max-content max-content!important;
+    gap:6px!important;
+  }
+  .pareto-chart{height:250px!important;}
+  .pareto-bars{gap:5px!important;}
+  .pareto-item{grid-template-rows:minmax(0,1fr) 42px!important;}
+  .pareto-bar{width:min(29px,68%)!important;}
+  .pareto-item>small{font-size:8px!important;}
+  .chart-row{gap:7px!important;}
+  .chart-label{
+    flex-basis:92px!important;
+    font-size:9.5px!important;
+  }
+  .chart-row .bar{height:20px!important;}
+  .chart-row .bar small{font-size:8.5px!important;}
+  .menu-panel-foot>span{font-size:8px!important;letter-spacing:1.2px!important;}
+}
+
+/* Respect reduced-motion preferences globally for UI transitions. */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important;}
+}

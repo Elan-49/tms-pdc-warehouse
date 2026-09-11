@@ -1,12 +1,28 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TMS PDC Warehouse</title>
-  <link rel="icon" type="image/png" href="./ut-logo-bulat.png"><link rel="stylesheet" href="styles.css"></head><body class="auth-booting">
+  <link rel="icon" type="image/png" href="./ut-logo-bulat.png"><link rel="stylesheet" href="styles.css"></head><body class="auth-booting"><div class="session-loader" id="sessionLoader" aria-live="polite" aria-label="Memuat sesi">
+  <div class="session-loader-card">
+    <div class="session-loader-orbit" aria-hidden="true">
+      <div class="session-loader-orbit-dots" aria-hidden="true">
+        <svg class="session-loader-orbit-svg" viewBox="0 0 132 132" focusable="false">
+          <g class="session-loader-orbit-ring">
+            <circle cx="66" cy="23" r="4"></circle>
+            <circle cx="109" cy="66" r="4"></circle>
+            <circle cx="66" cy="109" r="4"></circle>
+            <circle cx="23" cy="66" r="4"></circle>
+          </g>
+        </svg>
+      </div>
+      <img src="ut-logo-bulat.png" alt="United Tractors" class="session-loader-logo">
+    </div>
+  </div>
+</div>
+
 <div class="login-screen" id="loginScreen">
-  <div class="login-bg"><img src="login-hero.jpg" alt="Gedung United Tractors"></div>
-  <div class="login-bg-gradient" aria-hidden="true"></div>
-  <div class="login-panel">
+    <div class="login-panel">
     <div class="login-card">
-      <img class="login-badge" src="ut-logo-bulat.png" alt="United Tractors">
-      <h1>TMS PDC WAREHOUSE</h1>
+      <img class="login-badge" src="ut-logo-2.png" alt="United Tractors">
+      <h1 id="authTitle">Selamat Datang</h1>
+      <p class="auth-subtitle" id="authSubtitle">Silahkan masuk</p>
       <form id="loginForm">
         <label>Email / Nama Pengguna<input id="loginUser" type="text" autocomplete="username" placeholder="cth. nama Anda" required></label>
         <label>Password / Passcode<input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" required></label>
@@ -27,8 +43,10 @@
     </div>
   </div>
 </div>
-<div class="app-shell hidden" id="appShell"><div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div><aside class="sidebar" id="sidebar"><a class="brand brand-logo" href="#" data-go="dashboard" aria-label="Kembali ke Dashboard"><img src="ut-logo.png" alt="United Tractors"></a><nav id="nav"><button data-view="dashboard" class="active">Dashboard</button><button data-view="observe">Observation</button><button data-view="data">Data Waktu</button><button data-view="master">Master Process & Lean</button><button data-view="tskk">TSKK / SWCT</button><div class="nav-label">ANALYSIS</div><button data-view="quality">Data Quality</button><button data-view="uniformity">Uji Keseragaman</button><button data-view="sufficiency">Uji Kecukupan</button><button data-view="rating">Rating Factor</button><button data-view="standard">Standard Time</button><div class="nav-label">LEAN</div><button data-view="waste">Waste & Pareto</button><div class="nav-admin-group"><div class="nav-label" data-role="admin">ADMINISTRATION</div><button data-view="users" data-role="admin">User Management</button></div><div class="nav-label">TOOLS</div><button id="exportCsv">⇩ Export CSV</button><label class="import-btn">⇧ Import CSV<input id="importCsv" type="file" accept=".csv" hidden></label></nav></aside>
-<main class="main"><header class="topbar ut-topbar"><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Buka menu navigasi" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="page-heading"><p class="eyebrow" id="pageEyebrow">TIME & MOTION STUDY</p><h1 id="pageTitle">Dashboard</h1></div><div class="ut-header-logo-2" aria-label="United Tractors"><img src="ut-logo-2.png" alt="United Tractors"></div></header><div id="app"></div><footer class="ut-bottom-footer" aria-label="Kontrol dan identitas aplikasi"><div class="ut-footer-reset"><button id="logoutBtn" class="btn ghost" type="button">⏻ Keluar</button></div><div class="ut-footer-motto"><img src="ut-motto.png" alt="United Tractors Member of Astra"></div><div class="ut-footer-line" aria-hidden="true"></div></footer></main></div>
+<div class="app-shell hidden" id="appShell"><div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div><aside class="sidebar" id="sidebar">
+<div class="menu-panel-head"><div><div class="menu-eyebrow">COMMAND CENTER</div><h2>Dashboard</h2></div><button id="sidebarClose" class="menu-close" type="button" aria-label="Tutup menu">×</button></div>
+<a class="brand brand-logo" href="#" data-go="dashboard" aria-label="Kembali ke Dashboard"><img src="ut-logo.png" alt="United Tractors"></a><nav id="nav"><button data-view="dashboard" class="active">Dashboard</button><button data-view="observe">Observation</button><button data-view="data">Data Waktu</button><button data-view="master">Master Process & Lean</button><button data-view="tskk">TSKK / SWCT</button><div class="nav-label">ANALYSIS</div><button data-view="quality">Data Quality</button><button data-view="uniformity">Uji Keseragaman</button><button data-view="sufficiency">Uji Kecukupan</button><button data-view="rating">Rating Factor</button><button data-view="standard">Standard Time</button><div class="nav-label">LEAN</div><button data-view="waste">Waste & Pareto</button><div class="nav-admin-group hidden" id="adminNavGroup"><div class="nav-label" data-role="admin">ADMINISTRATION</div><button data-view="users" data-role="admin">User Management</button></div><div class="nav-label">TOOLS</div><button id="exportCsv">⇩ Export CSV</button><label class="import-btn">⇧ Import CSV<input id="importCsv" type="file" accept=".csv" hidden></label></nav><div class="menu-panel-foot"><button id="menuLogout" class="menu-logout" type="button"><span aria-hidden="true">⏻</span> Keluar</button><span>UT · PDC WAREHOUSE</span></div></aside>
+<main class="main"><header class="topbar ut-topbar"><a class="ut-header-logo-1" href="#" data-go="dashboard" aria-label="Kembali ke Dashboard"><img src="ut-logo.png" alt="United Tractors"></a><div class="page-heading"><p class="eyebrow" id="pageEyebrow">TIME & MOTION STUDY</p><h1 id="pageTitle">Dashboard</h1></div><div class="ut-header-actions"><div class="ut-header-logo-2" aria-label="United Tractors"><img src="ut-logo-2.png" alt="United Tractors"></div><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Buka menu navigasi" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button></div></header><div id="app"></div><footer class="ut-bottom-footer" aria-label="Identitas aplikasi"><div class="ut-footer-motto"><img src="ut-motto.png" alt="United Tractors Member of Astra"></div><div class="ut-footer-line" aria-hidden="true"></div></footer></main></div>
 <script src="auth-config.js"></script>
 <script src="auth.js"></script>
 <script src="auth-middleware.js"></script>
