@@ -37,7 +37,7 @@ input,select,textarea{border-color:#cbd3dd}input:focus,select:focus,textarea:foc
 :root{--ui-radius:12px;--ui-radius-sm:9px;--ui-control-h:44px;--ui-font:Inter,"Segoe UI",Arial,sans-serif}
 html{font-size:16px}body,button,input,select,textarea{font-family:var(--ui-font)}button,input,select,textarea{font-size:13px}
 input[type="date"],input[type="time"],input[type="datetime-local"],input[type="number"]{min-width:0}
-@media(max-width:760px){input,select,textarea{font-size:16px}}
+@media(max-width:760px){input,textarea{font-size:16px}}
 .topbar{min-height:96px}.page-heading h1{font-size:26px;line-height:1.15}.eyebrow{line-height:1.2}
 .card{border-radius:var(--ui-radius)}.btn,.top-actions button,.sidebar-toggle,input,select{min-height:var(--ui-control-h)}
 .btn{display:inline-flex;align-items:center;justify-content:center;line-height:1.15;text-align:center}
@@ -89,21 +89,29 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(max-height:620px){.brand{min-height:62px}.brand-logo img{width:84px;max-height:48px}.sidebar nav{padding-bottom:10px}.nav-label{margin:8px 10px 3px!important}}
 
 
-/* V2.8.7: balanced dashboard and observation spacing */
-:root{--section-gap:24px;--card-gap:20px;--card-pad:24px;--field-gap:16px}
+/* Dashboard spacing — single source of truth
+   Equal outer rhythm and equal gaps across dashboard cards/sections. */
+:root{
+  --section-gap:24px;
+  --card-gap:20px;
+  --card-pad:24px;
+  --field-gap:16px;
+  --dashboard-gap:20px;
+}
 .content{padding:32px 34px 40px}
-.content>.workspace,.dashboard-content>#dashResults{display:grid;gap:var(--section-gap)}
+.content>.workspace{display:grid;gap:var(--section-gap)}
 .grid{gap:var(--card-gap)}
 .section{margin-top:var(--section-gap)}
 .card{padding:var(--card-pad)}
-.dashboard-filter{padding:24px 24px 22px;margin-bottom:0}
+.dashboard-filter{padding:24px 24px 22px;margin:0}
 .filter-title{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px}
 .filter-title h3{margin:0 0 6px}.filter-title .muted{margin:0;line-height:1.55}
 .dashboard-filter-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 20px;align-items:end}
 .dashboard-filter-grid{gap:var(--field-gap);margin:0}
 .dashboard-filter-actions{display:flex;align-items:flex-end;min-width:132px}
 .dashboard-filter-actions .btn{width:100%;white-space:nowrap}
-.dashboard-kpis{margin:0}.dashboard-kpis+.section{margin-top:0}
+.dashboard-kpis{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--dashboard-gap)}
+.dashboard-kpis+.section{margin-top:0}
 .chart-card{padding:24px;min-height:0}.chart-card h3{margin-bottom:18px}
 .chart-note{margin:14px 0 18px;line-height:1.55}
 .compact-table{margin-top:18px}.pareto-table-block{margin-top:22px;padding-top:20px;border-top:1px solid #e8edf3}
@@ -117,33 +125,96 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .observation-save-action{margin-top:22px;padding-top:18px;border-top:1px solid #e8edf3}
 .observation-save-action .btn{min-height:48px}
 .video-card{padding:24px}.video-card-head{margin-bottom:18px}.dropzone{margin-bottom:16px}.video-stage{gap:16px}.time-grid{margin:18px 0;gap:12px}.seg-controls{margin:0 0 18px;gap:12px}.manual-time{margin-top:0}
-@media(max-width:1200px){.dashboard-filter-controls{grid-template-columns:1fr}.dashboard-filter-actions{justify-content:flex-start;min-width:0}.dashboard-filter-actions .btn{width:auto;min-width:160px}.content{padding:28px 26px 36px}}
-@media(max-width:900px){:root{--section-gap:20px;--card-gap:16px;--card-pad:20px}.dashboard-filter-controls{gap:16px}.workspace{gap:20px}.filter-title{margin-bottom:16px}.dashboard-filter-grid{gap:14px}.dashboard-filter-actions .btn{width:100%}}
-@media(max-width:760px){.content{padding:20px 16px 30px}.card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:18px}.filter-title{gap:14px}.dashboard-filter-grid{gap:12px}.dashboard-filter-actions .btn{min-height:46px}.observation-save-action{margin-top:18px;padding-top:16px}.workspace{gap:18px}.time-grid{gap:10px;margin:16px 0}.seg-controls{gap:10px;margin-bottom:16px}}
 
-/* V2.8.8: Dashboard vertical rhythm refinement
-   Keep the KPI row visually centered between the filter card above and the
-   TIME CLASSIFICATION / PARETO row below. */
-:root{--dashboard-vertical-gap:28px}
-.dashboard-content{display:flex;flex-direction:column;gap:var(--dashboard-vertical-gap)}
-.dashboard-content>#dashResults{display:grid;gap:var(--dashboard-vertical-gap);margin:0}
-.dashboard-content .dashboard-filter{margin:0}
-.dashboard-content .dashboard-kpis{margin:0}
-.dashboard-content #dashResults>.section{margin:0}
-.dashboard-content #dashResults>.card.section{margin:0}
-.dashboard-content .chart-card{margin:0}
-
-/* The KPI row gets the same 28px breathing room above and below.
-   No extra margin is left on only one side, preventing the visual imbalance
-   seen between the filter, KPI cards, and chart cards. */
-.dashboard-content .dashboard-kpis+.section{margin:0}
-.dashboard-content .grid.cols-2.section{margin:0}
-
+/* Dashboard vertical rhythm uses the same gap in every direction. */
+.dashboard-content{
+  width:100%;
+  max-width:100%;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--dashboard-gap);
+}
+.dashboard-content>.dashboard-filter,
+.dashboard-content>.dashboard-kpis,
+.dashboard-content>#dashResults{
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+.dashboard-content>#dashResults{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:var(--dashboard-gap);
+}
+.dashboard-content #dashResults>.section,
+.dashboard-content #dashResults>.card.section,
+.dashboard-content .chart-card,
+.dashboard-content .dashboard-kpis+.section,
+.dashboard-content .grid.cols-2.section{
+  margin:0;
+}
+.dashboard-content #dashResults>.grid.cols-2.section{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--dashboard-gap);
+}
+.dashboard-kpis>.kpi{
+  box-sizing:border-box;
+  min-height:132px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  text-align:left;
+  padding:20px;
+  overflow:hidden;
+}
+.dashboard-kpis>.kpi .kpi-content{
+  width:100%;
+  max-width:100%;
+  margin:0;
+  padding:0;
+  text-align:left;
+  align-self:stretch;
+}
+.dashboard-kpis>.kpi .label,
+.dashboard-kpis>.kpi .value,
+.dashboard-kpis>.kpi .sub{
+  width:100%;
+  margin-left:0;
+  margin-right:0;
+  text-align:left;
+}
+@media(max-width:1200px){
+  .dashboard-filter-controls{grid-template-columns:1fr}
+  .dashboard-filter-actions{justify-content:flex-start;min-width:0}
+  .dashboard-filter-actions .btn{width:auto;min-width:160px}
+  .content{padding:28px 26px 36px}
+}
 @media(max-width:900px){
-  :root{--dashboard-vertical-gap:22px}
+  :root{--section-gap:20px;--card-gap:16px;--card-pad:20px;--dashboard-gap:16px}
+  .dashboard-filter-controls{gap:16px}
+  .workspace{gap:20px}
+  .filter-title{margin-bottom:16px}
+  .dashboard-filter-grid{gap:14px}
+  .dashboard-filter-actions .btn{width:100%}
+  .dashboard-content #dashResults>.grid.cols-2.section{grid-template-columns:1fr}
 }
 @media(max-width:760px){
-  :root{--dashboard-vertical-gap:18px}
+  :root{--dashboard-gap:16px}
+  .content{padding:20px 16px 30px}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:18px}
+  .filter-title{gap:14px}
+  .dashboard-filter-grid{gap:12px}
+  .dashboard-filter-actions .btn{min-height:46px}
+  .observation-save-action{margin-top:18px;padding-top:16px}
+  .workspace{gap:18px}
+  .time-grid{gap:10px;margin:16px 0}
+  .seg-controls{gap:10px;margin-bottom:16px}
+  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--dashboard-gap)}
+  .dashboard-content>#dashResults{gap:var(--dashboard-gap)}
+  .dashboard-content #dashResults>.grid.cols-2.section{grid-template-columns:1fr;gap:var(--dashboard-gap)}
 }
 
 /* V2.8.9: bottom reset control + UT motto footer */
@@ -383,9 +454,7 @@ button,.btn,.sidebar button,.import-btn{touch-action:manipulation}
 
   .kpi .label{font-size:10px}
   .kpi .value{font-size:23px}
-  .dashboard-content{gap:14px}
-  .dashboard-content>#dashResults{gap:14px}
-  .dashboard-filter .muted{font-size:12px;line-height:1.45}
+      .dashboard-filter .muted{font-size:12px;line-height:1.45}
 
   .video-tools{grid-template-columns:1fr!important}
   #fullVideo{grid-column:auto}
@@ -793,7 +862,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 .user-management-table th,.user-management-table td{vertical-align:middle}
 .user-email-cell{overflow-wrap:anywhere;word-break:break-word}
 .user-created-cell{white-space:nowrap}
-.user-status-select{display:block;width:100%;max-width:160px;min-width:0;padding:9px 34px 9px 12px;border-radius:10px;font:inherit;font-size:14px;font-weight:700;line-height:1.2;background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
+.user-status-select{display:block;width:100%;max-width:160px;min-width:0;padding:9px 34px 9px 12px;border-radius:10px;font:inherit;font-weight:700;line-height:1.2;background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
 .user-status-approved{background:#dff5e7;color:#1f7a46;border:1px solid #b8e5c8}
 .user-status-pending{background:#fff4c9;color:#8a6800;border:1px solid #f1df95}
 .user-status-suspended{background:#fde3df;color:#b6453b;border:1px solid #f2bbb4}
@@ -805,7 +874,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .user-management-table .user-col-status{width:160px}
   .user-management-table .user-col-created{width:110px}
   .user-management-table .user-col-action{width:100px}
-  .user-status-select{max-width:150px;font-size:13px;padding:8px 30px 8px 10px}
+  .user-status-select{max-width:150px;padding:8px 30px 8px 10px}
 }
 @media(max-width:520px){
   .user-management-table{min-width:740px}
@@ -1077,7 +1146,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .toolbar .btn{min-height:36px;}
   .btn{min-height:36px;padding:8px 10px;font-size:11px;border-radius:7px;}
   label{font-size:10.5px;gap:4px;}
-  input,select,textarea{padding:8px!important;min-height:36px;font-size:13px!important;border-radius:7px;}
+  input,textarea{padding:8px!important;min-height:36px;font-size:13px!important;border-radius:7px;}
   textarea{min-height:58px;}
   .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
   .form-grid.four{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
@@ -1163,7 +1232,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
   .form-grid,.form-grid.four{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
   label{font-size:9.5px;}
-  input,select,textarea{min-height:34px;padding:7px!important;font-size:12px!important;}
+  input,textarea{min-height:34px;padding:7px!important;font-size:12px!important;}
   .btn{min-height:34px;padding:7px 8px;font-size:10.5px;}
   .card h3{font-size:12px;margin-bottom:6px;}
   .muted{font-size:9.5px;}
@@ -1193,7 +1262,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   html,body{font-size:14px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .content{padding:9px 10px 22px!important;}
   .section{margin-top:10px!important;}
-  .grid,.content>.workspace,.dashboard-content>#dashResults{gap:9px!important;}
+  .grid:not(.dashboard-kpis),.content>.workspace{gap:9px!important;}
   .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:11px!important;border-radius:9px!important;}
   .card h2{font-size:16px!important;line-height:1.18!important;}
   .card h3,.chart-card h3,.pareto-card h3{font-size:12.5px!important;line-height:1.25!important;margin-bottom:7px!important;}
@@ -1202,7 +1271,9 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 
   /* Consistent controls: compact but still finger-friendly. */
   label{font-size:10px!important;line-height:1.2!important;gap:4px!important;}
-  input,select,textarea{min-height:35px!important;height:35px;box-sizing:border-box!important;padding:7px 8px!important;font-size:13px!important;line-height:1.2!important;border-radius:7px!important;}
+  input,textarea{min-height:35px!important;height:35px;box-sizing:border-box!important;padding:7px 8px!important;font-size:13px!important;
+  }
+  select{min-height:35px!important;height:35px;box-sizing:border-box!important;padding:7px 8px!important;line-height:1.2!important;border-radius:7px!important;}
   textarea{height:auto;min-height:52px!important;}
   .btn{min-height:35px!important;height:35px;padding:7px 9px!important;font-size:11px!important;line-height:1.1!important;border-radius:7px!important;}
   .toolbar .btn,.top-actions button{min-height:35px!important;height:35px!important;padding:7px 8px!important;font-size:10.5px!important;}
@@ -1213,7 +1284,6 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .dashboard-filter-grid{gap:7px!important;}
   .dashboard-filter-actions{margin-top:1px!important;}
   .dashboard-filter-actions .btn{min-height:35px!important;height:35px!important;width:100%!important;}
-  .dashboard-kpis{gap:7px!important;}
   .kpi{padding:8px!important;}
   .kpi .label{font-size:8px!important;letter-spacing:.35px!important;}
   .kpi .value{font-size:17px!important;line-height:1.1!important;margin-top:3px!important;}
@@ -1278,7 +1348,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .rating-head{gap:8px!important;padding-bottom:3px!important;}
   .add-pic-form{gap:6px!important;margin-top:7px!important;}
   .rating-table{min-width:900px!important;}
-  .rating-table select{font-size:10px!important;min-height:34px!important;height:34px!important;padding:6px 8px!important;}
+  .rating-table select{min-height:34px!important;height:34px!important;padding:6px 8px!important;}
   #saveSettings{margin-top:9px!important;}
 
   /* Classification: prevent long names and metrics from colliding. */
@@ -1310,7 +1380,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .tskk-table-card h3,.tskk-chart-card h3{font-size:11.5px!important;margin-bottom:4px!important;}
   .tskk-work-table{min-width:900px!important;}
   .tskk-work-table th,.tskk-work-table td{padding:6px 7px!important;}
-  .tskk-work-table input,.tskk-work-table select{font-size:10px!important;min-height:32px!important;height:32px!important;padding:5px 6px!important;}
+  .tskk-work-table input,.tskk-work-table select{min-height:32px!important;height:32px!important;padding:5px 6px!important;}
   .tskk-item-element{min-width:180px!important;}
   .tskk-item-type{min-width:120px!important;}
   .tskk-item-time,.tskk-item-start{min-width:82px!important;}
@@ -1336,17 +1406,16 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
 @media (max-width:560px){
   .content{padding:8px 9px 20px!important;}
   .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:9px!important;}
-  .grid,.content>.workspace,.dashboard-content>#dashResults{gap:7px!important;}
+  .grid:not(.dashboard-kpis),.content>.workspace{gap:7px!important;}
   .section{margin-top:8px!important;}
   .card h2{font-size:15px!important;}
   .card h3,.chart-card h3,.pareto-card h3{font-size:11.5px!important;}
   label{font-size:9.5px!important;}
-  input,select,textarea{height:34px!important;min-height:34px!important;font-size:12.5px!important;padding:6px 7px!important;}
+  input,textarea{height:34px!important;min-height:34px!important;font-size:12.5px!important;padding:6px 7px!important;}
   .btn{height:34px!important;min-height:34px!important;padding:6px 8px!important;font-size:10px!important;}
   .topbar{height:60px!important;padding:7px 9px!important;}
   .topbar h1{font-size:15px!important;}
   .eyebrow{font-size:7px!important;letter-spacing:.9px!important;}
-  .dashboard-kpis{gap:6px!important;}
   .kpi{padding:7px!important;}
   .kpi .label{font-size:7.5px!important;}
   .kpi .value{font-size:16px!important;}
@@ -1363,7 +1432,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .two-equal>label small{font-size:7.7px!important;}
   .tskk-meta-grid{gap:6px!important;}
   .tskk-meta-grid label{font-size:9.5px!important;}
-  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{font-size:12.5px!important;height:34px!important;min-height:34px!important;}
+  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea{height:34px!important;min-height:34px!important;}
   .tskk-actions{gap:5px!important;}
   .tskk-actions .btn{height:34px!important;min-height:34px!important;font-size:10px!important;padding:6px 4px!important;}
   .tskk-combination-chart{min-width:660px!important;}
@@ -1443,7 +1512,7 @@ body.auth-booting::before{content:"Memeriksa sesi...";position:fixed;inset:0;z-i
   .two-equal>label small{display:block!important;min-height:28px!important;font-size:8px!important;line-height:1.2!important;}
 
   /* Master method is a select now; keep its height aligned with Equipment/Frequency. */
-  #mMethod{height:35px!important;min-height:35px!important;font-size:13px!important;}
+  #mMethod{height:35px!important;min-height:35px!important;}
 }
 
 @media (max-width:560px){
@@ -2285,7 +2354,6 @@ body.auth-booting .session-loader{
 .classify-card,.video-card{padding:20px!important}
 
 /* Dashboard: four KPI cards stay compact and visually balanced. */
-.dashboard-kpis{gap:16px!important}
 .dashboard-kpis>.kpi{
   min-height:132px!important;
   padding:20px!important;
@@ -2598,7 +2666,7 @@ button,input,select,textarea{font:inherit;}
   .card h3,.card h2,.dashboard-filter h3,.chart-card h3{font-size:14px!important;line-height:1.3!important;overflow-wrap:anywhere!important;}
 
   /* Dashboard: desktop 4-up -> mobile 2 x 2. */
-  .dashboard-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;margin:0!important;}
+  .dashboard-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;margin:0!important;}
   .dashboard-kpis>.kpi{
     width:100%!important;min-width:0!important;height:118px!important;min-height:118px!important;
     padding:14px 12px!important;border-radius:12px!important;
@@ -2620,7 +2688,7 @@ button,input,select,textarea{font:inherit;}
   /* Forms: never force desktop columns onto a phone. */
   .form-grid,.classify-top-grid,.classify-process-grid,.classify-activity-grid,.classify-element-grid,.two-equal{grid-template-columns:1fr!important;min-width:0!important;gap:10px!important;}
   label,input,select,textarea{min-width:0!important;max-width:100%!important;}
-  input,select,textarea{font-size:16px!important;}
+  input,textarea{font-size:16px!important;}
   .btn,.toolbar button,.import-btn,.menu-logout,.menu-close,#applyManualTime{min-height:44px!important;max-width:100%!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important;}
 
   /* Manual observation: controls stay inside the card. */
@@ -2665,7 +2733,6 @@ button,input,select,textarea{font:inherit;}
   .sidebar{left:8px!important;right:52px!important;top:8px!important;bottom:8px!important;padding:13px!important;border-radius:16px!important;}
   .sidebar-toggle,.app-shell.sidebar-open .sidebar-toggle{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;}
   .content{padding-left:10px!important;padding-right:10px!important;}
-  .dashboard-kpis{gap:8px!important;}
   .dashboard-kpis>.kpi{height:116px!important;min-height:116px!important;padding:13px 11px!important;}
   .dashboard-kpis>.kpi .label{font-size:8.5px!important;}
   .dashboard-kpis>.kpi .value{font-size:18px!important;}
@@ -2765,7 +2832,7 @@ button,input,select,textarea{font:inherit;}
   .content{padding-left:10px!important;padding-right:10px!important;}
   .card{padding:14px!important;}
   input,select,textarea{min-height:50px!important;height:50px!important;padding-left:13px!important;padding-right:38px!important;}
-  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
   .dashboard-kpis>.kpi{height:116px!important;min-height:116px!important;padding:13px 11px!important;}
   .dashboard-kpis>.kpi .value{white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;}
   .pareto-card .pareto-chart{padding-right:20px!important;}
@@ -2777,4 +2844,19 @@ button,input,select,textarea{font:inherit;}
   .page-heading h1{font-size:15px!important;}
   .dashboard-kpis>.kpi{padding-left:10px!important;padding-right:9px!important;}
   #dataTable .data-table{min-width:1060px!important;}
+}
+
+/* Mobile controls — single source of truth for dropdown typography.
+   Match the generic action-button text size used by Reset Filter. */
+@media (max-width:760px){
+  select,
+  .user-status-select,
+  .rating-table select,
+  .tskk-work-table select,
+  .tskk-meta-grid select,
+  #mMethod{
+    font-size:10.5px!important;
+    line-height:1.2!important;
+    -webkit-text-size-adjust:100%;
+  }
 }
