@@ -3085,498 +3085,422 @@ label{gap:6px!important}
   .auth-subtitle{margin:3px 0 15px!important;line-height:1.35!important}
 }
 
-/* =========================================================
-   V4.5.16 — Layout & Chart Polish / Responsive QA
-   Scope: spacing, alignment, chart readability, overflow and
-   responsive behavior. No application/data logic changed.
-   ========================================================= */
 
-/* ---------- Global rhythm ---------- */
-html{scroll-behavior:smooth;}
-html,body{max-width:100%;overflow-x:hidden;}
-body{line-height:1.45;}
-.main{min-width:0;overflow-x:clip;}
-#app{min-width:0;}
-.content{
-  width:100%!important;
-  max-width:1480px!important;
-  margin:0 auto!important;
-  padding:26px 32px 42px!important;
-}
-.grid{gap:18px!important;}
-.section{margin-top:22px!important;}
-.card,
-.dashboard-filter,
-.chart-card,
-.classify-card,
-.video-card,
-.tskk-table-card,
-.tskk-chart-card{
-  min-width:0!important;
-}
-.card h3,.chart-card h3{
-  margin:0 0 16px!important;
-  line-height:1.25!important;
-}
-.muted{line-height:1.45!important;}
-
-/* ---------- Dashboard filter ---------- */
-.dashboard-filter{
-  padding:20px 22px!important;
-  margin-bottom:0!important;
-}
-.dashboard-filter-controls{
-  gap:16px!important;
-  align-items:end!important;
-}
-.dashboard-filter-grid{
-  gap:14px!important;
-  min-width:0!important;
-}
-.dashboard-filter-actions{
-  min-width:126px!important;
-}
-.dashboard-filter-actions .btn{
-  height:42px!important;
-  min-height:42px!important;
-}
-
-/* ---------- KPI rhythm ---------- */
+/* V4.5.17 — Dashboard KPI vertical centering fix
+   Keep the four KPI cards visually symmetrical: the label sits in the upper
+   text zone, the value remains centered, and the supporting line occupies the
+   lower text zone. This prevents cards such as WASTE TERBESAR (which can wrap)
+   from making the top/bottom spacing look uneven. */
 .dashboard-kpis{
-  gap:18px!important;
   align-items:stretch!important;
 }
 .dashboard-kpis>.kpi{
-  min-width:0!important;
-  min-height:136px!important;
-  padding:20px 20px 18px!important;
-}
-.dashboard-kpis>.kpi .value{
-  overflow-wrap:anywhere;
-}
-.dashboard-kpis>.kpi .sub{
-  max-width:100%;
-}
-
-/* ---------- Time Classification chart ---------- */
-.chart-card{
-  padding:20px!important;
-  overflow:hidden!important;
-}
-.chart-card .pie-chart-wrap{
-  width:100%!important;
+  min-height:132px!important;
+  height:100%!important;
+  box-sizing:border-box!important;
   display:grid!important;
-  grid-template-columns:minmax(210px,.85fr) minmax(260px,1.15fr)!important;
-  gap:26px!important;
+  grid-template-rows:minmax(0,1fr) auto minmax(0,1fr)!important;
   align-items:center!important;
-  padding:8px 4px 18px!important;
-}
-.chart-card .pie-chart{
-  width:min(100%,250px)!important;
-  height:auto!important;
-  justify-self:center!important;
-}
-.chart-card .chart-legend{
-  width:100%!important;
-  min-width:0!important;
-  display:grid!important;
-  gap:0!important;
-}
-.chart-card .chart-legend-item{
-  min-height:42px!important;
-  padding:9px 0!important;
-  border-bottom:1px solid #edf0f4!important;
-}
-.chart-card .chart-legend-item:last-child{border-bottom:0!important;}
-.chart-card .chart-legend-label{
-  min-width:0!important;
-}
-.chart-card .chart-legend-label span{
-  line-height:1.3!important;
-}
-.chart-card .chart-legend-metrics{
-  gap:12px!important;
-}
-
-/* Keep the detail table visually separated from the graphic. */
-.chart-card .compact-table{
-  margin-top:4px!important;
-  border-top:1px solid #eef2f6!important;
-  padding-top:8px!important;
-}
-
-/* ---------- Pareto chart ---------- */
-.pareto-card{min-width:0!important;}
-.pareto-chart{
-  width:100%!important;
-  height:320px!important;
-  display:grid!important;
-  grid-template-columns:42px minmax(0,1fr)!important;
-  gap:10px!important;
-  padding:14px 4px 0!important;
-  min-width:0!important;
-}
-.pareto-scale{
-  padding-bottom:44px!important;
-  font-size:10px!important;
-}
-.pareto-bars{
-  min-width:0!important;
-  gap:16px!important;
-  padding:0 10px 0 8px!important;
-}
-.pareto-item{
-  min-width:0!important;
-  grid-template-rows:minmax(0,1fr) 44px!important;
-}
-.pareto-bar{
-  width:min(48px,72%)!important;
-}
-.pareto-bar b{
-  max-width:90px!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-}
-.pareto-item>small{
-  display:block!important;
-  min-width:0!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:normal!important;
   text-align:center!important;
+  padding:18px 20px!important;
+}
+.dashboard-kpis>.kpi .label{
+  align-self:end!important;
+  margin:0!important;
   line-height:1.2!important;
 }
-.chart-note{
-  margin:6px 0 14px!important;
-  line-height:1.45!important;
-}
-.pareto-table-block{
-  margin-top:12px!important;
-  padding-top:14px!important;
-  border-top:1px solid #edf0f4!important;
-}
-.pareto-table-block .subtable-title{
-  margin:0 0 10px!important;
-}
-
-/* ---------- Generic waste chart ---------- */
-.chart-row{
-  width:100%!important;
-  min-width:0!important;
-  gap:14px!important;
-  margin:12px 0!important;
-  align-items:center!important;
-}
-.chart-label{
-  flex:0 0 clamp(130px,24%,220px)!important;
-  width:auto!important;
-  min-width:0!important;
-}
-.chart-row .bar{
-  flex:1 1 auto!important;
-  min-width:0!important;
-  max-width:none!important;
-}
-.chart-row .bar small{
+.dashboard-kpis>.kpi .value{
+  align-self:center!important;
+  margin:5px 0!important;
+  line-height:1.15!important;
   max-width:100%!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
 }
-
-/* ---------- TSKK / timeline ---------- */
-.tskk-chart-card,
-.tskk-table-card{
-  overflow:hidden!important;
-}
-.tskk-chart-scroll{
-  width:100%!important;
-  min-width:0!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-  -webkit-overflow-scrolling:touch!important;
-}
-.tskk-combination-chart{
-  margin:2px 0!important;
-}
-.tskk-kpis{
-  gap:16px!important;
-  margin:0 0 18px!important;
-}
-.tskk-table-card .table-wrap{
-  margin-top:4px!important;
-}
-.tskk-chart-card .section-head{
-  margin-bottom:14px!important;
-}
-
-/* ---------- Forms / toolbars ---------- */
-.form-grid,
-.form-grid.four{
-  column-gap:16px!important;
-  row-gap:16px!important;
-}
-.toolbar{
-  gap:10px!important;
-}
-.filters{
-  gap:12px!important;
-  margin-bottom:16px!important;
-}
-.filters select,.filters input{
-  min-width:160px!important;
-  max-width:260px!important;
-}
-.modal-actions{
-  gap:10px!important;
-}
-
-/* ---------- Tables ---------- */
-.table-wrap{
-  width:100%!important;
+.dashboard-kpis>.kpi .sub{
+  align-self:start!important;
+  margin:0!important;
+  line-height:1.35!important;
   max-width:100%!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-  -webkit-overflow-scrolling:touch!important;
-}
-.data-table{
-  min-width:100%!important;
-}
-.data-table th,.data-table td{
-  padding:10px 12px!important;
 }
 
-/* ---------- Command Center: predictable columns ---------- */
-.sidebar nav{
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  gap:10px!important;
-}
-.sidebar nav .nav-label{
-  margin-top:10px!important;
-}
-.sidebar nav button,.sidebar nav .import-btn{
-  min-width:0!important;
-}
-.menu-panel-foot{
-  gap:12px!important;
-}
-.menu-panel-foot>span{
-  white-space:nowrap!important;
-}
-
-/* ---------- Tablet ---------- */
-@media(max-width:1100px){
-  .content{padding:24px 24px 36px!important;}
-  .dashboard-kpis{gap:14px!important;}
-  .chart-card .pie-chart-wrap{
-    grid-template-columns:minmax(180px,.8fr) minmax(230px,1.2fr)!important;
-    gap:18px!important;
-  }
-  .chart-card .pie-chart{max-width:220px!important;}
-  .pareto-bars{gap:12px!important;}
-  .sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
-}
 @media(max-width:900px){
-  .content{padding:20px 20px 32px!important;}
-  .grid{gap:16px!important;}
-  .section{margin-top:20px!important;}
-  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
-  .dashboard-filter-controls{align-items:stretch!important;}
-  .dashboard-filter-actions{width:100%!important;}
-  .dashboard-filter-actions .btn{margin:0!important;}
-  .chart-card .pie-chart-wrap{
-    grid-template-columns:1fr!important;
-    gap:18px!important;
-    justify-items:center!important;
-  }
-  .chart-card .chart-legend{
-    width:100%!important;
-    max-width:560px!important;
-  }
-  .chart-card .pie-chart{max-width:230px!important;}
-  .pareto-chart{height:300px!important;}
-  .sidebar{
-    width:min(92vw,760px)!important;
-    height:min(720px,calc(100vh - 40px))!important;
+  .dashboard-kpis>.kpi{
+    min-height:124px!important;
+    padding:16px 14px!important;
   }
 }
 
-/* ---------- Mobile ---------- */
-@media(max-width:760px){
-  .content{
-    padding:16px 14px 28px!important;
-  }
-  .grid{gap:14px!important;}
-  .section{margin-top:18px!important;}
-  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,
-  .tskk-table-card,.tskk-chart-card{
-    padding:16px!important;
-    border-radius:13px!important;
-  }
-  .card h3,.chart-card h3{
-    margin-bottom:13px!important;
-    font-size:14px!important;
-  }
-
-  /* KPI: two columns on larger phones, one column on narrow phones. */
-  .dashboard-kpis{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:12px!important;
-  }
+@media(max-width:700px){
   .dashboard-kpis>.kpi{
     min-height:112px!important;
-    padding:15px!important;
+    padding:14px 12px!important;
   }
-  .kpi .label{font-size:9.5px!important;}
-  .kpi .value{font-size:21px!important;}
-  .kpi .sub{font-size:10.5px!important;line-height:1.35!important;}
+  .dashboard-kpis>.kpi .label{font-size:9px!important;}
+  .dashboard-kpis>.kpi .value{font-size:19px!important;margin:4px 0!important;}
+  .dashboard-kpis>.kpi .sub{font-size:9px!important;line-height:1.3!important;}
+}
 
-  /* Classification legend remains readable instead of becoming tiny. */
-  .chart-card .pie-chart-wrap{
-    gap:14px!important;
-    padding:4px 0 12px!important;
-  }
-  .chart-card .pie-chart{width:min(100%,210px)!important;}
-  .chart-card .chart-legend{
-    max-width:none!important;
-  }
-  .chart-card .chart-legend-item{
-    min-height:40px!important;
-    padding:8px 0!important;
-    grid-template-columns:minmax(0,1fr) max-content!important;
+/* =========================================================
+   V4.5.18 — Native Mobile Layout / Touch & Safe-Area QA
+   Mobile is intentionally re-laid out rather than scaled from desktop.
+   ========================================================= */
+@media (max-width:760px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;}
+  body{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  button,input,select,textarea{font-size:16px!important;}
+  button,.btn,.sidebar button,.import-btn,.sidebar-toggle,.menu-close{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+
+  /* Header: compact mobile composition with a real side rail for the menu toggle. */
+  .ut-topbar{
+    min-height:64px!important;height:64px!important;
+    padding:6px 10px!important;
     gap:8px!important;
+    padding-top:max(6px,env(safe-area-inset-top))!important;
   }
-  .chart-card .chart-legend-label{gap:8px!important;}
-  .chart-card .chart-legend-label span{
-    font-size:11px!important;
-    line-height:1.25!important;
-  }
-  .chart-card .chart-legend-metrics{
-    gap:8px!important;
-  }
-  .chart-card .chart-legend-metrics b{font-size:10.5px!important;}
-  .chart-card .chart-legend-metrics small{font-size:9.5px!important;}
+  .ut-header-logo-1{flex:0 0 38px!important;width:38px!important;height:38px!important;}
+  .ut-header-logo-1 img{width:36px!important;height:36px!important;}
+  .page-heading{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important;}
+  .page-heading .eyebrow{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:7px!important;letter-spacing:.85px!important;}
+  .page-heading h1{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:17px!important;line-height:1.08!important;}
+  .ut-header-actions{flex:0 0 auto!important;gap:6px!important;}
+  .ut-header-logo-2{width:92px!important;min-width:0!important;}
+  .ut-header-logo-2 img{width:100%!important;max-width:92px!important;max-height:26px!important;}
 
-  /* Pareto gets enough horizontal breathing room without overflowing the card. */
-  .pareto-chart{
-    height:270px!important;
-    grid-template-columns:34px minmax(0,1fr)!important;
-    gap:7px!important;
-    padding:10px 0 0!important;
+  /* The hamburger never sits under the backdrop/panel. When open it moves into
+     a dedicated right-side rail beside the Command Center panel. */
+  .sidebar-toggle{
+    position:relative!important;z-index:140!important;
+    flex:0 0 40px!important;width:40px!important;min-width:40px!important;
+    height:40px!important;min-height:40px!important;
+    padding:0!important;margin:0!important;
+    display:grid!important;place-items:center!important;
+    border-radius:10px!important;
   }
-  .pareto-scale{font-size:8px!important;padding-bottom:40px!important;}
-  .pareto-bars{
-    gap:7px!important;
-    padding:0 5px 0 4px!important;
-  }
-  .pareto-item{grid-template-rows:minmax(0,1fr) 40px!important;}
-  .pareto-bar{width:min(34px,70%)!important;}
-  .pareto-bar b{font-size:8.5px!important;max-width:58px!important;}
-  .pareto-item>small{font-size:8.5px!important;}
-  .chart-note{font-size:10px!important;}
-
-  /* Generic waste chart: prevent labels from crushing the bars. */
-  .chart-row{
-    gap:9px!important;
-    margin:10px 0!important;
-  }
-  .chart-label{
-    flex-basis:clamp(92px,31vw,145px)!important;
-    font-size:10.5px!important;
-  }
-  .chart-row .bar{height:22px!important;}
-  .chart-row .bar small{font-size:9px!important;}
-
-  /* TSKK remains horizontally scrollable where its chart/table genuinely needs width. */
-  .tskk-kpis{
-    gap:10px!important;
-    margin-bottom:14px!important;
-  }
-  .tskk-chart-card .section-head{
-    margin-bottom:10px!important;
-  }
-  .tskk-chart-scroll{
-    margin:0 -2px!important;
-    width:calc(100% + 4px)!important;
+  .sidebar-toggle span{display:block!important;width:20px!important;height:2.5px!important;margin:0!important;}
+  .app-shell.sidebar-open .sidebar-toggle{
+    position:fixed!important;
+    z-index:140!important;
+    right:10px!important;
+    top:50%!important;
+    left:auto!important;
+    transform:translateY(-50%)!important;
+    width:40px!important;height:40px!important;
+    box-shadow:0 8px 20px rgba(10,25,47,.16)!important;
   }
 
-  .filters{
-    gap:9px!important;
-    margin-bottom:12px!important;
-  }
-  .filters select,.filters input{
-    min-width:0!important;
-    max-width:none!important;
-    flex:1 1 100%!important;
-  }
-  .toolbar{gap:8px!important;}
-  .toolbar .btn{flex:0 1 auto!important;}
-
-  .table-wrap{
-    margin-left:0!important;
-    margin-right:0!important;
-  }
-  .data-table th,.data-table td{
-    padding:9px 10px!important;
-  }
-
-  /* Command Center: one clean column on phones. */
+  /* Mobile Command Center: left panel + dedicated right rail. */
   .sidebar{
-    width:min(94vw,420px)!important;
-    height:calc(100vh - 28px)!important;
-    padding:16px!important;
+    z-index:120!important;
+    left:12px!important;
+    right:58px!important;
+    top:max(12px,env(safe-area-inset-top))!important;
+    bottom:max(12px,env(safe-area-inset-bottom))!important;
+    width:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:14px!important;
+    transform:none!important;
     border-radius:18px!important;
+    overflow:hidden!important;
+  }
+  .app-shell.sidebar-open .sidebar{transform:none!important;}
+  .sidebar-backdrop{z-index:110!important;}
+  .menu-panel-head{gap:10px!important;padding:0 0 12px!important;margin-bottom:12px!important;}
+  .menu-panel-head h2{font-size:18px!important;line-height:1.08!important;}
+  .menu-eyebrow{font-size:8px!important;letter-spacing:1.5px!important;margin-bottom:3px!important;}
+  .menu-panel-head .menu-close{
+    flex:0 0 36px!important;width:36px!important;min-width:36px!important;
+    height:36px!important;min-height:36px!important;border-radius:9px!important;
+    font-size:21px!important;
   }
   .sidebar nav{
+    height:calc(100% - 118px)!important;
+    min-height:0!important;
     grid-template-columns:1fr!important;
-    gap:8px!important;
+    gap:7px!important;
+    padding:0 1px 10px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior:contain!important;
   }
   .sidebar nav button,.sidebar nav .import-btn{
-    min-height:44px!important;
+    width:100%!important;min-width:0!important;max-width:none!important;
+    min-height:44px!important;height:auto!important;
+    padding:10px 12px!important;
+    border-radius:11px!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+    text-align:left!important;
   }
-  .menu-panel-head{margin-bottom:12px!important;padding-bottom:12px!important;}
+  .nav-label{margin:7px 3px 0!important;padding:0!important;font-size:8px!important;letter-spacing:1.5px!important;}
   .menu-panel-foot{
-    left:16px!important;
-    right:16px!important;
-    bottom:12px!important;
+    left:14px!important;right:14px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;
+    min-height:48px!important;padding:8px 0 0!important;
+    gap:8px!important;
+  }
+  .menu-panel-foot>span{font-size:7.5px!important;letter-spacing:1.2px!important;}
+  .menu-panel-foot .menu-logout{min-height:38px!important;padding:8px 11px!important;border-radius:10px!important;font-size:10px!important;}
+
+  /* Mobile content gets its own rhythm; no desktop grid is simply shrunk. */
+  .content{width:100%!important;max-width:none!important;padding:14px 12px 24px!important;}
+  .grid,.workspace,.form-grid,.form-grid.four,.grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr!important;gap:12px!important;}
+  .section{margin-top:14px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{width:100%!important;max-width:none!important;padding:14px!important;border-radius:12px!important;}
+
+  /* Manual Observation: input, unit and Apply are separate mobile rows so the
+     Apply control can never escape the input container. */
+  .manual-time-grid.manual-single{display:block!important;width:100%!important;max-width:none!important;}
+  .manual-time-grid.manual-single>label{width:100%!important;display:block!important;}
+  .manual-time-grid.manual-single .time-input-row{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 82px!important;
+    gap:8px!important;
+    align-items:stretch!important;
+  }
+  .manual-time-grid.manual-single .time-input-row input,
+  .manual-time-grid.manual-single .time-input-row select{
+    width:100%!important;min-width:0!important;height:44px!important;min-height:44px!important;
+    margin:0!important;box-sizing:border-box!important;
+  }
+  .manual-time-grid.manual-single .time-input-row #applyManualTime{
+    grid-column:1/-1!important;
+    justify-self:stretch!important;
+    width:100%!important;min-width:0!important;max-width:none!important;
+    height:44px!important;min-height:44px!important;
+    margin:0!important;padding:9px 14px!important;
+    box-sizing:border-box!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    line-height:1!important;position:static!important;
+    transform:none!important;
+  }
+  .manual-time-grid.manual-single .input-help{display:block!important;margin-top:7px!important;line-height:1.4!important;}
+
+  .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:10px 0!important;}
+  .timebox{min-height:62px!important;padding:9px!important;}
+  .seg-controls{grid-template-columns:1fr 1fr!important;gap:8px!important;margin:10px 0!important;}
+  .seg-controls .btn{min-height:44px!important;}
+  .seg-controls .btn:last-child{grid-column:1/-1!important;}
+
+  /* Prevent chart/table children from creating page-level horizontal overflow. */
+  .chart-row,.chart-wrap,.chart-card,.dashboard-chart,.table-wrap,.rating-table-wrap{max-width:100%!important;}
+  .table-wrap,.rating-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
+  .chart-label{width:105px!important;min-width:105px!important;}
+  .data-table{min-width:max-content!important;}
+  .toolbar,.filters,.summary-bar{gap:8px!important;}
+  .filters select,.filters input{max-width:none!important;width:100%!important;}
+
+  .ut-bottom-footer{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;}
+  .ut-footer-motto img{max-width:210px!important;width:min(55vw,210px)!important;max-height:34px!important;}
+}
+
+@media (max-width:390px){
+  .ut-header-logo-2{width:76px!important;}
+  .ut-header-logo-2 img{max-width:76px!important;max-height:23px!important;}
+  .page-heading h1{font-size:16px!important;}
+  .sidebar{left:10px!important;right:56px!important;padding:12px!important;}
+  .sidebar nav{gap:6px!important;}
+  .sidebar nav button,.sidebar nav .import-btn{min-height:42px!important;padding:9px 10px!important;font-size:10.5px!important;}
+  .menu-panel-foot{left:12px!important;right:12px!important;}
+  .content{padding-left:10px!important;padding-right:10px!important;}
+}
+
+@media (min-width:761px){
+  /* Keep all mobile-specific positioning completely isolated from desktop. */
+  .app-shell.sidebar-open .sidebar-toggle{position:relative!important;transform:none!important;right:auto!important;top:auto!important;}
+}
+
+/* V4.5.19 — Dashboard KPI outer-row spacing, not content centering
+   The previous KPI fix centered the contents inside each card. That is not the
+   intended layout: KPI contents should return to the normal top text flow.
+   The centering belongs to the spacing of the KPI row between surrounding
+   dashboard sections, which is controlled by --dashboard-vertical-gap. */
+.dashboard-content .dashboard-kpis,
+.dashboard-content .dashboard-kpis > .kpi{
+  align-items:stretch!important;
+}
+.dashboard-content .dashboard-kpis > .kpi{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  text-align:center!important;
+  height:auto!important;
+  min-height:132px!important;
+  padding:20px!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .label{
+  align-self:auto!important;
+  margin:0!important;
+  line-height:1.2!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .value{
+  align-self:auto!important;
+  margin:7px 0 0!important;
+  line-height:1.15!important;
+  max-width:100%!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .sub{
+  align-self:auto!important;
+  margin:5px 0 0!important;
+  line-height:1.4!important;
+  max-width:100%!important;
+}
+
+/* Keep equal outer spacing above and below the KPI row. */
+.dashboard-content{
+  row-gap:var(--dashboard-vertical-gap)!important;
+}
+.dashboard-content > #dashResults{
+  row-gap:var(--dashboard-vertical-gap)!important;
+}
+.dashboard-content #dashResults > .dashboard-kpis{
+  margin:0!important;
+}
+.dashboard-content #dashResults > .section,
+.dashboard-content #dashResults > .card.section{
+  margin:0!important;
+}
+
+@media(max-width:900px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    min-height:124px!important;
+    padding:18px!important;
+  }
+}
+@media(max-width:760px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    min-height:116px!important;
+    padding:16px!important;
+  }
+}
+@media(max-width:480px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    min-height:112px!important;
+    padding:14px!important;
   }
 }
 
-/* ---------- Narrow mobile ---------- */
-@media(max-width:520px){
-  .content{padding:14px 11px 24px!important;}
-  .grid{gap:12px!important;}
-  .section{margin-top:16px!important;}
-  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,
-  .tskk-table-card,.tskk-chart-card{padding:14px!important;}
-  .dashboard-kpis{grid-template-columns:1fr!important;gap:10px!important;}
-  .dashboard-kpis>.kpi{min-height:100px!important;padding:14px!important;}
-  .kpi .value{font-size:20px!important;}
-  .chart-card .pie-chart{width:min(100%,190px)!important;}
-  .chart-card .chart-legend-item{
-    grid-template-columns:minmax(0,1fr) max-content!important;
-    gap:7px!important;
-  }
-  .chart-card .chart-legend-label span{font-size:10.5px!important;}
-  .chart-card .chart-legend-metrics{
-    grid-template-columns:max-content max-content!important;
-    gap:6px!important;
-  }
-  .pareto-chart{height:250px!important;}
-  .pareto-bars{gap:5px!important;}
-  .pareto-item{grid-template-rows:minmax(0,1fr) 42px!important;}
-  .pareto-bar{width:min(29px,68%)!important;}
-  .pareto-item>small{font-size:8px!important;}
-  .chart-row{gap:7px!important;}
-  .chart-label{
-    flex-basis:92px!important;
-    font-size:9.5px!important;
-  }
-  .chart-row .bar{height:20px!important;}
-  .chart-row .bar small{font-size:8.5px!important;}
-  .menu-panel-foot>span{font-size:8px!important;letter-spacing:1.2px!important;}
+/* V4.5.20 — KPI content left alignment
+   Keep the KPI row/card spacing unchanged; only the content inside each card
+   returns to the intended left-aligned visual hierarchy. */
+.dashboard-content .dashboard-kpis > .kpi{
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .label,
+.dashboard-content .dashboard-kpis > .kpi .value,
+.dashboard-content .dashboard-kpis > .kpi .sub{
+  align-self:flex-start!important;
+  text-align:left!important;
+  width:100%!important;
 }
 
-/* Respect reduced-motion preferences globally for UI transitions. */
-@media(prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto!important;}
+@media(max-width:760px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    align-items:flex-start!important;
+    text-align:left!important;
+  }
+}
+
+/* V4.5.21: KPI content block centered as a group, while its text remains left-aligned.
+   This keeps the visual center of each card balanced without centering the text itself. */
+.dashboard-kpis .kpi{
+  align-items:center;
+}
+.dashboard-kpis .kpi .kpi-content{
+  width:max-content;
+  max-width:100%;
+  margin-inline:auto;
+  text-align:left;
+}
+.dashboard-kpis .kpi .label,
+.dashboard-kpis .kpi .value,
+.dashboard-kpis .kpi .sub{
+  text-align:left;
+}
+@media(max-width:760px){
+  .dashboard-kpis .kpi .kpi-content{
+    width:max-content;
+    max-width:100%;
+  }
+}
+
+/* V4.5.22 — Dashboard KPI final alignment
+   Horizontal: left aligned inside the card.
+   Vertical: the content group is centered so top/bottom breathing room is balanced. */
+.dashboard-kpis .kpi{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  text-align:left!important;
+}
+.dashboard-kpis .kpi .kpi-content{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  text-align:left!important;
+}
+.dashboard-kpis .kpi .label,
+.dashboard-kpis .kpi .value,
+.dashboard-kpis .kpi .sub{
+  width:100%!important;
+  text-align:left!important;
+}
+@media(max-width:760px){
+  .dashboard-kpis .kpi{
+    align-items:flex-start!important;
+    justify-content:center!important;
+  }
+  .dashboard-kpis .kpi .kpi-content{
+    width:100%!important;
+    margin:0!important;
+  }
+}
+
+/* V4.5.23 — KPI exact vertical rhythm
+   The content group stays LEFT aligned, while the GROUP itself is mathematically
+   centered inside the equal-height card so the top and bottom outer spacing match. */
+.dashboard-content .dashboard-kpis > .kpi{
+  box-sizing:border-box!important;
+  height:132px!important;
+  min-height:132px!important;
+  padding:20px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .kpi-content{
+  flex:0 0 auto!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  align-self:stretch!important;
+  text-align:left!important;
+}
+.dashboard-content .dashboard-kpis > .kpi .label,
+.dashboard-content .dashboard-kpis > .kpi .value,
+.dashboard-content .dashboard-kpis > .kpi .sub{
+  display:block!important;
+  width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  text-align:left!important;
+}
+@media(max-width:760px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    height:auto!important;
+    min-height:116px!important;
+    padding:18px!important;
+    justify-content:center!important;
+  }
+}
+@media(max-width:390px){
+  .dashboard-content .dashboard-kpis > .kpi{
+    min-height:112px!important;
+    padding:16px!important;
+  }
 }

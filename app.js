@@ -137,7 +137,7 @@ function stats(rows){const x=rows.map(r=>+r.time).filter(Number.isFinite),n=x.le
 function effectiveRows(g){const s=stats(g.rows);return g.rows.filter(r=>+r.time<=s.ucl&&+r.time>=s.lcl)}
 function standardFor(element,size){const cat=grouped(true).find(g=>g.element===element&&g.size===size);const pool=grouped(false).find(g=>g.element===element);let source='Pooled fallback',g=pool;if(cat&&stats(cat.rows).sufficient&&stats(cat.rows).uniform){source='Category specific';g=cat}if(!g)return null;let st=stats(effectiveRows(g));if(!st.n)return null;let rfAvg=g.rows.reduce((a,r)=>a+(+settings.ratings[r.operator]||1),0)/g.rows.length;let normal=st.mean*rfAvg;let standard=normal/(1-(+settings.allowance||0));return {source,mean:st.mean,rf:rfAvg,normal,standard,n:st.n,stats:st};}
 function setHeader(title,eyebrow='TIME & MOTION STUDY'){$('#pageTitle').textContent=title;$('#pageEyebrow').textContent=eyebrow;}
-function kpi(label,value,sub=''){return `<div class="card kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`}
+function kpi(label,value,sub=''){return `<div class="card kpi"><div class="kpi-content"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div></div>`}
 function dashboardRows(filter={}){
   const match=m=>(!filter.process||m.process===filter.process)&&(!filter.activity||m.activity===filter.activity)&&(!filter.element||m.element===filter.element);
   const sizes=filter.size?[filter.size]:['Small','Medium','Big'];
