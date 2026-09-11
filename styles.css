@@ -3617,3 +3617,1457 @@ label{gap:6px!important}
   .session-loader-orbit-dots{animation:none!important}
   .session-loader-orbit-dots span{opacity:.85}
 }
+
+
+
+/* ============================================================
+   V4.5.30 — MOBILE UI NORMALIZATION / iOS + ANDROID
+   Final override: consistent spacing, compact controls, adaptive
+   2-column cards, no accidental full-width action buttons.
+   ============================================================ */
+
+:root{
+  --mobile-page-pad: 12px;
+  --mobile-gap: 10px;
+  --mobile-card-pad: 13px;
+  --mobile-radius: 12px;
+  --mobile-control-h: 40px;
+  --mobile-control-font: 14px;
+}
+
+/* Keep every mobile section on a predictable vertical rhythm. */
+@media (max-width: 760px){
+  .content,
+  .dashboard-content{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:var(--mobile-page-pad)!important;
+  }
+
+  .dashboard-content{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:var(--mobile-gap)!important;
+  }
+
+  .dashboard-content > *{
+    margin:0!important;
+  }
+
+  .dashboard-content > #dashResults{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:var(--mobile-gap)!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+
+  .dashboard-content #dashResults > *{
+    margin:0!important;
+  }
+
+  .dashboard-content .section{
+    margin-top:0!important;
+  }
+
+  /* Generic grids: predictable gap, no uneven margins. */
+  .grid,
+  .form-grid,
+  .dashboard-filter-grid,
+  .chart-row{
+    gap:var(--mobile-gap)!important;
+  }
+
+  /* Dashboard filter: compact 2-column layout on normal phones. */
+  .dashboard-filter{
+    width:100%!important;
+    box-sizing:border-box!important;
+    padding:var(--mobile-card-pad)!important;
+    border-radius:var(--mobile-radius)!important;
+    overflow:visible!important;
+  }
+
+  .dashboard-filter-controls{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:var(--mobile-gap)!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .dashboard-filter-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:var(--mobile-gap)!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .dashboard-filter-grid label{
+    min-width:0!important;
+  }
+
+  .dashboard-filter-grid select{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  /* Reset stays compact and does not consume the full phone width. */
+  .dashboard-filter-actions{
+    display:flex!important;
+    justify-content:flex-end!important;
+    align-items:center!important;
+    width:100%!important;
+    margin-top:var(--mobile-gap)!important;
+  }
+
+  .dashboard-filter-actions .btn{
+    width:auto!important;
+    min-width:110px!important;
+    max-width:160px!important;
+    flex:0 0 auto!important;
+  }
+
+  /* All form controls + buttons use one visual size.
+     16px inputs/selects avoid iOS auto-zoom; buttons match visually. */
+  .dashboard-content select,
+  .dashboard-content input,
+  .dashboard-content textarea{
+    min-height:var(--mobile-control-h)!important;
+    height:var(--mobile-control-h)!important;
+    box-sizing:border-box!important;
+    padding:8px 10px!important;
+    font-size:var(--mobile-control-font)!important;
+    line-height:1.2!important;
+    border-radius:9px!important;
+  }
+
+  .dashboard-content .btn,
+  .dashboard-content button.btn{
+    min-height:var(--mobile-control-h)!important;
+    height:var(--mobile-control-h)!important;
+    padding:8px 12px!important;
+    font-size:var(--mobile-control-font)!important;
+    line-height:1.15!important;
+    border-radius:9px!important;
+    white-space:nowrap!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Headers and filter labels are compact but readable. */
+  .dashboard-filter .filter-title h3{
+    font-size:14px!important;
+    line-height:1.25!important;
+    margin:0!important;
+  }
+
+  .dashboard-filter .filter-title .muted{
+    font-size:10px!important;
+    line-height:1.4!important;
+    margin:4px 0 0!important;
+  }
+
+  .dashboard-filter-grid label{
+    font-size:10px!important;
+    line-height:1.2!important;
+    gap:5px!important;
+  }
+
+  /* KPI = 2 columns, equal dimensions and equal gaps. */
+  .dashboard-content .dashboard-kpis,
+  .dashboard-kpis{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:var(--mobile-gap)!important;
+    width:100%!important;
+    margin:0!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi,
+  .dashboard-kpis > .kpi{
+    width:100%!important;
+    min-width:0!important;
+    min-height:118px!important;
+    height:118px!important;
+    box-sizing:border-box!important;
+    padding:14px!important;
+    border-radius:var(--mobile-radius)!important;
+    margin:0!important;
+    overflow:hidden!important;
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .kpi-content,
+  .dashboard-kpis > .kpi .kpi-content{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .label,
+  .dashboard-kpis > .kpi .label{
+    display:block!important;
+    width:100%!important;
+    font-size:10px!important;
+    line-height:1.2!important;
+    letter-spacing:.7px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    margin:0!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .value,
+  .dashboard-kpis > .kpi .value{
+    display:block!important;
+    width:100%!important;
+    margin:6px 0 0!important;
+    font-size:clamp(19px,5.3vw,24px)!important;
+    line-height:1.15!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .sub,
+  .dashboard-kpis > .kpi .sub{
+    display:block!important;
+    width:100%!important;
+    margin:5px 0 0!important;
+    font-size:9.5px!important;
+    line-height:1.3!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  /* Card sizing and section rhythm. */
+  .dashboard-content .card,
+  .dashboard-content .chart-card,
+  .dashboard-content .section-card{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:var(--mobile-card-pad)!important;
+    border-radius:var(--mobile-radius)!important;
+    margin:0!important;
+  }
+
+  .dashboard-content .chart-row,
+  .dashboard-content .grid.cols-2,
+  .dashboard-content .grid.cols-3{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+
+  /* If there are 3 charts, let them wrap cleanly instead of producing
+     one very tall single-column stack. */
+  .dashboard-content .grid.cols-3{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .dashboard-content .chart-card h3{
+    font-size:12px!important;
+    line-height:1.25!important;
+    margin:0 0 8px!important;
+  }
+
+  .dashboard-content .chart-note,
+  .dashboard-content .analysis-note{
+    font-size:10px!important;
+    line-height:1.4!important;
+  }
+
+  .dashboard-content .table-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+  }
+
+  .dashboard-content .data-table{
+    width:max-content!important;
+    min-width:100%!important;
+    font-size:10px!important;
+  }
+
+  .dashboard-content .data-table th,
+  .dashboard-content .data-table td{
+    padding:7px 8px!important;
+    line-height:1.25!important;
+  }
+
+  /* Action/toolbars: fit controls to phone width, wrap only when necessary. */
+  .dashboard-content .toolbar,
+  .dashboard-content .top-actions,
+  .dashboard-content .tskk-actions,
+  .dashboard-content .modal-actions,
+  .dashboard-content .page-actions{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+
+  .dashboard-content .toolbar .btn,
+  .dashboard-content .top-actions .btn,
+  .dashboard-content .tskk-actions .btn,
+  .dashboard-content .modal-actions .btn,
+  .dashboard-content .page-actions .btn{
+    width:auto!important;
+    max-width:100%!important;
+    flex:0 1 auto!important;
+  }
+
+  /* Header actions are compact and stay on one line where possible. */
+  .ut-header-actions{
+    gap:6px!important;
+    min-width:0!important;
+  }
+
+  .ut-topbar{
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:8px!important;
+  }
+
+  .ut-header-logo-1{
+    flex:0 0 auto!important;
+  }
+
+  .ut-header-logo-2{
+    flex:0 0 auto!important;
+    min-width:0!important;
+  }
+
+  .sidebar-toggle{
+    flex:0 0 40px!important;
+    width:40px!important;
+    min-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+    padding:0!important;
+  }
+}
+
+/* Small phones: keep the same rhythm; only collapse the filter to one column
+   to prevent squeezed labels/selects. */
+@media (max-width: 430px){
+  :root{
+    --mobile-page-pad:10px;
+    --mobile-gap:8px;
+    --mobile-card-pad:11px;
+    --mobile-control-h:40px;
+    --mobile-control-font:14px;
+  }
+
+  .dashboard-filter-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .dashboard-filter-controls{
+    grid-template-columns:1fr!important;
+  }
+
+  .dashboard-content .grid.cols-2,
+  .dashboard-content .grid.cols-3,
+  .dashboard-content .chart-row{
+    grid-template-columns:1fr!important;
+  }
+
+  .dashboard-content .dashboard-kpis,
+  .dashboard-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi,
+  .dashboard-kpis > .kpi{
+    height:112px!important;
+    min-height:112px!important;
+    padding:12px!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .label,
+  .dashboard-kpis > .kpi .label{
+    font-size:9px!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .value,
+  .dashboard-kpis > .kpi .value{
+    font-size:18px!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .sub,
+  .dashboard-kpis > .kpi .sub{
+    font-size:9px!important;
+  }
+
+  .dashboard-filter-actions{
+    justify-content:stretch!important;
+  }
+
+  .dashboard-filter-actions .btn{
+    width:100%!important;
+    max-width:none!important;
+  }
+}
+
+/* Very narrow phones: protect text without shrinking controls into unreadable sizes. */
+@media (max-width: 360px){
+  .dashboard-content .dashboard-kpis > .kpi,
+  .dashboard-kpis > .kpi{
+    height:108px!important;
+    min-height:108px!important;
+    padding:10px!important;
+  }
+
+  .dashboard-content .dashboard-kpis > .kpi .value,
+  .dashboard-kpis > .kpi .value{
+    font-size:17px!important;
+  }
+
+  .dashboard-content .dashboard-filter .filter-title h3{
+    font-size:13px!important;
+  }
+}
+
+/* =========================================================
+   V4.5.31 — MOBILE GLOBAL CONTROLS / MANUAL OBSERVATION / COMMAND CENTER
+   Applies the mobile normalization to ALL dropdowns, not Dashboard only.
+   ========================================================= */
+@media (max-width:760px){
+  /* Global mobile form controls: Observation, Data Waktu, Master, TSKK,
+     Quality, Uniformity, Sufficiency, Rating, Standard Time, Waste, etc. */
+  .content select,
+  .content input,
+  .content textarea,
+  .card select,
+  .card input,
+  .card textarea,
+  .form-grid select,
+  .form-grid input,
+  .form-grid textarea,
+  .filters select,
+  .filters input,
+  .toolbar select,
+  .toolbar input,
+  .summary-bar select,
+  .summary-bar input{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    min-height:44px!important;
+    height:44px!important;
+    padding:8px 11px!important;
+    font-size:16px!important;
+    line-height:1.2!important;
+    border-radius:9px!important;
+  }
+
+  /* Keep select text vertically centered and prevent browser-specific clipping. */
+  .content select,
+  .card select,
+  .form-grid select,
+  .filters select,
+  .toolbar select{
+    line-height:normal!important;
+    padding-top:0!important;
+    padding-bottom:0!important;
+  }
+
+  /* Labels containing controls get a consistent rhythm. */
+  .content label,
+  .card label,
+  .form-grid label,
+  .filters label,
+  .toolbar label{
+    min-width:0!important;
+    line-height:1.25!important;
+    gap:6px!important;
+  }
+
+  /* Buttons follow the same mobile scale as the dropdowns without taking the
+     entire screen unless the layout explicitly needs a full-width action. */
+  .content .btn,
+  .content button.btn,
+  .content .top-actions button,
+  .content .toolbar button,
+  .content .page-actions button{
+    min-height:44px!important;
+    height:44px!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    padding:8px 13px!important;
+    font-size:14px!important;
+    line-height:1.15!important;
+    border-radius:9px!important;
+  }
+
+  /* Manual observation card: give the title, input and helper text real
+     breathing room so they do not hug the card border on phones. */
+  #manualObservationPanel.manual-time{
+    margin-top:12px!important;
+    padding:16px!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+
+  #manualObservationPanel .manual-time-head{
+    display:block!important;
+    margin:0 0 12px!important;
+    padding:0!important;
+  }
+
+  #manualObservationPanel .manual-time-head b{
+    display:block!important;
+    margin:0!important;
+    font-size:13px!important;
+    line-height:1.3!important;
+  }
+
+  #manualObservationPanel .manual-time-head span{
+    display:block!important;
+    margin:5px 0 0!important;
+    font-size:11px!important;
+    line-height:1.45!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single>label{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    line-height:1.3!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row{
+    width:100%!important;
+    margin-top:7px!important;
+    gap:8px!important;
+    box-sizing:border-box!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row input,
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row select{
+    height:44px!important;
+    min-height:44px!important;
+    font-size:16px!important;
+    margin:0!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single .input-help{
+    display:block!important;
+    margin:9px 2px 0!important;
+    padding:0!important;
+    font-size:10.5px!important;
+    line-height:1.45!important;
+    color:#7b8491!important;
+  }
+
+  /* Command Center: make the panel visually centered instead of heavily
+     weighted to the left. The close/hamburger rail remains usable. */
+  .app-shell.sidebar-open .sidebar{
+    left:14px!important;
+    right:14px!important;
+    width:auto!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+  }
+
+  .app-shell.sidebar-open .sidebar-toggle{
+    position:fixed!important;
+    top:max(18px,calc(env(safe-area-inset-top) + 8px))!important;
+    right:20px!important;
+    left:auto!important;
+    transform:none!important;
+    width:40px!important;
+    min-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+    z-index:145!important;
+  }
+
+  .app-shell.sidebar-open .sidebar{
+    padding-right:14px!important;
+  }
+
+  /* Keep menu content away from the edge on very narrow devices. */
+  .app-shell.sidebar-open .sidebar nav,
+  .app-shell.sidebar-open .menu-panel-head,
+  .app-shell.sidebar-open .menu-panel-foot{
+    min-width:0!important;
+  }
+}
+
+@media (max-width:430px){
+  .content select,
+  .content input,
+  .content textarea,
+  .card select,
+  .card input,
+  .card textarea,
+  .form-grid select,
+  .form-grid input,
+  .form-grid textarea,
+  .filters select,
+  .filters input{
+    min-height:42px!important;
+    height:42px!important;
+    font-size:16px!important;
+  }
+
+  #manualObservationPanel.manual-time{
+    padding:14px!important;
+  }
+
+  #manualObservationPanel .manual-time-grid.manual-single .input-help{
+    font-size:10px!important;
+  }
+
+  .app-shell.sidebar-open .sidebar{
+    left:10px!important;
+    right:10px!important;
+    padding:12px!important;
+  }
+
+  .app-shell.sidebar-open .sidebar-toggle{
+    top:max(14px,calc(env(safe-area-inset-top) + 6px))!important;
+    right:16px!important;
+  }
+}
+
+/* =========================================================
+   V4.5.32 — MOBILE ACTION BUTTON TEXT / TSKK FIX
+   Keep action labels on one line. Buttons may move to another row,
+   but the text inside the button must never wrap.
+   ========================================================= */
+@media (max-width:760px){
+  /* Global action buttons: preserve label integrity on phones. */
+  .content .btn,
+  .card .btn,
+  .modal .btn,
+  .toolbar .btn,
+  .page-actions .btn,
+  button.btn{
+    white-space:nowrap!important;
+    word-break:keep-all!important;
+    overflow-wrap:normal!important;
+    text-align:center!important;
+    line-height:1!important;
+  }
+
+  /* Do not let flex layouts squeeze buttons until their labels wrap. */
+  .tskk-actions{
+    display:flex!important;
+    width:100%!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+  }
+  .tskk-actions .btn{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:max-content!important;
+    max-width:none!important;
+    padding-left:11px!important;
+    padding-right:11px!important;
+  }
+
+  /* Observation/Data/Master/User table actions stay compact and single-line. */
+  .table-wrap td:last-child,
+  .data-table td:last-child{
+    white-space:nowrap!important;
+  }
+  .table-wrap td:last-child .btn,
+  .data-table td:last-child .btn,
+  .user-management-table .btn,
+  .editObs,
+  .del,
+  .editMaster,
+  .delMaster,
+  .tskk-open,
+  .tskk-delete,
+  .tskk-create-from-session{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    min-width:max-content!important;
+    max-width:none!important;
+    min-height:40px!important;
+    height:40px!important;
+    padding:7px 11px!important;
+    font-size:13px!important;
+    white-space:nowrap!important;
+    flex:0 0 auto!important;
+  }
+
+  /* Header/editor actions: allow buttons to fall to the next line,
+     never split their text. */
+  .section-head .tskk-actions{
+    margin-top:10px!important;
+  }
+
+  /* Master modal actions: no squeezed equal-width buttons on small screens. */
+  .modal-actions{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    justify-content:flex-end!important;
+    gap:8px!important;
+  }
+  .modal-actions .btn{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:max-content!important;
+  }
+}
+
+@media (max-width:430px){
+  /* Keep TSKK action row readable; buttons can stack, labels cannot. */
+  .tskk-actions .btn{
+    min-height:42px!important;
+    height:42px!important;
+    padding-left:10px!important;
+    padding-right:10px!important;
+    font-size:13px!important;
+  }
+
+  /* Table action buttons remain tappable but do not consume the full viewport. */
+  .table-wrap td:last-child .btn,
+  .data-table td:last-child .btn,
+  .user-management-table .btn,
+  .editObs,
+  .del,
+  .editMaster,
+  .delMaster,
+  .tskk-open,
+  .tskk-delete,
+  .tskk-create-from-session{
+    min-height:40px!important;
+    height:40px!important;
+    padding-left:10px!important;
+    padding-right:10px!important;
+    font-size:12.5px!important;
+  }
+}
+
+/* =========================================================
+   V4.5.33 — UI/UX FULL RESPONSIVE AUDIT
+   Global consistency pass for desktop + mobile.
+   Scope: layout, spacing, controls, buttons, tables, cards,
+   overlays, navigation and touch ergonomics. No calculation logic.
+   ========================================================= */
+
+:root{
+  --ui-content-max:1500px;
+  --ui-page-pad:clamp(16px,2.4vw,34px);
+  --ui-card-pad:clamp(18px,1.7vw,24px);
+  --ui-gap:clamp(12px,1.4vw,20px);
+  --ui-radius:12px;
+  --ui-control-h:42px;
+  --ui-touch-min:44px;
+}
+
+/* ---------- Global layout rhythm ---------- */
+.content{
+  width:100%;
+  max-width:var(--ui-content-max);
+  margin-inline:auto;
+  padding:clamp(22px,2.2vw,34px) var(--ui-page-pad) 40px;
+}
+.content > *{min-width:0}
+.card,
+.dashboard-filter,
+.chart-card,
+.classify-card,
+.video-card,
+.section-card,
+.tskk-header-card,
+.tskk-table-card,
+.tskk-chart-card{
+  min-width:0;
+  border-radius:var(--ui-radius);
+}
+.grid,
+.form-grid,
+.workspace,
+.dashboard-content #dashResults,
+.dashboard-content .dashboard-kpis{
+  min-width:0;
+}
+
+/* ---------- One button language everywhere ---------- */
+button,
+.btn,
+.import-btn,
+.video-skip,
+.method-choice,
+.login-link{
+  box-sizing:border-box;
+  font-family:inherit;
+}
+.btn,
+.video-skip,
+.method-choice{
+  min-height:var(--ui-control-h);
+}
+.btn,
+button.btn,
+.video-skip{
+  white-space:nowrap;
+  word-break:keep-all;
+  overflow-wrap:normal;
+  line-height:1.15;
+}
+.btn:not(.full){
+  width:auto;
+  max-width:100%;
+}
+
+/* Action clusters must wrap as a group, never wrap button labels. */
+.toolbar,
+.top-actions,
+.section-head > div:last-child,
+.section-head .tskk-actions,
+.tskk-actions,
+.modal-actions,
+.page-actions,
+.seg-controls,
+.dashboard-filter-actions,
+.video-tools,
+.observation-save-action{
+  min-width:0;
+}
+.toolbar,
+.top-actions,
+.modal-actions,
+.page-actions,
+.seg-controls,
+.tskk-actions{
+  flex-wrap:wrap;
+}
+
+/* ---------- Form controls: predictable dimensions ---------- */
+input,select,textarea{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+select,
+input[type="date"],
+input[type="number"],
+input[type="text"],
+input[type="email"],
+input[type="password"]{
+  min-height:var(--ui-control-h);
+}
+
+/* Keep utility/table controls compact on desktop. */
+.data-table select,
+.data-table input,
+.data-table .btn{
+  width:auto;
+  min-width:0;
+}
+.data-table select{
+  min-height:38px;
+  height:38px;
+  padding:6px 9px;
+  font-size:12px;
+}
+
+/* ---------- Headers / section heads ---------- */
+.section-head,
+.video-card-head,
+.filter-title{
+  min-width:0;
+}
+.section-head > div:first-child,
+.video-card-head > *,
+.filter-title > *{
+  min-width:0;
+}
+.section-head h2,
+.section-head h3,
+.video-card-head h2,
+.video-card-head h3,
+.filter-title h2,
+.filter-title h3{
+  overflow-wrap:anywhere;
+}
+
+/* ---------- Tables: horizontal scroll is intentional, not accidental ---------- */
+.table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.data-table{
+  width:max-content;
+  min-width:100%;
+}
+.data-table th,
+.data-table td{
+  vertical-align:middle;
+}
+.data-table td:last-child{
+  white-space:nowrap;
+}
+
+/* ---------- Dashboard controls ---------- */
+.dashboard-filter-grid label,
+.dashboard-filter-grid select{
+  min-width:0;
+}
+.dashboard-filter-actions .btn{
+  flex:0 0 auto;
+}
+
+/* ---------- Observation video area ---------- */
+.video-stage,
+.video-wrap,
+.seek-panel,
+.video-tools{
+  min-width:0;
+}
+.video-tools .video-skip{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ---------- Modal ergonomics ---------- */
+.modal-backdrop{
+  overscroll-behavior:contain;
+}
+.modal{
+  box-sizing:border-box;
+  width:min(760px,calc(100vw - 32px));
+  min-width:0;
+}
+.modal-actions .btn{
+  flex:0 0 auto;
+}
+
+/* =========================================================
+   MOBILE — 761px and below
+   ========================================================= */
+@media(max-width:760px){
+  :root{
+    --ui-page-pad:14px;
+    --ui-card-pad:16px;
+    --ui-gap:12px;
+    --ui-control-h:44px;
+  }
+
+  body{
+    overflow-x:hidden;
+    -webkit-text-size-adjust:100%;
+  }
+  .main,
+  #app,
+  .content,
+  .dashboard-content{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+  .content{
+    padding:18px var(--ui-page-pad) 28px;
+  }
+
+  /* Mobile card spacing: same outer/inner rhythm across every view. */
+  .card,
+  .dashboard-filter,
+  .chart-card,
+  .classify-card,
+  .video-card,
+  .section-card,
+  .tskk-header-card,
+  .tskk-table-card,
+  .tskk-chart-card{
+    padding:var(--ui-card-pad);
+    margin-inline:0;
+  }
+
+  .section{margin-top:var(--ui-gap)}
+  .grid{gap:var(--ui-gap)}
+  .form-grid{gap:var(--ui-gap)}
+  .section-head{gap:12px}
+  .section-head > div:last-child{margin-top:0}
+
+  /* ALL app dropdowns / inputs, not dashboard-only. */
+  .content select,
+  .content input,
+  .content textarea,
+  .card select,
+  .card input,
+  .card textarea,
+  .form-grid select,
+  .form-grid input,
+  .form-grid textarea,
+  .filters select,
+  .filters input,
+  .filters textarea,
+  .toolbar select,
+  .toolbar input,
+  .toolbar textarea,
+  .summary-bar select,
+  .summary-bar input,
+  .summary-bar textarea,
+  .tskk-meta-grid select,
+  .tskk-meta-grid input,
+  .tskk-meta-grid textarea{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    min-height:44px;
+    height:44px;
+    box-sizing:border-box;
+    font-size:16px;
+    line-height:1.2;
+  }
+
+  textarea{
+    min-height:92px!important;
+    height:auto!important;
+    line-height:1.45!important;
+  }
+
+  select{
+    padding-top:0!important;
+    padding-bottom:0!important;
+  }
+
+  /* Table selects are the exception: keep them compact instead of making
+     every row 44px wide/tall and creating unnecessary table growth. */
+  .data-table select,
+  .data-table input{
+    min-height:38px!important;
+    height:38px!important;
+    width:auto!important;
+    font-size:14px!important;
+    padding:6px 9px!important;
+  }
+
+  /* Buttons: compact, tappable, single-line labels. */
+  .content .btn,
+  .card .btn,
+  .modal .btn,
+  .toolbar .btn,
+  .page-actions .btn,
+  .section-head .btn,
+  .video-tools .video-skip,
+  button.btn{
+    min-height:44px;
+    height:44px;
+    width:auto;
+    max-width:100%;
+    padding:8px 13px;
+    font-size:14px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    flex:0 0 auto;
+  }
+  .btn.full,
+  .observation-save-action .btn.full{
+    width:100%;
+  }
+
+  /* Action rows: wrap buttons, not their text. */
+  .tskk-actions,
+  .modal-actions,
+  .toolbar,
+  .page-actions,
+  .seg-controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+  }
+
+  .tskk-actions .btn,
+  .modal-actions .btn,
+  .toolbar .btn,
+  .page-actions .btn,
+  .seg-controls .btn{
+    flex:0 0 auto;
+    min-width:max-content;
+  }
+
+  /* When a control group gets too wide, distribute at 2-up instead of
+     creating giant full-width controls. */
+  .seg-controls .btn{
+    flex:1 1 calc(50% - 8px);
+  }
+  .seg-controls .btn:last-child{
+    flex:0 0 auto;
+  }
+
+  /* Manual observation: keep all content inside the card with clear inset. */
+  #manualObservationPanel.manual-time{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+    margin:12px 0 0!important;
+    padding:15px!important;
+    overflow:visible!important;
+  }
+  #manualObservationPanel .manual-time-head{
+    margin:0 0 12px!important;
+    padding:0!important;
+    display:block!important;
+  }
+  #manualObservationPanel .manual-time-head b{
+    display:block;
+    font-size:13px;
+    line-height:1.35;
+  }
+  #manualObservationPanel .manual-time-head span{
+    display:block;
+    margin-top:5px;
+    font-size:11px;
+    line-height:1.45;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single{
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single>label{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 76px!important;
+    gap:8px!important;
+    width:100%!important;
+    margin-top:7px!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row input,
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row select{
+    min-width:0!important;
+    width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single #applyManualTime{
+    grid-column:1/-1!important;
+    width:auto!important;
+    min-width:108px!important;
+    max-width:130px!important;
+    justify-self:start!important;
+    margin:0!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single .input-help,
+  #manualObservationPanel .input-help{
+    display:block!important;
+    width:100%!important;
+    margin:9px 2px 0!important;
+    padding:0!important;
+    font-size:10.5px!important;
+    line-height:1.45!important;
+  }
+
+  /* TSKK editor meta form stays readable instead of producing tiny fields. */
+  .tskk-meta-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .tskk-meta-grid .full{
+    grid-column:1/-1;
+  }
+  .tskk-meta-grid .time-input-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 82px;
+    gap:8px;
+  }
+
+  /* Observation method switch: same touch height as the rest of the app. */
+  .observation-method-switch{
+    min-height:50px;
+  }
+  .method-choice{
+    min-height:42px;
+    font-size:14px;
+    white-space:nowrap;
+  }
+
+  /* Time summary: avoid a long 5-cell single-column stack. */
+  .time-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .timebox{
+    min-width:0;
+    min-height:64px;
+  }
+  .timebox:last-child{
+    grid-column:1/-1;
+  }
+
+  /* Video tools: 2 + 1 layout on phone, not three squeezed buttons. */
+  .video-tools{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .video-tools .video-skip{
+    width:100%;
+    min-width:0;
+    padding-inline:8px;
+  }
+  .video-tools #fullVideo{
+    grid-column:1/-1;
+  }
+
+  /* Dashboard: use the width intentionally, without excessive vertical scroll. */
+  .dashboard-content .grid.cols-2,
+  .dashboard-content .grid.cols-3,
+  .dashboard-content .chart-row{
+    grid-template-columns:1fr;
+  }
+  .dashboard-content .dashboard-kpis,
+  .dashboard-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  .dashboard-content .dashboard-kpis>.kpi,
+  .dashboard-kpis>.kpi{
+    min-width:0;
+  }
+
+  /* Footer never creates horizontal overflow. */
+  .ut-bottom-footer{
+    width:100%;
+    min-width:0;
+    padding-inline:var(--ui-page-pad);
+  }
+  .ut-footer-motto img{
+    min-width:0;
+    max-width:100%;
+  }
+
+  /* Command center overlay: safe-area aware, centered and independently scrollable. */
+  .sidebar-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:19;
+  }
+  .app-shell.sidebar-open .sidebar{
+    position:fixed!important;
+    top:max(10px,env(safe-area-inset-top))!important;
+    left:10px!important;
+    right:10px!important;
+    bottom:max(10px,env(safe-area-inset-bottom))!important;
+    width:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:14px!important;
+    border-radius:16px;
+    overflow:hidden;
+    box-sizing:border-box;
+    z-index:30;
+  }
+  .app-shell.sidebar-open .sidebar nav{
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .app-shell.sidebar-open .menu-panel-head{
+    flex:0 0 auto;
+    padding-right:54px;
+  }
+  .app-shell.sidebar-open .sidebar-toggle{
+    position:fixed!important;
+    top:max(17px,calc(env(safe-area-inset-top) + 7px))!important;
+    right:17px!important;
+    width:40px!important;
+    min-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+    padding:0!important;
+    z-index:45!important;
+  }
+
+  /* Header: protect the title and menu from squeezing each other. */
+  .ut-topbar,
+  .topbar{
+    min-width:0;
+    gap:10px;
+  }
+  .page-heading{
+    min-width:0;
+    flex:1 1 auto;
+  }
+  .page-heading h1{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .ut-header-logo-1,
+  .ut-header-logo-2{
+    flex:0 0 auto;
+  }
+
+  /* Prevent accidental page-wide horizontal scroll from long helper text. */
+  .muted,
+  .analysis-note,
+  .chart-note,
+  .manual-time-head span,
+  .input-help,
+  .tskk-meta-helper,
+  .tskk-insight{
+    overflow-wrap:anywhere;
+  }
+}
+
+/* ---------- Narrow phones ---------- */
+@media(max-width:430px){
+  :root{
+    --ui-page-pad:11px;
+    --ui-card-pad:13px;
+  }
+  .content{
+    padding:14px var(--ui-page-pad) 24px;
+  }
+  .card,
+  .dashboard-filter,
+  .chart-card,
+  .classify-card,
+  .video-card,
+  .section-card,
+  .tskk-header-card,
+  .tskk-table-card,
+  .tskk-chart-card{
+    padding:var(--ui-card-pad);
+  }
+  .dashboard-content .dashboard-kpis,
+  .dashboard-kpis{
+    gap:8px!important;
+  }
+  .dashboard-content .dashboard-kpis>.kpi,
+  .dashboard-kpis>.kpi{
+    min-height:108px;
+  }
+  .content .btn,
+  .card .btn,
+  .modal .btn,
+  .toolbar .btn,
+  .page-actions .btn,
+  .section-head .btn,
+  button.btn{
+    min-height:42px;
+    height:42px;
+    padding-inline:11px;
+    font-size:13px;
+  }
+  .tskk-meta-grid{
+    grid-template-columns:1fr;
+  }
+  .tskk-meta-grid .full{
+    grid-column:auto;
+  }
+  .tskk-actions .btn,
+  .modal-actions .btn,
+  .toolbar .btn,
+  .page-actions .btn{
+    flex:0 0 auto;
+    max-width:100%;
+  }
+  #manualObservationPanel.manual-time{
+    padding:13px!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single .time-input-row{
+    grid-template-columns:minmax(0,1fr) 72px!important;
+  }
+  #manualObservationPanel .manual-time-grid.manual-single #applyManualTime{
+    min-width:104px!important;
+  }
+  .video-wrap{
+    min-height:205px!important;
+  }
+  .video-tools .video-skip{
+    font-size:12px;
+  }
+  .ut-footer-motto img{
+    width:min(78vw,300px)!important;
+  }
+}
+
+@media(max-width:360px){
+  .content{
+    padding-inline:9px;
+  }
+  .dashboard-content .dashboard-kpis,
+  .dashboard-kpis{
+    gap:7px!important;
+  }
+  .content .btn,
+  .card .btn,
+  .modal .btn,
+  .toolbar .btn,
+  .page-actions .btn,
+  .section-head .btn,
+  button.btn{
+    padding-inline:9px;
+    font-size:12.5px;
+  }
+}
+
+/* ---------- Desktop/tablet sanity pass ---------- */
+@media(min-width:761px){
+  .content{
+    overflow-x:visible;
+  }
+  .section-head .btn,
+  .tskk-actions .btn,
+  .modal-actions .btn,
+  .toolbar .btn,
+  .page-actions .btn{
+    min-height:40px;
+  }
+  .table-wrap{
+    scrollbar-gutter:stable;
+  }
+  .modal-backdrop{
+    padding:24px;
+  }
+}
