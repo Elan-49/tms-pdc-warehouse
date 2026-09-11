@@ -2681,3 +2681,100 @@ button,input,select,textarea{font:inherit;}
 }
 
 
+
+/* =========================================================
+   V4.5.28 — Mobile polish: no clipping / no wrapped controls
+   ========================================================= */
+@media (max-width:760px){
+  /* Native phone controls: give text enough vertical room on iOS Safari and Android Chrome. */
+  input, select, textarea{
+    box-sizing:border-box!important;
+    min-height:52px!important;
+    height:52px!important;
+    padding:10px 14px!important;
+    font-size:16px!important;
+    line-height:1.25!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  select{
+    line-height:normal!important;
+    padding-right:42px!important;
+  }
+  textarea{height:auto!important;min-height:96px!important;overflow:auto!important;}
+
+  /* Filter controls: never crop the selected value. */
+  .filters{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;width:100%!important;}
+  .filters select,.filters input{width:100%!important;max-width:none!important;min-width:0!important;}
+  .dashboard-filter-grid label,.dashboard-filter-controls label{min-width:0!important;}
+
+  /* Every action button keeps its label on one line and inside its shape. */
+  .btn,.toolbar button,.import-btn,.menu-logout,.menu-close,#applyManualTime,
+  .editObs,.del,.editMaster,.delMaster,.tskk-open,.tskk-delete,.tskk-create-from-session,
+  .section-head .btn,.top-actions button{
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    flex-shrink:0!important;
+  }
+
+  /* Data Waktu: action column has a real width; Edit/Hapus never stack letter-by-letter. */
+  #dataTable .table-wrap{overflow-x:auto!important;overflow-y:hidden!important;direction:ltr!important;}
+  #dataTable .data-table{min-width:1120px!important;width:max-content!important;table-layout:auto!important;}
+  #dataTable .data-table th,#dataTable .data-table td{white-space:nowrap!important;vertical-align:middle!important;}
+  #dataTable .data-table th:first-child,#dataTable .data-table td:first-child{min-width:48px!important;width:48px!important;}
+  #dataTable .data-table th:nth-child(11),#dataTable .data-table td:nth-child(11){min-width:150px!important;width:150px!important;text-align:center!important;}
+  #dataTable .data-table td:nth-child(11) .btn{display:inline-flex!important;width:auto!important;min-width:62px!important;height:40px!important;min-height:40px!important;padding:8px 11px!important;align-items:center!important;justify-content:center!important;}
+
+  /* All other action/table columns get protected widths so labels remain readable. */
+  .data-table td .btn{white-space:nowrap!important;word-break:normal!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .rating-table td:last-child,.tskk-observation-list td:last-child,.tskk-list-wrap td:last-child,
+  .master-legend+ .table-wrap td:last-child{min-width:145px!important;white-space:nowrap!important;}
+
+  /* Prevent the table viewport from inheriting a stale horizontal position on mobile. */
+  .table-wrap{scrollbar-width:thin!important;overscroll-behavior-x:contain!important;}
+
+  /* Top-5 Pareto: reserve visible breathing room after the fifth item. */
+  .pareto-card .pareto-chart{width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding-left:10px!important;padding-right:18px!important;}
+  .pareto-card .pareto-bars{padding-left:4px!important;padding-right:16px!important;gap:8px!important;min-width:0!important;}
+  .pareto-card .pareto-item{min-width:0!important;}
+  .pareto-card .pareto-item:last-child{margin-right:10px!important;}
+
+  /* Manual Observation: input + unit remain aligned; Apply is a full-width row inside the card. */
+  .manual-time-grid.manual-single{width:100%!important;min-width:0!important;display:block!important;}
+  .manual-time-grid.manual-single label{width:100%!important;min-width:0!important;}
+  .manual-time-grid.manual-single .time-input-row{width:100%!important;display:grid!important;grid-template-columns:minmax(0,1fr) 82px!important;gap:8px!important;align-items:stretch!important;}
+  .manual-time-grid.manual-single .time-input-row input,
+  .manual-time-grid.manual-single .time-input-row select{width:100%!important;min-width:0!important;}
+  .manual-time-grid.manual-single .time-input-row #applyManualTime{grid-column:1 / -1!important;width:100%!important;height:46px!important;min-height:46px!important;}
+
+  /* Header/menu: preserve a dedicated right rail so the toggle never sits under the sheet. */
+  .ut-topbar{padding-left:max(10px,env(safe-area-inset-left))!important;padding-right:max(10px,env(safe-area-inset-right))!important;}
+  .ut-header-actions{margin-left:auto!important;flex:0 0 auto!important;}
+  .sidebar{left:8px!important;right:58px!important;}
+  .app-shell.sidebar-open .sidebar-toggle{right:max(8px,env(safe-area-inset-right))!important;z-index:999!important;}
+
+  /* Charts/cards never exceed the phone viewport. */
+  .chart-card,.pareto-card,.dashboard-filter,.card{max-width:100%!important;min-width:0!important;}
+  .chart-card{overflow:hidden!important;}
+}
+
+@media (max-width:480px){
+  .content{padding-left:10px!important;padding-right:10px!important;}
+  .card{padding:14px!important;}
+  input,select,textarea{min-height:50px!important;height:50px!important;padding-left:13px!important;padding-right:38px!important;}
+  .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+  .dashboard-kpis>.kpi{height:116px!important;min-height:116px!important;padding:13px 11px!important;}
+  .dashboard-kpis>.kpi .value{white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;}
+  .pareto-card .pareto-chart{padding-right:20px!important;}
+  .pareto-card .pareto-bars{padding-right:18px!important;}
+}
+
+@media (max-width:360px){
+  .ut-header-logo-2{width:82px!important;}
+  .page-heading h1{font-size:15px!important;}
+  .dashboard-kpis>.kpi{padding-left:10px!important;padding-right:9px!important;}
+  #dataTable .data-table{min-width:1060px!important;}
+}
