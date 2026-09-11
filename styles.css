@@ -3584,3 +3584,36 @@ label{gap:6px!important}
   .dashboard-content .dashboard-kpis > .kpi,.dashboard-kpis > .kpi{height:112px!important;min-height:112px!important;padding:12px 10px!important;}
   .dashboard-content .dashboard-kpis > .kpi .value,.dashboard-kpis > .kpi .value{font-size:17px!important;}
 }
+
+/* ============================================================================
+   BUGFIX — Session loader orbit dots
+   The 6 dots had accumulated two conflicting positioning systems from past
+   redesigns (fixed corner offsets AND a rotate+translate transform at the
+   same time), so the ring was lopsided/uneven instead of a clean circle.
+   This is the single source of truth going forward — six dots, evenly
+   spaced every 60deg, positioned purely via transform from dead-center.
+   ============================================================================ */
+.session-loader-orbit-dots span{
+  position:absolute!important;
+  top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;
+  width:8px!important;height:8px!important;margin:-4px!important;
+  border-radius:50%!important;background:#FFD100!important;
+  box-shadow:0 2px 8px rgba(212,175,55,.3)!important;
+  transform-origin:center!important;
+}
+.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-52px)!important}
+.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-52px)!important}
+.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-52px)!important}
+.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-52px)!important}
+.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-52px)!important}
+.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-52px)!important}
+.session-loader-orbit-dots{
+  position:absolute!important;inset:0!important;width:132px!important;height:132px!important;
+  margin:0!important;padding:0!important;left:0!important;top:0!important;
+  transform-origin:66px 66px!important;
+  animation:sessionOrbitTrue 1.35s linear infinite!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .session-loader-orbit-dots{animation:none!important}
+  .session-loader-orbit-dots span{opacity:.85}
+}
