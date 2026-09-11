@@ -2249,9 +2249,7 @@ body.auth-booting .session-loader{
     margin:0 auto!important;
   }
 }
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important}
-}
+
 
 /* =========================================================
    V4.5.4 — Proportional UI & 6-Dot Loader Refinement
@@ -2417,120 +2415,114 @@ label{gap:6px!important}
 .session-loader-orbit-dots span:nth-child(5){bottom:29px!important;left:11px!important}
 .session-loader-orbit-dots span:nth-child(6){top:29px!important;left:11px!important}
 
-/* Symmetric desktop/tablet spacing. */
-@media(max-width:1200px){
-  .content{padding:24px 26px 32px!important}
-  .dashboard-kpis{gap:14px!important}
-}
-@media(max-width:900px){
-  .content{padding:20px 20px 28px!important}
-  .card{padding:18px!important}
-  .dashboard-filter{padding:18px!important}
-  .dashboard-kpis>.kpi{min-height:124px!important;padding:18px!important}
-  .dashboard-filter-actions{width:100%!important;min-width:0!important}
-  .dashboard-filter-actions .btn{width:126px!important;min-width:126px!important}
-  .sidebar{width:min(92vw,760px)!important;height:min(720px,calc(100vh - 40px))!important;padding:20px!important}
-}
-@media(max-width:760px){
-  .content{padding:16px 14px 24px!important}
-  .grid{gap:14px!important}
-  .section{margin-top:18px!important}
-  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{padding:16px!important;border-radius:12px!important}
-  .dashboard-kpis{gap:12px!important}
-  .dashboard-kpis>.kpi{min-height:116px!important;padding:16px!important}
-  .kpi .value{font-size:24px!important}
-  .data-table th,.data-table td{padding:9px 10px!important}
-  .sidebar{width:min(94vw,420px)!important;height:calc(100vh - 28px)!important;padding:16px!important;border-radius:18px!important}
-  .sidebar nav{grid-template-columns:1fr!important;gap:8px!important}
-  .sidebar nav button,.sidebar nav .import-btn{min-height:46px!important}
-  .menu-panel-foot{padding-top:9px!important}
-  .manual-time-grid.manual-single{grid-template-columns:1fr!important}
-  .manual-time-grid.manual-single>#applyManualTime{width:116px!important;min-width:116px!important;max-width:116px!important}
-}
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important}
-}
-
 /* =========================================================
-   V4.5.5 — Final Alignment / Six-Dot / Rating Table Cleanup
+   V4.5.26 — Canonical UI + Responsive Mobile Layer
+   One final override layer. Older V4.5.x patch stacks are removed above.
+   Desktop keeps the established composition; mobile gets its own layout.
    ========================================================= */
-.ut-topbar{display:flex!important;align-items:center!important;gap:14px!important;}
-.ut-header-logo-1{flex:0 0 52px!important;width:52px!important;height:52px!important;display:grid!important;place-items:center!important;margin:0!important;}
-.ut-header-logo-1 img{display:block!important;width:48px!important;height:48px!important;object-fit:contain!important;}
-.ut-header-logo-2 img{box-shadow:none!important;}
 
-.manual-time-grid.manual-single{display:block!important;max-width:700px!important;}
-.manual-time-grid.manual-single>label{display:block!important;min-width:0!important;}
-.manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 92px 116px!important;gap:8px!important;align-items:stretch!important;}
+/* ---------- Header / branding ---------- */
+.ut-topbar{
+  height:74px!important;
+  min-height:74px!important;
+  padding:7px 16px 7px 30px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  background:#fff!important;
+  border-bottom:2px solid var(--ut-yellow,#FFD100)!important;
+}
+.ut-header-logo-1{
+  flex:0 0 48px!important;width:48px!important;height:48px!important;
+  display:grid!important;place-items:center!important;margin:0!important;
+  text-decoration:none!important;cursor:pointer!important;
+}
+.ut-header-logo-1 img{width:46px!important;height:46px!important;object-fit:contain!important;}
+.page-heading{min-width:0!important;flex:1 1 auto!important;line-height:1!important;}
+.page-heading .eyebrow{margin:0 0 3px!important;font-size:9px!important;line-height:1.1!important;letter-spacing:1.25px!important;}
+.page-heading h1{margin:0!important;font-size:23px!important;line-height:1.05!important;letter-spacing:.15px!important;}
+.ut-header-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:12px!important;flex:0 0 auto!important;}
+.ut-header-logo-2{width:min(25vw,260px)!important;max-width:260px!important;padding:0!important;margin:0!important;}
+.ut-header-logo-2 img{display:block!important;width:100%!important;max-width:260px!important;max-height:40px!important;object-fit:contain!important;object-position:right center!important;}
+.sidebar-toggle{
+  width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;
+  border-radius:12px!important;border:1px solid var(--ut-grey-border,#E2E8F0)!important;
+  background:#fff!important;box-shadow:0 6px 16px rgba(10,25,47,.10)!important;
+}
+.sidebar-toggle span{width:21px!important;height:2.5px!important;background:var(--ut-navy-dark,#0A192F)!important;}
+
+/* ---------- Command Center ---------- */
+.sidebar{
+  z-index:120!important;
+  width:min(1180px,calc(100vw - 64px))!important;
+  height:min(760px,calc(100vh - 72px))!important;
+  max-height:calc(100vh - 72px)!important;
+  padding:24px!important;
+  overflow:hidden!important;
+}
+.sidebar nav{
+  height:calc(100% - 150px)!important;
+  overflow:auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-content:start!important;
+  gap:10px!important;
+  padding:0 2px 12px!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.sidebar button,.import-btn{min-height:56px!important;box-sizing:border-box!important;}
+.menu-panel-foot{left:24px!important;right:24px!important;bottom:18px!important;}
+
+/* ---------- Dashboard KPI: left aligned content, vertically balanced ---------- */
+.dashboard-kpis>.kpi{
+  box-sizing:border-box!important;
+  min-height:132px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  text-align:left!important;
+  padding:20px!important;
+  overflow:hidden!important;
+}
+.dashboard-kpis>.kpi .kpi-content{
+  width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;
+  text-align:left!important;align-self:stretch!important;
+}
+.dashboard-kpis>.kpi .label,
+.dashboard-kpis>.kpi .value,
+.dashboard-kpis>.kpi .sub{
+  width:100%!important;margin-left:0!important;margin-right:0!important;text-align:left!important;
+}
+.dashboard-kpis>.kpi .value{color:#202B35!important;}
+
+/* ---------- Manual observation ---------- */
+.manual-time-grid.manual-single{
+  display:block!important;max-width:700px!important;
+}
+.manual-time-grid.manual-single .time-input-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 92px 116px!important;
+  gap:8px!important;align-items:stretch!important;
+}
 .manual-time-grid.manual-single .time-input-row input,
 .manual-time-grid.manual-single .time-input-row select,
-.manual-time-grid.manual-single .time-input-row #applyManualTime{height:42px!important;min-height:42px!important;box-sizing:border-box!important;}
-.manual-time-grid.manual-single .time-input-row #applyManualTime{width:116px!important;min-width:116px!important;max-width:116px!important;margin:0!important;padding:8px 12px!important;justify-self:center!important;align-self:stretch!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:9px!important;}
+.manual-time-grid.manual-single .time-input-row #applyManualTime{
+  height:42px!important;min-height:42px!important;box-sizing:border-box!important;
+}
+#applyManualTime{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:116px!important;min-width:116px!important;max-width:116px!important;
+  margin:0!important;padding:8px 12px!important;border-radius:9px!important;
+}
 
-/* Rating Factor: continuous separators; the RF column has no broken blank cell. */
-.rating-table-wrap{overflow-x:auto!important;overflow-y:hidden!important;}
-.rating-table{border-collapse:separate!important;border-spacing:0!important;}
-.rating-table tbody tr{background:#fff!important;}
-.rating-table tbody td{border-bottom:1px solid #E2E8F0!important;border-top:0!important;vertical-align:middle!important;}
+/* ---------- Rating Factor ---------- */
+.rating-table-wrap{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch;}
+.rating-table{width:100%!important;border-collapse:collapse!important;border-spacing:0!important;table-layout:auto!important;}
+.rating-table th,.rating-table td{border-left:0!important;border-right:0!important;border-top:0!important;box-sizing:border-box!important;}
+.rating-table tbody td{border-bottom:1px solid #E2E8F0!important;vertical-align:middle!important;}
 .rating-table tbody tr:last-child td{border-bottom:0!important;}
-.rating-table td.rf-result{display:table-cell!important;width:118px!important;min-width:118px!important;padding-left:12px!important;padding-right:12px!important;text-align:center!important;vertical-align:middle!important;white-space:nowrap!important;color:#0A192F!important;font-weight:800!important;border-left:1px solid #E2E8F0!important;border-right:1px solid #E2E8F0!important;}
-.rating-table th:nth-child(7),.rating-table td:nth-child(7){min-width:118px!important;width:118px!important;text-align:center!important;}
-.rating-table th:nth-child(7){border-left:1px solid rgba(255,255,255,.10)!important;border-right:1px solid rgba(255,255,255,.10)!important;}
-
-.ut-footer-motto img{width:min(28vw,300px)!important;min-width:0!important;max-width:300px!important;height:auto!important;max-height:42px!important;object-fit:contain!important;}
-
-/* Exactly six evenly spaced dots around the UT logo. */
-.session-loader-orbit{width:122px!important;height:122px!important;}
-.session-loader-logo{width:76px!important;height:76px!important;z-index:2!important;}
-.session-loader-orbit-dots{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;animation:sessionOrbit 1.65s linear infinite!important;}
-.session-loader-orbit-dots span{position:absolute!important;top:50%!important;left:50%!important;width:8px!important;height:8px!important;margin:-4px!important;border-radius:50%!important;background:#FFD100!important;box-shadow:0 2px 8px rgba(212,175,55,.28)!important;}
-.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-55px)!important;}
-.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-55px)!important;}
-.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-55px)!important;}
-.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-55px)!important;}
-.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-55px)!important;}
-.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-55px)!important;}
-@keyframes sessionOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-@media(max-width:760px){
- .ut-header-logo-1{flex-basis:42px!important;width:42px!important;height:42px!important}.ut-header-logo-1 img{width:40px!important;height:40px!important}
- .manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 82px 110px!important}.manual-time-grid.manual-single .time-input-row #applyManualTime{width:110px!important;min-width:110px!important;max-width:110px!important}
- .ut-footer-motto img{width:min(42vw,230px)!important;max-height:38px!important}
-}
-@media(max-width:520px){
- .manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 82px!important}.manual-time-grid.manual-single .time-input-row #applyManualTime{grid-column:1/-1!important;width:110px!important;min-width:110px!important;max-width:110px!important;justify-self:center!important}
-}
-@media(prefers-reduced-motion:reduce){.session-loader-orbit-dots{animation:none!important;}}
-
-
-/* =========================================================
-   V4.5.6 — Final Visual QA / Rating Grid / Header Branding
-   ========================================================= */
-.ut-header-logo-1{
-  text-decoration:none!important;
-  cursor:pointer!important;
-}
-.ut-header-logo-1:focus-visible{
-  outline:2px solid #FFD100!important;
-  outline-offset:3px!important;
-  border-radius:8px!important;
-}
-
-/* Rating Factor: every column owns the same separator; no broken vertical gaps. */
-.rating-table{
-  width:100%!important;
-  border-collapse:collapse!important;
-  border-spacing:0!important;
-  table-layout:auto!important;
-}
-.rating-table th,
-.rating-table td{
-  border-right:1px solid #E2E8F0!important;
-  border-left:0!important;
-  box-sizing:border-box!important;
-}
-.rating-table th:last-child,
-.rating-table td:last-child{border-right:0!important;}
 .rating-table th:nth-child(1),.rating-table td:nth-child(1){min-width:120px!important;}
 .rating-table th:nth-child(2),.rating-table td:nth-child(2){min-width:180px!important;}
 .rating-table th:nth-child(3),.rating-table td:nth-child(3),
@@ -2539,1081 +2531,153 @@ label{gap:6px!important}
 .rating-table th:nth-child(6),.rating-table td:nth-child(6){min-width:94px!important;text-align:center!important;}
 .rating-table th:nth-child(7),.rating-table td:nth-child(7){min-width:125px!important;width:125px!important;text-align:center!important;}
 .rating-table th:nth-child(8),.rating-table td:nth-child(8){min-width:82px!important;text-align:center!important;}
-.rating-table td.rf-result{
-  width:125px!important;min-width:125px!important;
-  border-left:0!important;border-right:1px solid #E2E8F0!important;
-  text-align:center!important;
-}
-.rating-table tbody tr:last-child td{border-bottom:1px solid #E2E8F0!important;}
-.rating-table tbody tr:last-child td:first-child{border-bottom-left-radius:0!important;}
-.rating-table tbody tr:last-child td:last-child{border-bottom-right-radius:0!important;}
+.rating-table td.rf-result{width:125px!important;min-width:125px!important;border:0!important;background:#fff!important;text-align:center!important;}
 
-/* Six dots: fixed six-point orbit, no accidental gaps or overlapping transforms. */
-.session-loader-orbit{width:132px!important;height:132px!important;position:relative!important;}
-.session-loader-logo{width:78px!important;height:78px!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;}
-.session-loader-orbit-dots{
-  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
-  animation:sessionOrbit 1.7s linear infinite!important;
-}
-.session-loader-orbit-dots span{
-  position:absolute!important;
-  width:8px!important;height:8px!important;margin:0!important;
-  left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;
-  transform:none!important;
-  border-radius:50%!important;background:#FFD100!important;
-}
-.session-loader-orbit-dots span:nth-child(1){left:calc(50% - 4px)!important;top:2px!important;}
-.session-loader-orbit-dots span:nth-child(2){right:12px!important;top:calc(25% - 2px)!important;}
-.session-loader-orbit-dots span:nth-child(3){right:12px!important;bottom:calc(25% - 2px)!important;}
-.session-loader-orbit-dots span:nth-child(4){left:calc(50% - 4px)!important;bottom:2px!important;}
-.session-loader-orbit-dots span:nth-child(5){left:12px!important;bottom:calc(25% - 2px)!important;}
-.session-loader-orbit-dots span:nth-child(6){left:12px!important;top:calc(25% - 2px)!important;}
+/* ---------- Session loader: four dots on one true circular orbit ---------- */
+.session-loader-orbit{width:132px!important;height:132px!important;position:relative!important;overflow:visible!important;}
+.session-loader-logo{position:absolute!important;left:50%!important;top:50%!important;width:78px!important;height:78px!important;margin:0!important;transform:translate(-50%,-50%)!important;z-index:3!important;}
+.session-loader-orbit-dots{position:absolute!important;inset:0!important;width:132px!important;height:132px!important;margin:0!important;padding:0!important;z-index:4!important;}
+.session-loader-orbit-svg{display:block!important;width:132px!important;height:132px!important;overflow:visible!important;}
+.session-loader-orbit-ring{transform-box:fill-box!important;transform-origin:center!important;animation:sessionOrbitTrue 1.35s linear infinite!important;will-change:transform!important;}
+.session-loader-orbit-ring circle{fill:#FFD100!important;stroke:none!important;}
+@keyframes sessionOrbitTrue{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-/* Header/footer branding: restrained and visually balanced. */
-.ut-header-logo-1 img{width:44px!important;height:44px!important;object-fit:contain!important;}
-.ut-header-logo-2{width:min(25vw,300px)!important;padding-left:10px!important;}
-.ut-header-logo-2 img{width:100%!important;max-width:300px!important;max-height:46px!important;object-fit:contain!important;}
-.ut-footer-motto img{width:min(22vw,250px)!important;max-width:250px!important;min-width:0!important;max-height:38px!important;object-fit:contain!important;}
-.menu-panel-foot{justify-content:flex-start!important;}
-
-@media(max-width:760px){
-  .ut-header-logo-1 img{width:38px!important;height:38px!important;}
-  .ut-header-logo-2{width:min(30vw,190px)!important;}
-  .ut-header-logo-2 img{max-height:36px!important;}
-  .ut-footer-motto img{width:min(42vw,210px)!important;max-height:34px!important;}
-}
-@media(max-width:480px){
-  .ut-header-logo-1{flex-basis:40px!important;width:40px!important;}
-  .ut-header-logo-1 img{width:36px!important;height:36px!important;}
-  .ut-header-logo-2{width:110px!important;}
-  .ut-header-logo-2 img{max-height:30px!important;}
-}
-@media(prefers-reduced-motion:reduce){.session-loader-orbit-dots{animation:none!important;}}
+/* ---------- Safe, fluid controls ---------- */
+html,body{width:100%;min-width:0;overflow-x:hidden;-webkit-text-size-adjust:100%;}
+*,*::before,*::after{box-sizing:border-box;}
+button,input,select,textarea{font:inherit;}
 
 /* =========================================================
-   V4.5.7 — Visual QA: Rating Grid / True 6-Point Loader / Compact Header
-   ========================================================= */
-
-/* Rating Factor: match the other table columns — no special vertical cage
-   around Rating Factor. Keep only the same horizontal row separators. */
-.rating-table{
-  border-collapse:collapse!important;
-  border-spacing:0!important;
-  table-layout:auto!important;
-}
-.rating-table th,
-.rating-table td{
-  border-left:0!important;
-  border-right:0!important;
-  border-top:0!important;
-  box-sizing:border-box!important;
-}
-.rating-table tbody td{
-  border-bottom:1px solid #E2E8F0!important;
-}
-.rating-table tbody tr:last-child td{
-  border-bottom:0!important;
-}
-.rating-table td.rf-result{
-  border-left:0!important;
-  border-right:0!important;
-  background:#fff!important;
-  text-align:center!important;
-}
-.rating-table th:nth-child(7),
-.rating-table td:nth-child(7){
-  border-left:0!important;
-  border-right:0!important;
-}
-
-/* Header: compact, balanced like the supplied reference. */
-.ut-topbar{
-  height:74px!important;
-  min-height:74px!important;
-  padding:7px 16px 7px 30px!important;
-  gap:14px!important;
-  border-bottom:2px solid var(--ut-yellow,#FFD100)!important;
-}
-.ut-header-logo-1{
-  flex:0 0 48px!important;
-  width:48px!important;
-  height:48px!important;
-}
-.ut-header-logo-1 img{
-  width:46px!important;
-  height:46px!important;
-}
-.page-heading{
-  min-width:0!important;
-  line-height:1!important;
-}
-.page-heading .eyebrow{
-  margin:0 0 3px!important;
-  font-size:9px!important;
-  line-height:1.1!important;
-  letter-spacing:1.25px!important;
-}
-.page-heading h1{
-  margin:0!important;
-  font-size:23px!important;
-  line-height:1.05!important;
-  letter-spacing:.15px!important;
-}
-.ut-header-actions{
-  margin-left:auto!important;
-  display:flex!important;
-  align-items:center!important;
-  gap:12px!important;
-}
-.ut-header-logo-2{
-  width:min(25vw,260px)!important;
-  padding-left:0!important;
-}
-.ut-header-logo-2 img{
-  max-width:260px!important;
-  max-height:40px!important;
-}
-.sidebar-toggle{
-  width:46px!important;
-  height:46px!important;
-  border-radius:12px!important;
-}
-
-/* True mathematical six-point orbit. Every dot is anchored from the exact
-   center at 60-degree intervals, so there can be no missing/random point. */
-.session-loader-orbit{
-  width:132px!important;
-  height:132px!important;
-  position:relative!important;
-}
-.session-loader-logo{
-  width:78px!important;
-  height:78px!important;
-  left:50%!important;
-  top:50%!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:3!important;
-}
-.session-loader-orbit-dots{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  z-index:2!important;
-  animation:sessionOrbit 1.7s linear infinite!important;
-}
-.session-loader-orbit-dots span{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  right:auto!important;
-  bottom:auto!important;
-  width:8px!important;
-  height:8px!important;
-  margin:-4px!important;
-  border-radius:50%!important;
-  background:#FFD100!important;
-  box-shadow:0 2px 8px rgba(212,175,55,.28)!important;
-  transform-origin:center!important;
-}
-.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-57px)!important;}
-.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-57px)!important;}
-.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-57px)!important;}
-.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-57px)!important;}
-.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-57px)!important;}
-.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-57px)!important;}
-
-@media(max-width:760px){
-  .ut-topbar{
-    height:66px!important;
-    min-height:66px!important;
-    padding:6px 12px 6px 14px!important;
-    gap:9px!important;
-  }
-  .ut-header-logo-1{
-    flex-basis:40px!important;
-    width:40px!important;
-    height:40px!important;
-  }
-  .ut-header-logo-1 img{width:38px!important;height:38px!important;}
-  .page-heading .eyebrow{font-size:8px!important;letter-spacing:1px!important;}
-  .page-heading h1{font-size:19px!important;}
-  .ut-header-actions{gap:7px!important;}
-  .ut-header-logo-2{width:min(30vw,180px)!important;}
-  .ut-header-logo-2 img{max-height:31px!important;}
-  .sidebar-toggle{width:40px!important;height:40px!important;border-radius:10px!important;}
-}
-@media(max-width:480px){
-  .ut-topbar{padding-left:10px!important;padding-right:10px!important;}
-  .ut-header-logo-2{width:105px!important;}
-  .ut-header-logo-2 img{max-height:28px!important;}
-  .page-heading .eyebrow{font-size:7.5px!important;}
-  .page-heading h1{font-size:17px!important;}
-}
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important;}
-}
-
-
-/* V4.5.8 — Loader: 7-dot tight orbit around the round UT logo.
-   Seven dots are mathematically spaced at 360/7 degrees and sit directly
-   against the logo edge. The ring rotates as one unit; the logo stays still. */
-.session-loader-orbit{
-  width:112px!important;
-  height:112px!important;
-  position:relative!important;
-  overflow:visible!important;
-}
-.session-loader-logo{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  width:78px!important;
-  height:78px!important;
-  margin:0!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:3!important;
-}
-.session-loader-orbit-dots{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  margin:0!important;
-  z-index:4!important;
-  animation:sessionOrbit 1.25s linear infinite!important;
-  transform-origin:50% 50%!important;
-}
-.session-loader-orbit-dots span{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  right:auto!important;
-  bottom:auto!important;
-  width:8px!important;
-  height:8px!important;
-  margin:-4px!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:50%!important;
-  background:#FFD100!important;
-  box-shadow:0 1px 5px rgba(212,175,55,.24)!important;
-  transform-origin:50% 50%!important;
-}
-.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(2){transform:rotate(51.428571deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(3){transform:rotate(102.857143deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(4){transform:rotate(154.285714deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(5){transform:rotate(205.714286deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(6){transform:rotate(257.142857deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(7){transform:rotate(308.571429deg) translateY(-43px)!important;}
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important;}
-}
-
-
-/* V4.5.9 — Loader: 4-dot true circular orbit around UT logo */
-.session-loader-orbit{
-  width:132px!important;
-  height:132px!important;
-  position:relative!important;
-  display:block!important;
-}
-.session-loader-logo{
-  width:78px!important;
-  height:78px!important;
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  margin:0!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:2!important;
-}
-.session-loader-orbit-dots{
-  position:absolute!important;
-  left:0!important;
-  top:0!important;
-  width:100%!important;
-  height:100%!important;
-  margin:0!important;
-  padding:0!important;
-  animation:sessionOrbit 1.35s linear infinite!important;
-  transform-origin:50% 50%!important;
-  z-index:3!important;
-}
-.session-loader-orbit-dots span{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  right:auto!important;
-  bottom:auto!important;
-  width:8px!important;
-  height:8px!important;
-  margin:-4px!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:50%!important;
-  background:#FFD100!important;
-  box-shadow:none!important;
-  transform-origin:50% 50%!important;
-}
-.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(2){transform:rotate(90deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(3){transform:rotate(180deg) translateY(-43px)!important;}
-.session-loader-orbit-dots span:nth-child(4){transform:rotate(270deg) translateY(-43px)!important;}
-@media (prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important;}
-}
-
-
-/* V4.5.10 — Loader: true 4-dot orbit, SVG geometry
-   One circular path, four equally spaced dots, logo fixed at center. */
-.session-loader-orbit{
-  width:132px!important;
-  height:132px!important;
-  position:relative!important;
-  overflow:visible!important;
-}
-.session-loader-logo{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  width:78px!important;
-  height:78px!important;
-  margin:0!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:2!important;
-}
-.session-loader-orbit-dots{
-  position:absolute!important;
-  inset:0!important;
-  width:132px!important;
-  height:132px!important;
-  margin:0!important;
-  padding:0!important;
-  z-index:3!important;
-  animation:sessionOrbitTrue 1.35s linear infinite!important;
-  transform-origin:66px 66px!important;
-}
-.session-loader-orbit-svg{
-  display:block!important;
-  width:132px!important;
-  height:132px!important;
-  overflow:visible!important;
-}
-.session-loader-orbit-ring{
-  transform-origin:66px 66px;
-}
-.session-loader-orbit-ring circle{
-  fill:#FFD100!important;
-  stroke:none!important;
-}
-@keyframes sessionOrbitTrue{
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
-}
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important;}
-}
-
-/* V4.5.11 — Restore Command Center logout only */
-.menu-panel-foot{
-  justify-content:space-between!important;
-  align-items:center!important;
-}
-.menu-panel-foot .menu-logout{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:7px!important;
-  min-height:36px!important;
-  height:36px!important;
-  padding:7px 12px!important;
-  border:0!important;
-  border-radius:9px!important;
-  background:#DC2626!important;
-  color:#fff!important;
-  font:800 12px/1 Inter,system-ui,sans-serif!important;
-  cursor:pointer!important;
-  box-shadow:0 5px 12px rgba(220,38,38,.18)!important;
-}
-.menu-panel-foot .menu-logout span{font-size:16px!important;line-height:1!important;}
-.menu-panel-foot .menu-logout:hover{background:#B91C1C!important;transform:translateY(-1px);}
-.menu-panel-foot .menu-logout:active{transform:translateY(0);}
-@media(max-width:760px){
-  .menu-panel-foot .menu-logout{min-height:36px!important;height:36px!important;padding:7px 11px!important;}
-}
-
-/* V4.5.12 — Clean White Authentication Layout */
-.login-screen{
-  background:#fff!important;
-  color:#111827!important;
-}
-.login-panel{
-  min-height:100vh!important;
-  min-height:100dvh!important;
-  padding:28px 18px!important;
-  background:#fff!important;
-}
-.login-card{
-  width:100%!important;
-  max-width:430px!important;
-  background:#fff!important;
-  border:1px solid #E2E8F0!important;
-  border-radius:18px!important;
-  padding:34px 32px 28px!important;
-  box-shadow:0 14px 40px rgba(15,23,42,.10)!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-.login-badge{
-  width:116px!important;
-  height:auto!important;
-  max-height:116px!important;
-  object-fit:contain!important;
-  margin:0 auto 20px!important;
-  border-radius:0!important;
-  background:transparent!important;
-}
-.login-card h1{
-  color:#0A192F!important;
-  font-size:25px!important;
-  line-height:1.2!important;
-  margin:0!important;
-  letter-spacing:-.2px!important;
-  font-weight:800!important;
-}
-.auth-subtitle{
-  color:#64748B!important;
-  font-size:13px!important;
-  line-height:1.5!important;
-  margin:7px 0 22px!important;
-}
-.login-card form{gap:14px!important}
-.login-card label{color:#334155!important}
-.login-card input{
-  background:#fff!important;
-  border:1px solid #CBD5E1!important;
-  color:#111827!important;
-  border-radius:9px!important;
-}
-.login-card input::placeholder{color:#94A3B8!important}
-.login-card input:focus{outline:2px solid rgba(255,209,0,.25)!important;border-color:#D4AF37!important}
-.login-switch{
-  background:#F8FAFC!important;
-  border:1px solid #E2E8F0!important;
-}
-.login-link{color:#64748B!important}
-.login-link.active{color:#0A192F!important}
-.login-error{color:#B91C1C!important}
-@media(max-width:600px){
-  .login-panel{padding:20px 14px!important}
-  .login-card{max-width:420px!important;padding:28px 20px 24px!important}
-  .login-badge{width:96px!important;max-height:96px!important;margin-bottom:17px!important}
-  .login-card h1{font-size:22px!important}
-}
-
-/* V4.5.14 — Login building background with dedicated right-side login space */
-.login-screen{
-  background-color:#fff!important;
-  background-image:url('login-building-bg.webp')!important;
-  background-repeat:no-repeat!important;
-  background-size:cover!important;
-  background-position:center center!important;
-}
-.login-panel{
-  min-height:100vh!important;
-  min-height:100dvh!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:flex-end!important;
-  padding:28px clamp(28px,7vw,110px) 28px 28px!important;
-  background:transparent!important;
-}
-.login-card{
-  width:min(430px,100%)!important;
-  max-width:430px!important;
-  margin:0!important;
-  background:rgba(255,255,255,.96)!important;
-  border:1px solid rgba(226,232,240,.95)!important;
-  border-radius:18px!important;
-  padding:34px 32px 28px!important;
-  box-shadow:0 18px 50px rgba(15,23,42,.12)!important;
-  backdrop-filter:blur(3px)!important;
-  -webkit-backdrop-filter:blur(3px)!important;
-}
-.login-badge{
-  width:112px!important;
-  max-height:112px!important;
-  margin:0 auto 18px!important;
-}
-.login-card h1{font-size:25px!important;line-height:1.2!important}
-.auth-subtitle{margin:7px 0 22px!important}
-@media(max-width:900px){
-  .login-panel{padding-right:34px!important}
-}
-@media(max-width:700px){
-  .login-screen{
-    background-size:auto 100%!important;
-    background-position:left center!important;
-  }
-  .login-panel{
-    justify-content:center!important;
-    padding:22px 14px!important;
-    background:rgba(255,255,255,.10)!important;
-  }
-  .login-card{
-    max-width:430px!important;
-    padding:28px 20px 24px!important;
-    background:rgba(255,255,255,.97)!important;
-  }
-  .login-badge{width:96px!important;max-height:96px!important;margin-bottom:17px!important}
-  .login-card h1{font-size:22px!important}
-}
-
-/* V4.5.15 — Tighten authentication heading spacing */
-.login-card h1{
-  margin:0!important;
-  line-height:1.15!important;
-}
-.auth-subtitle{
-  margin:3px 0 16px!important;
-  line-height:1.35!important;
-}
-@media(max-width:700px){
-  .login-card h1{line-height:1.15!important}
-  .auth-subtitle{margin:3px 0 15px!important;line-height:1.35!important}
-}
-
-
-/* V4.5.17 — Dashboard KPI vertical centering fix
-   Keep the four KPI cards visually symmetrical: the label sits in the upper
-   text zone, the value remains centered, and the supporting line occupies the
-   lower text zone. This prevents cards such as WASTE TERBESAR (which can wrap)
-   from making the top/bottom spacing look uneven. */
-.dashboard-kpis{
-  align-items:stretch!important;
-}
-.dashboard-kpis>.kpi{
-  min-height:132px!important;
-  height:100%!important;
-  box-sizing:border-box!important;
-  display:grid!important;
-  grid-template-rows:minmax(0,1fr) auto minmax(0,1fr)!important;
-  align-items:center!important;
-  text-align:center!important;
-  padding:18px 20px!important;
-}
-.dashboard-kpis>.kpi .label{
-  align-self:end!important;
-  margin:0!important;
-  line-height:1.2!important;
-}
-.dashboard-kpis>.kpi .value{
-  align-self:center!important;
-  margin:5px 0!important;
-  line-height:1.15!important;
-  max-width:100%!important;
-}
-.dashboard-kpis>.kpi .sub{
-  align-self:start!important;
-  margin:0!important;
-  line-height:1.35!important;
-  max-width:100%!important;
-}
-
-@media(max-width:900px){
-  .dashboard-kpis>.kpi{
-    min-height:124px!important;
-    padding:16px 14px!important;
-  }
-}
-
-@media(max-width:700px){
-  .dashboard-kpis>.kpi{
-    min-height:112px!important;
-    padding:14px 12px!important;
-  }
-  .dashboard-kpis>.kpi .label{font-size:9px!important;}
-  .dashboard-kpis>.kpi .value{font-size:19px!important;margin:4px 0!important;}
-  .dashboard-kpis>.kpi .sub{font-size:9px!important;line-height:1.3!important;}
-}
-
-/* =========================================================
-   V4.5.18 — Native Mobile Layout / Touch & Safe-Area QA
-   Mobile is intentionally re-laid out rather than scaled from desktop.
+   MOBILE — native composition for iOS / Android
    ========================================================= */
 @media (max-width:760px){
-  html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;}
-  body{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
-  button,input,select,textarea{font-size:16px!important;}
-  button,.btn,.sidebar button,.import-btn,.sidebar-toggle,.menu-close{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
-
-  /* Header: compact mobile composition with a real side rail for the menu toggle. */
   .ut-topbar{
-    min-height:64px!important;height:64px!important;
-    padding:6px 10px!important;
-    gap:8px!important;
-    padding-top:max(6px,env(safe-area-inset-top))!important;
+    height:66px!important;min-height:66px!important;
+    padding:6px 12px 6px 14px!important;gap:8px!important;
   }
-  .ut-header-logo-1{flex:0 0 38px!important;width:38px!important;height:38px!important;}
-  .ut-header-logo-1 img{width:36px!important;height:36px!important;}
-  .page-heading{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important;}
-  .page-heading .eyebrow{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:7px!important;letter-spacing:.85px!important;}
-  .page-heading h1{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:17px!important;line-height:1.08!important;}
-  .ut-header-actions{flex:0 0 auto!important;gap:6px!important;}
-  .ut-header-logo-2{width:92px!important;min-width:0!important;}
-  .ut-header-logo-2 img{width:100%!important;max-width:92px!important;max-height:26px!important;}
+  .ut-header-logo-1{flex:0 0 40px!important;width:40px!important;height:40px!important;}
+  .ut-header-logo-1 img{width:38px!important;height:38px!important;}
+  .page-heading{min-width:0!important;overflow:hidden!important;}
+  .page-heading .eyebrow{font-size:7.5px!important;letter-spacing:1px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .page-heading h1{font-size:18px!important;line-height:1.08!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .ut-header-actions{gap:7px!important;}
+  .ut-header-logo-2{width:min(30vw,180px)!important;min-width:0!important;}
+  .ut-header-logo-2 img{max-height:31px!important;}
+  .sidebar-toggle{width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;border-radius:10px!important;}
 
-  /* The hamburger never sits under the backdrop/panel. When open it moves into
-     a dedicated right-side rail beside the Command Center panel. */
-  .sidebar-toggle{
-    position:relative!important;z-index:140!important;
-    flex:0 0 40px!important;width:40px!important;min-width:40px!important;
-    height:40px!important;min-height:40px!important;
-    padding:0!important;margin:0!important;
-    display:grid!important;place-items:center!important;
-    border-radius:10px!important;
-  }
-  .sidebar-toggle span{display:block!important;width:20px!important;height:2.5px!important;margin:0!important;}
-  .app-shell.sidebar-open .sidebar-toggle{
-    position:fixed!important;
-    z-index:140!important;
-    right:10px!important;
-    top:50%!important;
-    left:auto!important;
-    transform:translateY(-50%)!important;
-    width:40px!important;height:40px!important;
-    box-shadow:0 8px 20px rgba(10,25,47,.16)!important;
-  }
-
-  /* Mobile Command Center: left panel + dedicated right rail. */
+  /* Menu opens as a phone sheet with a dedicated right rail for the toggle. */
   .sidebar{
-    z-index:120!important;
-    left:12px!important;
-    right:58px!important;
-    top:max(12px,env(safe-area-inset-top))!important;
-    bottom:max(12px,env(safe-area-inset-bottom))!important;
-    width:auto!important;
-    height:auto!important;
-    max-height:none!important;
-    padding:14px!important;
-    transform:none!important;
-    border-radius:18px!important;
+    left:10px!important;right:54px!important;top:10px!important;bottom:10px!important;
+    width:auto!important;height:auto!important;max-height:none!important;
+    transform:translateX(-14px) scale(.985)!important;
+    padding:16px!important;border-radius:18px!important;
     overflow:hidden!important;
   }
-  .app-shell.sidebar-open .sidebar{transform:none!important;}
-  .sidebar-backdrop{z-index:110!important;}
-  .menu-panel-head{gap:10px!important;padding:0 0 12px!important;margin-bottom:12px!important;}
-  .menu-panel-head h2{font-size:18px!important;line-height:1.08!important;}
-  .menu-eyebrow{font-size:8px!important;letter-spacing:1.5px!important;margin-bottom:3px!important;}
-  .menu-panel-head .menu-close{
-    flex:0 0 36px!important;width:36px!important;min-width:36px!important;
-    height:36px!important;min-height:36px!important;border-radius:9px!important;
-    font-size:21px!important;
+  .app-shell.sidebar-open .sidebar{transform:translateX(0) scale(1)!important;}
+  .app-shell.sidebar-open .sidebar-toggle{
+    position:fixed!important;left:auto!important;right:max(8px,env(safe-area-inset-right))!important;
+    top:calc(50% - 21px)!important;z-index:160!important;
+    width:42px!important;height:42px!important;
   }
   .sidebar nav{
-    height:calc(100% - 118px)!important;
-    min-height:0!important;
-    grid-template-columns:1fr!important;
-    gap:7px!important;
-    padding:0 1px 10px!important;
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    -webkit-overflow-scrolling:touch!important;
-    overscroll-behavior:contain!important;
+    height:calc(100% - 124px)!important;
+    grid-template-columns:1fr!important;gap:8px!important;
+    padding:0 0 calc(12px + env(safe-area-inset-bottom))!important;
   }
-  .sidebar nav button,.sidebar nav .import-btn{
-    width:100%!important;min-width:0!important;max-width:none!important;
-    min-height:44px!important;height:auto!important;
-    padding:10px 12px!important;
-    border-radius:11px!important;
-    font-size:11px!important;
-    line-height:1.2!important;
-    text-align:left!important;
-  }
-  .nav-label{margin:7px 3px 0!important;padding:0!important;font-size:8px!important;letter-spacing:1.5px!important;}
-  .menu-panel-foot{
-    left:14px!important;right:14px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;
-    min-height:48px!important;padding:8px 0 0!important;
-    gap:8px!important;
-  }
-  .menu-panel-foot>span{font-size:7.5px!important;letter-spacing:1.2px!important;}
-  .menu-panel-foot .menu-logout{min-height:38px!important;padding:8px 11px!important;border-radius:10px!important;font-size:10px!important;}
+  .sidebar button,.import-btn{min-height:46px!important;padding:11px 13px!important;font-size:12px!important;}
+  .menu-panel-head{gap:10px!important;padding-bottom:12px!important;margin-bottom:12px!important;}
+  .menu-panel-head h2{font-size:18px!important;}
+  .menu-close{width:40px!important;height:40px!important;min-height:40px!important;}
+  .menu-panel-foot{left:16px!important;right:16px!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;min-height:48px!important;padding-top:8px!important;gap:8px!important;}
+  .menu-panel-foot>span{font-size:8px!important;letter-spacing:1.2px!important;}
 
-  /* Mobile content gets its own rhythm; no desktop grid is simply shrunk. */
-  .content{width:100%!important;max-width:none!important;padding:14px 12px 24px!important;}
-  .grid,.workspace,.form-grid,.form-grid.four,.grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr!important;gap:12px!important;}
-  .section{margin-top:14px!important;}
-  .card,.dashboard-filter,.chart-card,.classify-card,.video-card{width:100%!important;max-width:none!important;padding:14px!important;border-radius:12px!important;}
+  .content{width:100%!important;min-width:0!important;padding:14px 12px calc(26px + env(safe-area-inset-bottom))!important;}
+  .main,#app,.workspace{min-width:0!important;width:100%!important;}
+  .workspace{display:flex!important;flex-direction:column!important;gap:12px!important;}
+  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,.tskk-table-card,.tskk-chart-card{width:100%!important;min-width:0!important;padding:16px!important;border-radius:13px!important;}
+  .card h3,.card h2,.dashboard-filter h3,.chart-card h3{font-size:14px!important;line-height:1.3!important;overflow-wrap:anywhere!important;}
 
-  /* Manual Observation: input, unit and Apply are separate mobile rows so the
-     Apply control can never escape the input container. */
-  .manual-time-grid.manual-single{display:block!important;width:100%!important;max-width:none!important;}
-  .manual-time-grid.manual-single>label{width:100%!important;display:block!important;}
-  .manual-time-grid.manual-single .time-input-row{
-    width:100%!important;
-    display:grid!important;
-    grid-template-columns:minmax(0,1fr) 82px!important;
-    gap:8px!important;
-    align-items:stretch!important;
+  /* Dashboard: desktop 4-up -> mobile 2 x 2. */
+  .dashboard-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;margin:0!important;}
+  .dashboard-kpis>.kpi{
+    width:100%!important;min-width:0!important;height:118px!important;min-height:118px!important;
+    padding:14px 12px!important;border-radius:12px!important;
+    justify-content:center!important;align-items:flex-start!important;overflow:hidden!important;
   }
-  .manual-time-grid.manual-single .time-input-row input,
-  .manual-time-grid.manual-single .time-input-row select{
-    width:100%!important;min-width:0!important;height:44px!important;min-height:44px!important;
-    margin:0!important;box-sizing:border-box!important;
-  }
-  .manual-time-grid.manual-single .time-input-row #applyManualTime{
-    grid-column:1/-1!important;
-    justify-self:stretch!important;
-    width:100%!important;min-width:0!important;max-width:none!important;
-    height:44px!important;min-height:44px!important;
-    margin:0!important;padding:9px 14px!important;
-    box-sizing:border-box!important;
-    display:flex!important;align-items:center!important;justify-content:center!important;
-    line-height:1!important;position:static!important;
-    transform:none!important;
-  }
-  .manual-time-grid.manual-single .input-help{display:block!important;margin-top:7px!important;line-height:1.4!important;}
+  .dashboard-kpis>.kpi .kpi-content{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;}
+  .dashboard-kpis>.kpi .label{font-size:9px!important;line-height:1.25!important;letter-spacing:.9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .dashboard-kpis>.kpi .value{font-size:clamp(18px,5.2vw,23px)!important;line-height:1.15!important;margin:5px 0 0!important;white-space:normal!important;overflow-wrap:anywhere!important;}
+  .dashboard-kpis>.kpi .sub{font-size:9px!important;line-height:1.3!important;margin:5px 0 0!important;white-space:normal!important;overflow-wrap:anywhere!important;}
 
-  .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:10px 0!important;}
-  .timebox{min-height:62px!important;padding:9px!important;}
-  .seg-controls{grid-template-columns:1fr 1fr!important;gap:8px!important;margin:10px 0!important;}
-  .seg-controls .btn{min-height:44px!important;}
+  /* Dashboard/filter/chart columns become one clean vertical flow. */
+  .dashboard-filter-controls,.dashboard-filter-grid,.form-grid.four,.chart-row{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;min-width:0!important;}
+  .dashboard-filter-actions{width:100%!important;min-width:0!important;}
+  .dashboard-filter-actions .btn{width:100%!important;min-width:0!important;min-height:44px!important;}
+  .chart-card,.chart-wrap,.dashboard-chart{min-width:0!important;width:100%!important;max-width:100%!important;}
+  .table-wrap,.rating-table-wrap,.data-table-wrap{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-x:contain!important;}
+  .table-wrap table,.rating-table-wrap table,.data-table-wrap table{min-width:680px!important;}
+
+  /* Forms: never force desktop columns onto a phone. */
+  .form-grid,.classify-top-grid,.classify-process-grid,.classify-activity-grid,.classify-element-grid,.two-equal{grid-template-columns:1fr!important;min-width:0!important;gap:10px!important;}
+  label,input,select,textarea{min-width:0!important;max-width:100%!important;}
+  input,select,textarea{font-size:16px!important;}
+  .btn,.toolbar button,.import-btn,.menu-logout,.menu-close,#applyManualTime{min-height:44px!important;max-width:100%!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important;}
+
+  /* Manual observation: controls stay inside the card. */
+  .manual-time-grid.manual-single{max-width:none!important;}
+  .manual-time-grid.manual-single .time-input-row{grid-template-columns:minmax(0,1fr) 78px!important;gap:8px!important;}
+  .manual-time-grid.manual-single .time-input-row #applyManualTime{grid-column:1/-1!important;width:100%!important;min-width:0!important;max-width:none!important;height:44px!important;min-height:44px!important;justify-self:stretch!important;}
+
+  /* Video area: contain portrait media instead of zoom/crop. */
+  .video-stage,.video-wrap{width:100%!important;min-width:0!important;max-width:100%!important;}
+  .video-wrap{min-height:220px!important;}
+  .video-wrap video{width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;}
+  .video-tools{grid-template-columns:1fr 1fr!important;gap:8px!important;}
+  .video-tools .video-skip:last-child{grid-column:1/-1!important;}
+  .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+  .timebox{min-width:0!important;}
+  .seg-controls{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;}
   .seg-controls .btn:last-child{grid-column:1/-1!important;}
 
-  /* Prevent chart/table children from creating page-level horizontal overflow. */
-  .chart-row,.chart-wrap,.chart-card,.dashboard-chart,.table-wrap,.rating-table-wrap{max-width:100%!important;}
-  .table-wrap,.rating-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
-  .chart-label{width:105px!important;min-width:105px!important;}
-  .data-table{min-width:max-content!important;}
-  .toolbar,.filters,.summary-bar{gap:8px!important;}
-  .filters select,.filters input{max-width:none!important;width:100%!important;}
+  /* Footer and motto remain inside the phone viewport. */
+  .ut-bottom-footer{padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important;gap:10px!important;min-width:0!important;}
+  .ut-footer-motto{min-width:0!important;max-width:100%!important;}
+  .ut-footer-motto img{width:min(58vw,230px)!important;max-width:100%!important;height:auto!important;max-height:36px!important;}
 
-  .ut-bottom-footer{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;}
-  .ut-footer-motto img{max-width:210px!important;width:min(55vw,210px)!important;max-height:34px!important;}
-}
+  /* TSKK is scrollable inside its own frame. */
+  .tskk-work-table,.tskk-readonly-table{min-width:920px!important;}
+  .tskk-chart-scroll{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;}
+  .tskk-meta-grid{grid-template-columns:1fr!important;gap:8px!important;}
 
-@media (max-width:390px){
-  .ut-header-logo-2{width:76px!important;}
-  .ut-header-logo-2 img{max-width:76px!important;max-height:23px!important;}
-  .page-heading h1{font-size:16px!important;}
-  .sidebar{left:10px!important;right:56px!important;padding:12px!important;}
-  .sidebar nav{gap:6px!important;}
-  .sidebar nav button,.sidebar nav .import-btn{min-height:42px!important;padding:9px 10px!important;font-size:10.5px!important;}
-  .menu-panel-foot{left:12px!important;right:12px!important;}
-  .content{padding-left:10px!important;padding-right:10px!important;}
-}
-
-@media (min-width:761px){
-  /* Keep all mobile-specific positioning completely isolated from desktop. */
-  .app-shell.sidebar-open .sidebar-toggle{position:relative!important;transform:none!important;right:auto!important;top:auto!important;}
-}
-
-/* V4.5.19 — Dashboard KPI outer-row spacing, not content centering
-   The previous KPI fix centered the contents inside each card. That is not the
-   intended layout: KPI contents should return to the normal top text flow.
-   The centering belongs to the spacing of the KPI row between surrounding
-   dashboard sections, which is controlled by --dashboard-vertical-gap. */
-.dashboard-content .dashboard-kpis,
-.dashboard-content .dashboard-kpis > .kpi{
-  align-items:stretch!important;
-}
-.dashboard-content .dashboard-kpis > .kpi{
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:flex-start!important;
-  text-align:center!important;
-  height:auto!important;
-  min-height:132px!important;
-  padding:20px!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .label{
-  align-self:auto!important;
-  margin:0!important;
-  line-height:1.2!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .value{
-  align-self:auto!important;
-  margin:7px 0 0!important;
-  line-height:1.15!important;
-  max-width:100%!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .sub{
-  align-self:auto!important;
-  margin:5px 0 0!important;
-  line-height:1.4!important;
-  max-width:100%!important;
-}
-
-/* Keep equal outer spacing above and below the KPI row. */
-.dashboard-content{
-  row-gap:var(--dashboard-vertical-gap)!important;
-}
-.dashboard-content > #dashResults{
-  row-gap:var(--dashboard-vertical-gap)!important;
-}
-.dashboard-content #dashResults > .dashboard-kpis{
-  margin:0!important;
-}
-.dashboard-content #dashResults > .section,
-.dashboard-content #dashResults > .card.section{
-  margin:0!important;
-}
-
-@media(max-width:900px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    min-height:124px!important;
-    padding:18px!important;
-  }
-}
-@media(max-width:760px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    min-height:116px!important;
-    padding:16px!important;
-  }
-}
-@media(max-width:480px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    min-height:112px!important;
-    padding:14px!important;
-  }
-}
-
-/* V4.5.20 — KPI content left alignment
-   Keep the KPI row/card spacing unchanged; only the content inside each card
-   returns to the intended left-aligned visual hierarchy. */
-.dashboard-content .dashboard-kpis > .kpi{
-  align-items:flex-start!important;
-  text-align:left!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .label,
-.dashboard-content .dashboard-kpis > .kpi .value,
-.dashboard-content .dashboard-kpis > .kpi .sub{
-  align-self:flex-start!important;
-  text-align:left!important;
-  width:100%!important;
-}
-
-@media(max-width:760px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    align-items:flex-start!important;
-    text-align:left!important;
-  }
-}
-
-/* V4.5.21: KPI content block centered as a group, while its text remains left-aligned.
-   This keeps the visual center of each card balanced without centering the text itself. */
-.dashboard-kpis .kpi{
-  align-items:center;
-}
-.dashboard-kpis .kpi .kpi-content{
-  width:max-content;
-  max-width:100%;
-  margin-inline:auto;
-  text-align:left;
-}
-.dashboard-kpis .kpi .label,
-.dashboard-kpis .kpi .value,
-.dashboard-kpis .kpi .sub{
-  text-align:left;
-}
-@media(max-width:760px){
-  .dashboard-kpis .kpi .kpi-content{
-    width:max-content;
-    max-width:100%;
-  }
-}
-
-/* V4.5.22 — Dashboard KPI final alignment
-   Horizontal: left aligned inside the card.
-   Vertical: the content group is centered so top/bottom breathing room is balanced. */
-.dashboard-kpis .kpi{
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:flex-start!important;
-  justify-content:center!important;
-  text-align:left!important;
-}
-.dashboard-kpis .kpi .kpi-content{
-  width:100%!important;
-  max-width:none!important;
-  margin:0!important;
-  text-align:left!important;
-}
-.dashboard-kpis .kpi .label,
-.dashboard-kpis .kpi .value,
-.dashboard-kpis .kpi .sub{
-  width:100%!important;
-  text-align:left!important;
-}
-@media(max-width:760px){
-  .dashboard-kpis .kpi{
-    align-items:flex-start!important;
-    justify-content:center!important;
-  }
-  .dashboard-kpis .kpi .kpi-content{
-    width:100%!important;
-    margin:0!important;
-  }
-}
-
-/* V4.5.23 — KPI exact vertical rhythm
-   The content group stays LEFT aligned, while the GROUP itself is mathematically
-   centered inside the equal-height card so the top and bottom outer spacing match. */
-.dashboard-content .dashboard-kpis > .kpi{
-  box-sizing:border-box!important;
-  height:132px!important;
-  min-height:132px!important;
-  padding:20px!important;
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-  align-items:flex-start!important;
-  text-align:left!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .kpi-content{
-  flex:0 0 auto!important;
-  width:100%!important;
-  max-width:none!important;
-  margin:0!important;
-  padding:0!important;
-  align-self:stretch!important;
-  text-align:left!important;
-}
-.dashboard-content .dashboard-kpis > .kpi .label,
-.dashboard-content .dashboard-kpis > .kpi .value,
-.dashboard-content .dashboard-kpis > .kpi .sub{
-  display:block!important;
-  width:100%!important;
-  margin-left:0!important;
-  margin-right:0!important;
-  text-align:left!important;
-}
-@media(max-width:760px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    height:auto!important;
-    min-height:116px!important;
-    padding:18px!important;
-    justify-content:center!important;
-  }
-}
-@media(max-width:390px){
-  .dashboard-content .dashboard-kpis > .kpi{
-    min-height:112px!important;
-    padding:16px!important;
-  }
-}
-
-
-/* =========================================================
-   V4.5.24 — Dedicated Mobile UI / Two-Column KPI + No-Crop QA
-   Mobile is designed as its own composition, not a shrunken desktop.
-   ========================================================= */
-@media (max-width:760px){
-  /* viewport-safe content */
-  .app-shell, .main, .content, .dashboard-content{min-width:0!important;width:100%!important;}
-  .content{padding:12px 12px calc(24px + env(safe-area-inset-bottom))!important;}
-
-  /* Header: keep the taskbar control on the right-side safe rail. */
-  .ut-topbar{position:relative!important;display:flex!important;align-items:center!important;padding-left:12px!important;padding-right:10px!important;}
-  .ut-header-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;}
-  .sidebar-toggle{position:relative!important;inset:auto!important;transform:none!important;z-index:160!important;flex:0 0 42px!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;}
-  .app-shell.sidebar-open .sidebar-toggle{position:fixed!important;right:max(10px,env(safe-area-inset-right))!important;left:auto!important;top:50%!important;transform:translateY(-50%)!important;z-index:160!important;}
-
-  /* Dashboard KPI: desktop 4-up becomes a deliberate 2 x 2 mobile grid. */
-  .dashboard-content .dashboard-kpis,
-  .dashboard-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;margin:0!important;}
-  .dashboard-content .dashboard-kpis > .kpi,
-  .dashboard-kpis > .kpi{
-    width:100%!important;min-width:0!important;height:118px!important;min-height:118px!important;
-    box-sizing:border-box!important;padding:14px 13px!important;border-radius:12px!important;
-    overflow:hidden!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;
-  }
-  .dashboard-content .dashboard-kpis > .kpi .kpi-content,
-  .dashboard-kpis > .kpi .kpi-content{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;padding:0!important;}
-  .dashboard-content .dashboard-kpis > .kpi .label,
-  .dashboard-kpis > .kpi .label{font-size:9px!important;line-height:1.25!important;letter-spacing:1px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
-  .dashboard-content .dashboard-kpis > .kpi .value,
-  .dashboard-kpis > .kpi .value{font-size:clamp(18px,5.2vw,23px)!important;line-height:1.15!important;margin:5px 0 0!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;}
-  .dashboard-content .dashboard-kpis > .kpi .sub,
-  .dashboard-kpis > .kpi .sub{font-size:9px!important;line-height:1.35!important;margin:5px 0 0!important;white-space:normal!important;overflow-wrap:anywhere!important;}
-
-  /* Every generic card gets enough internal breathing room without creating crop. */
-  .card,.dashboard-filter,.chart-card,.classify-card,.video-card,.section-card{box-sizing:border-box!important;overflow:visible!important;}
-  .card h1,.card h2,.card h3,.dashboard-filter h1,.dashboard-filter h2,.dashboard-filter h3,
-  .chart-card h1,.chart-card h2,.chart-card h3{max-width:100%!important;overflow-wrap:anywhere!important;word-break:normal!important;}
-  .dashboard-filter .filters,.filters{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
-  .dashboard-filter .filters>*{min-width:0!important;width:100%!important;}
-  select,input,textarea{max-width:100%!important;box-sizing:border-box!important;}
-
-  /* Buttons are full-size touch targets and their text never escapes the shape. */
-  .btn,.toolbar button,.import-btn,.menu-logout,.menu-close,#applyManualTime{box-sizing:border-box!important;min-height:44px!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.2!important;}
-
-  /* Tables scroll inside their own frame, never push the viewport sideways. */
-  .table-wrap,.rating-table-wrap,.data-table-wrap{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;}
-  .table-wrap table,.rating-table-wrap table,.data-table-wrap table{min-width:720px!important;}
-
-  /* Charts: own container, no text clipping at the page edge. */
-  .chart-row{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;width:100%!important;}
-  .chart-card,.chart-wrap,.dashboard-chart{min-width:0!important;width:100%!important;}
-  .chart-card canvas,.chart-card svg,.chart-wrap canvas,.chart-wrap svg{max-width:100%!important;}
+  /* Modal fits above iOS/Android browser controls. */
+  .modal-backdrop{padding:12px!important;padding-bottom:calc(12px + env(safe-area-inset-bottom))!important;}
+  .modal{width:min(100%,560px)!important;max-width:100%!important;max-height:calc(100dvh - 24px)!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;}
 }
 
 @media (max-width:480px){
-  .ut-topbar{min-height:62px!important;height:62px!important;padding-left:10px!important;padding-right:8px!important;gap:6px!important;}
-  .ut-header-logo-1{flex-basis:34px!important;width:34px!important;height:34px!important;}
-  .ut-header-logo-1 img{width:32px!important;height:32px!important;}
-  .ut-header-logo-2{width:78px!important;}
-  .ut-header-logo-2 img{max-width:78px!important;max-height:24px!important;}
-  .page-heading h1{font-size:15px!important;line-height:1.1!important;}
-  .page-heading .eyebrow{font-size:6.5px!important;letter-spacing:.65px!important;}
-  .sidebar-toggle{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;border-radius:10px!important;}
-  .dashboard-content .dashboard-kpis,.dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
-  .dashboard-content .dashboard-kpis > .kpi,.dashboard-kpis > .kpi{height:116px!important;min-height:116px!important;padding:13px 11px!important;}
-  .dashboard-content .dashboard-kpis > .kpi .label,.dashboard-kpis > .kpi .label{font-size:8.5px!important;}
-  .dashboard-content .dashboard-kpis > .kpi .value,.dashboard-kpis > .kpi .value{font-size:18px!important;}
-  .dashboard-content .dashboard-kpis > .kpi .sub,.dashboard-kpis > .kpi .sub{font-size:8.5px!important;}
+  .ut-topbar{padding-left:10px!important;padding-right:8px!important;gap:6px!important;}
+  .ut-header-logo-1{flex-basis:36px!important;width:36px!important;height:36px!important;}
+  .ut-header-logo-1 img{width:34px!important;height:34px!important;}
+  .ut-header-logo-2{width:96px!important;}
+  .ut-header-logo-2 img{max-height:26px!important;}
+  .page-heading h1{font-size:16px!important;}
+  .page-heading .eyebrow{font-size:7px!important;}
+  .sidebar{left:8px!important;right:52px!important;top:8px!important;bottom:8px!important;padding:13px!important;border-radius:16px!important;}
+  .sidebar-toggle,.app-shell.sidebar-open .sidebar-toggle{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;}
   .content{padding-left:10px!important;padding-right:10px!important;}
+  .dashboard-kpis{gap:8px!important;}
+  .dashboard-kpis>.kpi{height:116px!important;min-height:116px!important;padding:13px 11px!important;}
+  .dashboard-kpis>.kpi .label{font-size:8.5px!important;}
+  .dashboard-kpis>.kpi .value{font-size:18px!important;}
+  .dashboard-kpis>.kpi .sub{font-size:8.5px!important;}
 }
 
 @media (max-width:360px){
-  .ut-header-logo-2{width:68px!important;}
-  .ut-header-logo-2 img{max-width:68px!important;max-height:22px!important;}
-  .page-heading h1{font-size:14px!important;}
-  .dashboard-content .dashboard-kpis > .kpi,.dashboard-kpis > .kpi{height:112px!important;min-height:112px!important;padding:12px 10px!important;}
-  .dashboard-content .dashboard-kpis > .kpi .value,.dashboard-kpis > .kpi .value{font-size:17px!important;}
+  .ut-header-logo-2{width:84px!important;}
+  .ut-header-logo-2 img{max-height:23px!important;}
+  .page-heading h1{font-size:15px!important;}
+  .dashboard-kpis>.kpi{height:112px!important;min-height:112px!important;padding:12px 10px!important;}
+  .dashboard-kpis>.kpi .value{font-size:17px!important;}
 }
 
-/* ============================================================================
-   BUGFIX — Session loader orbit dots
-   The 6 dots had accumulated two conflicting positioning systems from past
-   redesigns (fixed corner offsets AND a rotate+translate transform at the
-   same time), so the ring was lopsided/uneven instead of a clean circle.
-   This is the single source of truth going forward — six dots, evenly
-   spaced every 60deg, positioned purely via transform from dead-center.
-   ============================================================================ */
-.session-loader-orbit-dots span{
-  position:absolute!important;
-  top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;
-  width:8px!important;height:8px!important;margin:-4px!important;
-  border-radius:50%!important;background:#FFD100!important;
-  box-shadow:0 2px 8px rgba(212,175,55,.3)!important;
-  transform-origin:center!important;
-}
-.session-loader-orbit-dots span:nth-child(1){transform:rotate(0deg) translateY(-52px)!important}
-.session-loader-orbit-dots span:nth-child(2){transform:rotate(60deg) translateY(-52px)!important}
-.session-loader-orbit-dots span:nth-child(3){transform:rotate(120deg) translateY(-52px)!important}
-.session-loader-orbit-dots span:nth-child(4){transform:rotate(180deg) translateY(-52px)!important}
-.session-loader-orbit-dots span:nth-child(5){transform:rotate(240deg) translateY(-52px)!important}
-.session-loader-orbit-dots span:nth-child(6){transform:rotate(300deg) translateY(-52px)!important}
-.session-loader-orbit-dots{
-  position:absolute!important;inset:0!important;width:132px!important;height:132px!important;
-  margin:0!important;padding:0!important;left:0!important;top:0!important;
-  transform-origin:66px 66px!important;
-  animation:sessionOrbitTrue 1.35s linear infinite!important;
-}
-@media(prefers-reduced-motion:reduce){
-  .session-loader-orbit-dots{animation:none!important}
-  .session-loader-orbit-dots span{opacity:.85}
-}
+
