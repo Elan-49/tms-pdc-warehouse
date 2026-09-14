@@ -5278,3 +5278,30 @@ input[type="password"]{
     font-size:8px!important;
   }
 }
+
+/* V4.5.33 — FINAL LOADER MOTION FIX
+   Keep the UT orbit animated on mobile/refresh. Earlier reduced-motion rules
+   could override the loader animation on some phones/browser accessibility settings.
+   The loader is explicitly requested as a dynamic visual. */
+.session-loader-orbit-dots{
+  animation:sessionLoaderSpin 1.4s linear infinite!important;
+  animation-play-state:running!important;
+  transform-origin:66px 66px!important;
+  will-change:transform;
+}
+.session-loader-orbit-svg{
+  display:block!important;
+  width:132px!important;
+  height:132px!important;
+  transform-origin:66px 66px!important;
+}
+@keyframes sessionLoaderSpin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@media(max-width:760px){
+  .session-loader-orbit-dots{
+    animation:sessionLoaderSpin 1.4s linear infinite!important;
+    animation-play-state:running!important;
+  }
+}
