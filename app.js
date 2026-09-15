@@ -774,5 +774,4 @@ startAppCloud();
       alert('Gagal mengubah password: ' + (err && err.message ? err.message : 'terjadi kesalahan'));
     }
     });
-  }
 })();
