@@ -419,7 +419,7 @@ function renderUsers(){
   if(!ensureAdmin()){state.view='dashboard';return renderDashboard();}
   const sb=window.tmsAuth?.getClient?.();
   if(!sb){$('#app').innerHTML='<div class="content"><div class="card"><div class="analysis-note">Supabase client belum siap.</div></div></div>';return;}
-  $('#app').innerHTML='<div class="content"><div class="card user-management-page"><div class="section-head user-management-title"><div><h2>User Management</h2><h3>Pengguna Aplikasi</h3><p class="muted">Akun baru masuk sebagai Pending. Admin menentukan status dan role.</p></div></div><div id="userTable"><div class="empty">Memuat pengguna...</div></div></div></div>';
+  $('#app').innerHTML='<div class="content"><div class="card user-management-page"><div class="section-head user-management-title"><div><h2>User Management</h2><h3>Pengguna Aplikasi</h3><p class="muted">Akun baru masuk dengan status Pending untuk ditinjau oleh admin.</p></div></div><div id="userTable"><div class="empty">Memuat pengguna...</div></div></div></div>';
   (async()=>{
     const {data,error}=await sb.from('user_profiles').select('id,email,full_name,role,status,created_at,approved_at').order('created_at',{ascending:false});
     if(error){$('#userTable').innerHTML='<div class="analysis-note">Gagal memuat user: '+esc(error.message)+'</div>';return;}
