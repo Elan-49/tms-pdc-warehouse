@@ -653,7 +653,7 @@ window.addEventListener('popstate',()=>{
     render();
   }
 });
-$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open')); const profileToggle=$('#profileToggle'),profileMenu=$('#profileMenu');if(profileToggle&&profileMenu){profileToggle.onclick=e=>{e.stopPropagation();const open=!profileMenu.classList.contains('hidden');profileMenu.classList.toggle('hidden',open);profileToggle.setAttribute('aria-expanded',String(!open));syncProfileUI();};document.addEventListener('click',e=>{if(!e.target.closest('#profileToggle')&&!e.target.closest('#profileMenu')){profileMenu.classList.add('hidden');profileToggle.setAttribute('aria-expanded','false');}});} $('#sidebarClose').onclick=()=>setSidebar(false); const menuLogout=$('#menuLogout'); if(menuLogout) menuLogout.onclick=()=>window.tmsAuth?.logout?.();
+$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open')); $('#sidebarClose').onclick=()=>setSidebar(false); const menuLogout=$('#menuLogout'); if(menuLogout) menuLogout.onclick=()=>window.tmsAuth?.logout?.();
 $('#sidebarBackdrop').onclick=()=>setSidebar(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});
 $('#exportCsv').onclick=()=>{if(ensureWrite())exportCsv()};
