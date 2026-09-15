@@ -653,7 +653,7 @@ window.addEventListener('popstate',()=>{
     render();
   }
 });
-$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open')); $('#sidebarClose').onclick=()=>setSidebar(false); const menuLogout=$('#menuLogout'); if(menuLogout) menuLogout.onclick=()=>window.tmsAuth?.logout?.();
+$('#sidebarToggle').onclick=()=>setSidebar(!$('#appShell').classList.contains('sidebar-open')); $('#sidebarClose').onclick=()=>setSidebar(false);
 $('#sidebarBackdrop').onclick=()=>setSidebar(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});
 $('#exportCsv').onclick=()=>{if(ensureWrite())exportCsv()};
