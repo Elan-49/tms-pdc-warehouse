@@ -5512,3 +5512,8 @@ input[type="password"]{
 /* V4.5.38 — Plain black key icon */
 .ut-profile-action .icon-key{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:17px!important;height:17px!important;flex:0 0 17px!important;color:#111827!important}
 .ut-profile-action .icon-key svg{display:block!important;width:16px!important;height:16px!important;fill:none!important;stroke:#111827!important;stroke-width:1.9!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+
+/* Combined Time Data Validation */
+.formula-box{margin:12px 0;padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:#f7f9fc;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.7}
+.validation-rule{margin-top:16px}
+@media (max-width:700px){.formula-box{font-size:.9rem;overflow-x:auto}.validation-summary{grid-template-columns:1fr!important}}
