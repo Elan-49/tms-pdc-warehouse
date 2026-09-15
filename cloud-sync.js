@@ -68,6 +68,33 @@
     return {observations,settings,master};
   }
   let queuedState=null, queuedResolvers=[];
+  let statusCb=null;
+  function setStatus(s){try{statusCb&&statusCb(s)}catch(e){}}
+  function persistPending(state){try{localStorage.setItem(PENDING_KEY,JSON.stringify({state,savedAt:Date.now()}))}catch(e){console.warn('Could not persist pending cloud snapshot:',e)}}
+  function readPending(){try{const raw=localStorage.getItem(PENDING_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
+  function clearPending(){try{localStorage.removeItem(PENDING_KEY)}catch(e){}}
+  function hasPending(){return !!readPending()}
+  let flushing=false;
+  async function flushPending(){
+    if(flushing||!configured)return false;
+    const pending=readPending();
+    if(!pending)return true;
+    if(typeof navigator!=='undefined'&&navigator.onLine===false)return false;
+    flushing=true; setStatus('retrying');
+    try{
+      await write(pending.state);
+      clearPending();
+      setStatus('synced');
+      return true;
+    }catch(err){
+      console.warn('Cloud retry still failing:',err);
+      setStatus('pending');
+      return false;
+    }finally{flushing=false}
+  }
+  if(typeof window!=='undefined'){
+    window.addEventListener('online',()=>{flushPending()});
+  }
   async function saveSnapshot(state){
     if(!configured||applying)return false;
     queuedState=state;
@@ -77,8 +104,20 @@
       timer=setTimeout(async()=>{
         const snapshot=queuedState; queuedState=null;
         const resolvers=queuedResolvers.splice(0);
-        try{await write(snapshot);resolvers.forEach(resolve=>resolve(true));}
-        catch(err){console.error('Cloud sync failed',err);resolvers.forEach(resolve=>resolve(false));}
+        // Persist BEFORE attempting the write. If the tab closes or the network
+        // drops mid-request, the next reload (or the "online" event) can still
+        // find and retry this exact snapshot instead of losing it silently.
+        persistPending(snapshot);
+        try{
+          await write(snapshot);
+          clearPending();
+          setStatus('synced');
+          resolvers.forEach(resolve=>resolve(true));
+        }catch(err){
+          console.error('Cloud sync failed',err);
+          setStatus('pending');
+          resolvers.forEach(resolve=>resolve(false));
+        }
       },150);
     });
   }
@@ -126,5 +165,15 @@
     if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
     const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;
   }
-  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe,deleteObservation,deleteOperator,deleteMaster};
+  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe,deleteObservation,deleteOperator,deleteMaster,
+    hasPending,flushPending,
+    onStatus(cb){statusCb=cb}
+  };
+  // If the app was closed while an update was still unsynced, try again as
+  // soon as this module loads (covers "closed the tab offline, reopened
+  // later already connected" — the "online" event alone would never fire
+  // in that case because connectivity was already there before load).
+  if(configured&&hasPending()){
+    setTimeout(()=>{flushPending()},1200);
+  }
 })();

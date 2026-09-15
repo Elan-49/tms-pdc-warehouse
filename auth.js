@@ -20,7 +20,15 @@
   }
   function showLogin() {
     $('#loginScreen').classList.remove('hidden');
-    $('#appShell').classList.add('hidden');
+    const shell = $('#appShell');
+    shell.classList.add('hidden');
+    // Reset navigation state, otherwise a menu left open before logout stays
+    // open behind the login screen and reappears on the next sign-in.
+    shell.classList.remove('sidebar-open');
+    const toggle = $('#sidebarToggle');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    const pm = $('#profileMenu');
+    if (pm) pm.classList.add('hidden');
   }
   function setModeLabel() {
     const el = $('#loginMode');
@@ -119,6 +127,21 @@
     return { signedIn: false, message: 'Pendaftaran berhasil. Akun menunggu persetujuan admin. Anda akan dapat masuk setelah status akun disetujui.' };
   }
 
+  async function doForgotPassword(email) {
+    if (!hasSupabaseConfig) throw new Error('Reset password membutuhkan konfigurasi Supabase.');
+    const sb = await getSupabaseClient();
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw new Error(error.message);
+  }
+
+  async function doResetPassword(pass) {
+    if (!hasSupabaseConfig) throw new Error('Reset password membutuhkan konfigurasi Supabase.');
+    const sb = await getSupabaseClient();
+    const { error } = await sb.auth.updateUser({ password: pass });
+    if (error) throw new Error(error.message);
+  }
+
   function isLoggedIn() {
     try { return !!JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { return false; }
   }
@@ -144,27 +167,56 @@
   setModeLabel();
   const loginForm = $('#loginForm');
   const signupForm = $('#signupForm');
+  const forgotForm = $('#forgotForm');
+  const resetForm = $('#resetForm');
   const showLoginBtn = $('#showLoginBtn');
   const showSignupBtn = $('#showSignupBtn');
+  const showForgotBtn = $('#showForgotBtn');
+  const backToLoginBtn = $('#backToLoginBtn');
+  const authSwitch = document.querySelector('.login-switch');
 
   function showAuthTab(mode) {
-    const signup = mode === 'signup';
-    loginForm.classList.toggle('hidden', signup);
-    signupForm.classList.toggle('hidden', !signup);
-    showLoginBtn.classList.toggle('active', !signup);
-    showSignupBtn.classList.toggle('active', signup);
+    const forms = { login: loginForm, signup: signupForm, forgot: forgotForm, reset: resetForm };
+    Object.entries(forms).forEach(([key, form]) => { if (form) form.classList.toggle('hidden', key !== mode); });
+    if (showLoginBtn) showLoginBtn.classList.toggle('active', mode === 'login');
+    if (showSignupBtn) showSignupBtn.classList.toggle('active', mode === 'signup');
+    // The Masuk/Buat Akun tab strip only makes sense for those two modes.
+    if (authSwitch) authSwitch.classList.toggle('hidden', mode === 'forgot' || mode === 'reset');
     const authTitle = $('#authTitle');
     const authSubtitle = $('#authSubtitle');
-    if (authTitle) authTitle.textContent = signup ? 'Buat Akun Baru' : 'Selamat Datang';
-    if (authSubtitle) authSubtitle.textContent = signup ? 'Lengkapi data berikut' : 'Masukkan username dan password';
+    const titles = {
+      login: ['Selamat Datang', 'Masukkan username dan password'],
+      signup: ['Buat Akun Baru', 'Lengkapi data berikut'],
+      forgot: ['Lupa Password', 'Masukkan email akun Anda untuk menerima link reset'],
+      reset: ['Buat Password Baru', 'Sesi reset terverifikasi — silakan buat password baru'],
+    };
+    if (authTitle) authTitle.textContent = titles[mode][0];
+    if (authSubtitle) authSubtitle.textContent = titles[mode][1];
     $('#loginError').classList.add('hidden');
     $('#loginError').textContent = '';
   }
 
   showLoginBtn.addEventListener('click', () => showAuthTab('login'));
   showSignupBtn.addEventListener('click', () => showAuthTab('signup'));
+  if (showForgotBtn) showForgotBtn.addEventListener('click', () => showAuthTab('forgot'));
+  if (backToLoginBtn) backToLoginBtn.addEventListener('click', () => showAuthTab('login'));
   // Defensive initialization: always open on the Login tab.
   showAuthTab('login');
+
+  // A password-recovery link lands back here with a Supabase auth event
+  // rather than a normal page state. When it fires, skip straight to the
+  // "set a new password" form instead of showing the login screen.
+  if (hasSupabaseConfig) {
+    getSupabaseClient().then(sb => {
+      sb.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          document.body.classList.remove('auth-booting');
+          showLogin();
+          showAuthTab('reset');
+        }
+      });
+    }).catch(() => {});
+  }
 
   async function restoreAuthSession() {
     if (!hasSupabaseConfig) {
@@ -216,9 +268,19 @@
     }
   }
 
+  const isRecoveryLink = /type=recovery/.test(window.location.hash);
+
   restoreAuthSession().finally(() => {
     document.body.classList.remove('auth-booting');
   });
+  // A recovery link carries its own short-lived session. Do not let the
+  // normal restore flow above race it into the main app — force the
+  // reset-password tab the moment we can see it in the URL.
+  if (isRecoveryLink) {
+    showLogin();
+    showAuthTab('reset');
+    document.body.classList.remove('auth-booting');
+  }
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -277,6 +339,56 @@
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'logoutBtn') {
       if (confirm('Keluar dari aplikasi?')) logout();
+    }
+  });
+
+  if (forgotForm) forgotForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const errEl = $('#loginError');
+    errEl.classList.add('hidden'); errEl.textContent = '';
+    const email = $('#forgotEmail').value.trim();
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Mengirim...';
+    try {
+      await doForgotPassword(email);
+      errEl.textContent = 'Link reset password telah dikirim ke ' + email + '. Periksa inbox (dan folder spam) lalu klik link tersebut.';
+      errEl.classList.remove('hidden');
+      forgotForm.reset();
+    } catch (err) {
+      errEl.textContent = err.message || 'Gagal mengirim link reset. Coba lagi.';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  if (resetForm) resetForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const errEl = $('#loginError');
+    errEl.classList.add('hidden'); errEl.textContent = '';
+    const pass = $('#resetPass').value;
+    const confirmPass = $('#resetPassConfirm').value;
+    if (pass.length < 6) { errEl.textContent = 'Password minimal 6 karakter.'; errEl.classList.remove('hidden'); return; }
+    if (pass !== confirmPass) { errEl.textContent = 'Konfirmasi password tidak sama.'; errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Menyimpan...';
+    try {
+      await doResetPassword(pass);
+      // Sign out of the short-lived recovery session and ask the user to log
+      // in fresh with the new password — simpler and safer than trying to
+      // carry the recovery session straight into the approval-gated app.
+      if (supabaseClient) await supabaseClient.auth.signOut().catch(() => {});
+      currentProfile = null;
+      resetForm.reset();
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      showAuthTab('login');
+      errEl.textContent = 'Password berhasil diubah. Silakan masuk dengan password baru Anda.';
+      errEl.classList.remove('hidden');
+    } catch (err) {
+      errEl.textContent = err.message || 'Gagal menyimpan password baru. Coba lagi.';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; btn.textContent = original;
     }
   });
 })();
