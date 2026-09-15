@@ -5508,3 +5508,10 @@ input[type="password"]{
 .login-forgot-link{text-align:center;margin:10px 0 0}
 .link-btn{background:transparent!important;border:0!important;padding:0!important;color:#dbe6f4!important;font:700 12px/1.4 inherit!important;cursor:pointer!important;text-decoration:underline;text-underline-offset:2px}
 .link-btn:hover{color:#f9b400!important}
+
+/* V4.5.38 — Profile action hit-area reliability + plain black key icon */
+.ut-profile-menu-actions{position:relative!important;z-index:2!important;pointer-events:auto!important}
+.ut-profile-action{position:relative!important;z-index:3!important;pointer-events:auto!important;isolation:isolate!important}
+.ut-profile-action .icon-key{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:17px!important;height:17px!important;flex:0 0 17px!important;color:#111827!important}
+.ut-profile-action .icon-key svg{display:block!important;width:16px!important;height:16px!important;fill:none!important;stroke:#111827!important;stroke-width:1.9!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.ut-profile-action.danger{position:relative!important;z-index:3!important}
