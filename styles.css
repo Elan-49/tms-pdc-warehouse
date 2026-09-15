@@ -4569,7 +4569,14 @@ input[type="password"]{
 
 /* ---------- Modal ergonomics ---------- */
 .modal-backdrop{
+  /* Modal layer must sit above the locked page header. The header remains
+     fixed/locked; opening a modal temporarily places the modal in a higher
+     viewport layer so no part of the dialog is hidden behind the header. */
+  position:fixed!important;
+  inset:0!important;
+  z-index:4000!important;
   overscroll-behavior:contain;
+  isolation:isolate!important;
 }
 .modal{
   box-sizing:border-box;
