@@ -364,9 +364,6 @@ create table if not exists public.tskk_studies (
   available_minutes numeric not null default 0,
   required_units numeric not null default 0,
   takt_time numeric not null default 0,
-  from_point text,
-  to_point text,
-  machine_name text,
   notes text,
   created_by uuid references auth.users(id) on delete set null,
   updated_by uuid references auth.users(id) on delete set null,
@@ -421,3 +418,61 @@ create trigger trg_audit_tskk_items after insert or update or delete on public.t
 
 alter table public.tskk_studies add column if not exists created_by uuid references auth.users(id) on delete set null;
 alter table public.tskk_studies add column if not exists updated_by uuid references auth.users(id) on delete set null;
+
+-- ===========================================================================
+-- FINAL TMS PDC WAREHOUSE / TSKK additions
+-- Consolidated from the historical TSKK observation-cycle/source migrations.
+-- Safe to run against the current database; existing rows are preserved.
+-- ===========================================================================
+
+-- TSKK size category used by the current application.
+alter table public.tskk_studies add column if not exists size_category text not null default 'Small';
+alter table public.tskk_studies drop constraint if exists tskk_studies_size_category_check;
+alter table public.tskk_studies
+  add constraint tskk_studies_size_category_check
+  check (size_category in ('Small','Medium','Big'));
+
+-- Observation-driven TSKK linkage.
+alter table public.observations add column if not exists observation_cycle_id text;
+update public.observations
+set observation_cycle_id = coalesce(observation_cycle_id, concat('LEGACY-', id::text))
+where observation_cycle_id is null;
+create index if not exists idx_observations_cycle_id on public.observations(observation_cycle_id);
+
+alter table public.tskk_studies add column if not exists observation_cycle_id text;
+alter table public.tskk_studies add column if not exists source_observation_ids jsonb not null default '[]'::jsonb;
+create unique index if not exists ux_tskk_studies_observation_cycle_id
+  on public.tskk_studies(observation_cycle_id)
+  where observation_cycle_id is not null;
+create index if not exists idx_tskk_studies_observation_cycle_id
+  on public.tskk_studies(observation_cycle_id);
+
+-- One video/observation session can be used as the TSKK source.
+alter table public.observations add column if not exists observation_session_id text;
+update public.observations
+set observation_session_id = coalesce(observation_session_id, observation_cycle_id, concat('LEGACY-', id::text))
+where observation_session_id is null;
+create index if not exists idx_observations_session_id on public.observations(observation_session_id);
+
+alter table public.tskk_studies add column if not exists observation_session_id text;
+update public.tskk_studies
+set observation_session_id = coalesce(observation_session_id, observation_cycle_id)
+where observation_session_id is null;
+create unique index if not exists ux_tskk_studies_observation_session_id
+  on public.tskk_studies(observation_session_id)
+  where observation_session_id is not null;
+create index if not exists idx_tskk_studies_observation_session_id
+  on public.tskk_studies(observation_session_id);
+
+-- Current application allows analysts to replace/edit TSKK child items.
+drop policy if exists "admin can delete tskk items" on public.tskk_items;
+drop policy if exists "analyst admin can delete tskk items" on public.tskk_items;
+create policy "analyst admin can delete tskk items"
+on public.tskk_items
+for delete to authenticated
+using (public.has_role('analyst'));
+
+-- Legacy TSKK header fields no longer used by the application.
+alter table public.tskk_studies drop column if exists machine_name;
+alter table public.tskk_studies drop column if exists from_point;
+alter table public.tskk_studies drop column if exists to_point;
