@@ -621,6 +621,32 @@ function renderTSKK(skipCloud=false){
   }).catch(()=>{});
 }
 
+/* ── Sidebar dynamic title ─────────────────────────────────────────────────
+   Maps every state.view value → judul yang tampil di h2#sidebarTitle.
+   Tambahkan entry baru di sini setiap kali ada view baru. */
+const VIEW_LABELS={
+  dashboard:'Dashboard',
+  observe:'Observation',
+  data:'Data Waktu',
+  master:'Master Process & Lean',
+  tskk:'TSKK / SWCT',
+  quality:'Data Quality',
+  validation:'Validasi Data Waktu',
+  rating:'Rating Factor',
+  standard:'Standard Time',
+  waste:'Waste & Pareto',
+  users:'User Management',
+};
+function updateSidebarTitle(){
+  const el=document.getElementById('sidebarTitle');
+  if(!el)return;
+  const next=VIEW_LABELS[state.view]||'Dashboard';
+  if(el.textContent===next)return;           // skip jika tidak berubah
+  el.classList.remove('sidebar-title-in');   // reset animasi
+  void el.offsetWidth;                       // reflow trigger
+  el.textContent=next;
+  el.classList.add('sidebar-title-in');      // jalankan fade-slide masuk
+}
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,quality:renderQuality,validation:renderValidation,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
 function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.classList.toggle('sidebar-open',!!open); const toggle=$('#sidebarToggle'); if(toggle) toggle.setAttribute('aria-expanded',String(!!open));}
 function syncNavGroups(){$$('#nav .nav-group').forEach(g=>{const items=g.querySelector('.nav-group-items'),toggle=g.querySelector('.nav-group-toggle');if(!items||!toggle)return;const active=!!g.querySelector('button[data-view].active');g.classList.toggle('open',active);toggle.setAttribute('aria-expanded',String(active));items.setAttribute('aria-hidden',String(!active));});}
@@ -628,7 +654,7 @@ function setNavGroup(group,open){if(!group)return;const items=group.querySelecto
 function initNavGroups(){$$('#nav .nav-group-toggle').forEach(toggle=>{toggle.onclick=e=>{e.preventDefault();e.stopPropagation();const group=toggle.closest('.nav-group');const open=!group.classList.contains('open');$$('#nav .nav-group').forEach(g=>{if(g!==group)setNavGroup(g,false)});setNavGroup(group,open);};});syncNavGroups();}
 function syncProfileUI(){const p=window.tmsAuth?.getProfile?.()||{};const name=(p.full_name||p.email||'Pengguna').trim();const email=(p.email||'').trim()||'—';const r=String(p.role||window.tmsAuth?.getRole?.()||'user').trim().toLowerCase();const roleLabel=r==='admin'?'Administrator':r==='analyst'?'Analyst':r==='viewer'?'Viewer':'User';['#profileName','#profileMenuName'].forEach(s=>{const el=$(s);if(el)el.textContent=name});['#profileRole','#profileMenuRole'].forEach(s=>{const el=$(s);if(el)el.textContent=roleLabel});const em=$('#profileMenuEmail');if(em)em.textContent=email;}
 initNavGroups();document.addEventListener('tms-auth-ready',syncProfileUI);window.addEventListener('load',syncProfileUI);
-function render(){if(state.view==='uniformity'||state.view==='sufficiency')state.view='validation';if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();syncNavGroups();}
+function render(){if(state.view==='uniformity'||state.view==='sufficiency')state.view='validation';if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();updateSidebarTitle();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();syncNavGroups();}
 $$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){alert('Menu ini hanya dapat diakses Admin.');return}state.view=b.dataset.view;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()});
 document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){state.view=b.dataset.go;state.tskkEditor=false;history.replaceState({appView:state.view,tskkEditor:false},'',location.href);setSidebar(false);render()}});
 // Preserve the current browser route on reload. This prevents F5/refresh from

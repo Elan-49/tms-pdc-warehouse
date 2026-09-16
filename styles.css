@@ -1629,6 +1629,16 @@ html,body{background:#fff!important;color:var(--ut-black)}
   text-transform:uppercase;
   letter-spacing:.2px;
 }
+/* ── Sidebar title: fade + slide saat view berganti ────────────────────── */
+#sidebarTitle{
+  transition:none;                    /* animasi dihandle via class */
+  will-change:opacity,transform;
+}
+@keyframes sidebarTitleIn{
+  from{opacity:0;transform:translateY(6px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+
 .menu-close{
   width:44px;height:44px;min-height:44px;
   border:0!important;
