@@ -5603,3 +5603,52 @@ input[type="password"]{
     -webkit-backdrop-filter:blur(8px)!important;
   }
 }
+
+/* ============================================================================
+   V4.5.40 BUGFIX — mobile dropdown/input font-size, unified
+   Across many past patches, the SAME controls ended up with wildly different
+   mobile font-sizes depending on which page they lived on: some at 10px
+   (illegible), others jumped to 16px, others sat at 12/12.5/13/14/15px in
+   between — a different, arbitrary size almost everywhere you looked.
+   This is the single, final answer, in two deliberate tiers:
+     1) Ordinary controls (forms, filters, modals, metadata fields) -> 16px.
+        16px is not a style preference: below it, iOS Safari auto-zooms the
+        whole page on focus, which is what made some fields feel broken.
+     2) Controls embedded inside dense data tables (Rating Factor, TSKK work
+        table) stay compact on purpose — a table cell can't fit a 16px
+        control next to five others — but now they all match EACH OTHER at
+        one size instead of ranging from 10px to 14px depending on the table.
+   ============================================================================ */
+@media(max-width:760px){
+  /* Tier 1 — every ordinary control, no exceptions. */
+  input,select,textarea,
+  .tskk-meta-grid input,.tskk-meta-grid select,.tskk-meta-grid textarea,
+  .dashboard-content select,.dashboard-content input,
+  .content select,.content input,.content textarea,
+  .modal-backdrop input,.modal-backdrop select,.modal-backdrop textarea,
+  .user-status-select{
+    font-size:16px!important;
+  }
+
+  /* Tier 2 — controls that live inside a dense multi-column data table. */
+  .rating-table select,
+  .tskk-work-table input,.tskk-work-table select,
+  .data-table select{
+    font-size:13px!important;
+  }
+}
+@media(max-width:520px){
+  .user-status-select{font-size:16px!important}
+}
+
+/* ============================================================================
+   V4.5.41 BUGFIX — two fields skipped the mobile font-size unification
+   Both had an extra-specific selector (an #id, and an [type="date"] attribute)
+   that out-ranks the generic ".modal-backdrop select" / ".tskk-meta-grid input"
+   rules from the previous fix, so they silently stayed small while every
+   other field in the same row/modal correctly became 16px.
+   ============================================================================ */
+@media(max-width:760px){
+  #mMethod{font-size:16px!important}
+  .tskk-meta-grid input[type="date"]{font-size:16px!important}
+}
