@@ -217,6 +217,7 @@ function renderObserve(){
   $('#date').value=new Date().toISOString().slice(0,10);
   $('#observationSessionId').textContent=state.observationSessionId?observationSessionLabel(state.observationSessionId,$('#date').value):'Belum ada video';
   wireObserve();
+  setObserveMethodUI(state.observationMethod==='manual'?'manual':'video');
   $('#methodVideo').onclick=()=>setObserveMethodUI('video');
   $('#methodManual').onclick=()=>setObserveMethodUI('manual');
   function setObserveMethodUI(method){
