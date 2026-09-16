@@ -149,7 +149,7 @@ function priority(p){return p>=30?'Critical':p>=20?'High':p>=10?'Medium':p>0?'Lo
 function dashboardPie(classNames, cls, total){
   const safeTotal=Number(total)||0;
   if(!(safeTotal>0))return `<div class="chart-empty">Belum ada standard time yang dapat divisualisasikan.</div>`;
-  const colors=['#f7c600','#102a43','#263238','#b8860b'];
+  const colors=['#f5b400','#102a43','#2f6fed','#4b5563'];
   // Circumference-based segments are stable for zero, half, full-circle and mixed values.
   const r=68, circumference=2*Math.PI*r; let offset=0;
   const slices=classNames.map((cName,i)=>{

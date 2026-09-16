@@ -5652,3 +5652,18 @@ input[type="password"]{
   #mMethod{font-size:16px!important}
   .tskk-meta-grid input[type="date"]{font-size:16px!important}
 }
+
+/* ============================================================================
+   V4.5.42 — Full United Tractors color pass
+   A handful of secondary elements were still on the old generic blue
+   (#3b82f6) left over from the very first prototype, never migrated when
+   the rest of the app moved to the UT yellow/gold/navy palette. Retinted
+   to match what the rest of the app already uses (including the same
+   label color already used by the sidebar's own eyebrows).
+   ============================================================================ */
+.eyebrow{color:#8A6500!important}
+.dropzone:hover{border-color:var(--ut-yellow)!important;background:#fffaf0!important}
+.progress>i{background:linear-gradient(90deg,#2f6fed,#1c4fb8)!important}
+.bar i{background:linear-gradient(90deg,#2f6fed,#1c4fb8)!important}
+.analysis-note{border-left-color:var(--ut-navy)!important;background:#f7f8fb!important;color:var(--ut-ink)!important}
+.brand-mark{background:var(--ut-navy)!important}
