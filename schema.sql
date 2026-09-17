@@ -26,6 +26,9 @@ create table if not exists master_elements (
   unique(process, activity, element_name)
 );
 
+-- Ensure pre-existing installations also generate UUIDs for new master elements.
+alter table master_elements alter column id set default gen_random_uuid();
+
 create table if not exists observations (
   id uuid primary key default gen_random_uuid(),
   observation_no integer,

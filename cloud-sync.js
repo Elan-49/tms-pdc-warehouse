@@ -3,7 +3,7 @@
    Supabase menjadi sumber data bersama dan perubahan dipantau secara realtime. */
 (function(){
   const configured=typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL&&typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY;
-  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tms-pdc-pending-observations';
+  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tms-pdc-pending-observations'; const CLOUD_PENDING_KEY='tms-pdc-pending-cloud-snapshot';
   async function sdk(){
     if(window.supabase)return window.supabase;
     await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});
@@ -70,9 +70,11 @@
   let queuedState=null, queuedResolvers=[];
   let statusCb=null;
   function setStatus(s){try{statusCb&&statusCb(s)}catch(e){}}
-  function persistPending(state){try{localStorage.setItem(PENDING_KEY,JSON.stringify({state,savedAt:Date.now()}))}catch(e){console.warn('Could not persist pending cloud snapshot:',e)}}
-  function readPending(){try{const raw=localStorage.getItem(PENDING_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
-  function clearPending(){try{localStorage.removeItem(PENDING_KEY)}catch(e){}}
+  function migrateLegacyPending(){try{const raw=localStorage.getItem(PENDING_KEY);if(!raw)return;const value=JSON.parse(raw);if(value&&typeof value==='object'&&!Array.isArray(value)&&value.state){localStorage.setItem(CLOUD_PENDING_KEY,raw);localStorage.removeItem(PENDING_KEY)}}catch(e){console.warn('Could not migrate legacy pending cloud snapshot:',e)}}
+  migrateLegacyPending();
+  function persistPending(state){try{localStorage.setItem(CLOUD_PENDING_KEY,JSON.stringify({state,savedAt:Date.now()}))}catch(e){console.warn('Could not persist pending cloud snapshot:',e)}}
+  function readPending(){try{const raw=localStorage.getItem(CLOUD_PENDING_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
+  function clearPending(){try{localStorage.removeItem(CLOUD_PENDING_KEY)}catch(e){}}
   function hasPending(){return !!readPending()}
   let flushing=false;
   async function flushPending(){
@@ -132,7 +134,7 @@
     if(opRows.length){const {error}=await sb.from('operators').upsert(opRows,{onConflict:'name'});if(error)throw error;}
     const {data:ops,error:oe}=await sb.from('operators').select('id,name');if(oe)throw oe;
     const opId=Object.fromEntries((ops||[]).map(x=>[x.name,x.id]));
-    const masters=(state.master||[]).map(m=>{const row={process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:normalizeMasterMethod(m.method)||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,notes:m.notes||null};if(m.id)row.id=m.id;return row;});
+    const masters=(state.master||[]).map(m=>{const row={process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:normalizeMasterMethod(m.method)||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,notes:m.notes||null};if(m.id)row.id=m.id;else row.id=(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():('m-'+Date.now()+'-'+Math.random().toString(16).slice(2));return row;});
     if(masters.length){const {error}=await sb.from('master_elements').upsert(masters,{onConflict:'process,activity,element_name'});if(error)throw error;}
     const ratings=names.map(name=>{const w=state.settings.westinghouse?.[name]||{};return {operator_id:opId[name],skill_value:n(w.skill)||0,effort_value:n(w.effort)||0,condition_value:n(w.condition)||0,consistency_value:n(w.consistency)||0};}).filter(x=>x.operator_id);
     if(ratings.length){const {error}=await sb.from('rating_factors').upsert(ratings,{onConflict:'operator_id'});if(error)throw error;}
