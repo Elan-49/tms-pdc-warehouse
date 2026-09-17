@@ -256,6 +256,8 @@ do $$ begin
   if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='master_elements') then alter publication supabase_realtime add table master_elements; end if;
   if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='rating_factors') then alter publication supabase_realtime add table rating_factors; end if;
   if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='study_settings') then alter publication supabase_realtime add table study_settings; end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='tskk_studies') then alter publication supabase_realtime add table tskk_studies; end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='tskk_items') then alter publication supabase_realtime add table tskk_items; end if;
 end $$;
 
 -- ---------------------------------------------------------------------------

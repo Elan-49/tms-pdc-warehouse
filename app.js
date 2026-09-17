@@ -32,14 +32,18 @@ async function hydrateLocalData(){
   if(Array.isArray(localMaster)&&localMaster.length) safeWrite(MASTER_KEY,localMaster);
 }
 function mergeObservations(remote,local){
+  // Cloud is authoritative once a snapshot has been loaded. Only observations
+  // explicitly marked pending are retained locally while their cloud write is
+  // still in flight. A missing remote row therefore means it was deleted and
+  // must NOT be resurrected from stale browser cache.
   const pending=pendingIds(); const map=new Map((remote||[]).map(o=>[o.id,o]));
-  for(const o of (local||[])){ if(pending.has(o.id)||!map.has(o.id)) map.set(o.id,o); }
+  for(const o of (local||[])){ if(pending.has(o.id)&&!map.has(o.id)) map.set(o.id,o); }
   return [...map.values()].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
 }
 const WASTE_TYPES=['Defects','Overproduction','Waiting','Non-Utilized Talent','Transportation','Inventory','Motion','Extra Processing'];
 const CLASSIFICATIONS=['Direct Value-Added','Non-Value-Added','Indirect','Loss'];
 function masterData(){const v=safeRead(MASTER_KEY,null);const rows=Array.isArray(v)&&v.length?v:MASTER_DATA;return rows.map(x=>({...x,method:normalizeMasterMethod(x.method),equipment:x.equipment||'-'}));}
-function saveMaster(rows){if(!ensureWrite())return false;safeWrite(MASTER_KEY,rows);idbSet(MASTER_KEY,rows).catch(e=>console.warn('Master IndexedDB save failed:',e));if(window.tmsCloud?.enabled)window.tmsCloud.saveSnapshot({observations,settings,master:rows}).catch(console.error);return true;}
+function saveMaster(rows){if(!ensureWrite())return false;safeWrite(MASTER_KEY,rows);idbSet(MASTER_KEY,rows).catch(e=>console.warn('Master IndexedDB save failed:',e));return true;}
 function normalizeMasterMethod(method){
   const v=String(method||'').trim().toLowerCase();
   if(v==='alat bantu'||v==='alat-bantu'||v==='mesin'||v==='auto'||v==='auto / machine'||v==='auto/machine') return 'Auto / Machine';
@@ -389,7 +393,7 @@ function wireObserve(){
       alert('Observasi gagal disimpan: '+(err?.message||String(err)));
     }
   };
-  registerDraftCapture(captureObserveDraft);
+  registerDraftCapture(()=>saveDraft('observe',captureObserveDraft()));
   restoreObserveVideo();
 }
 function renderData(){setHeader('Data Waktu','RAW OBSERVATION MANAGEMENT');let proc=unique(masterData().map(x=>x.process));$('#app').innerHTML=`<div class="content"><div class="card"><div class="filters"><select id="fProc">${opt(proc,'All Process')}</select><select id="fSize"><option value="">All Size</option><option>Small</option><option>Medium</option><option>Big</option></select><input id="search" placeholder="Search element / PIC"></div><div id="dataTable"></div></div></div>`;function draw(){let rows=[...observations].filter(o=>(!$('#fProc').value||o.process===$('#fProc').value)&&(!$('#fSize').value||o.size===$('#fSize').value)&&(`${o.element} ${o.operator}`.toLowerCase().includes($('#search').value.toLowerCase()))).sort((a,b)=>b.createdAt-a.createdAt);$('#dataTable').innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>No</th><th>Date</th><th>PIC</th><th>Process</th><th>Activity</th><th>Element</th><th>Size</th><th>Start</th><th>End</th><th>Time</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.date}</td><td>${esc(r.operator)}</td><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${r.size}</td><td>${t(r.start)}</td><td>${t(r.end)}</td><td><b>${fmtTimeValue(r.time)}</b></td><td>${canWrite()?`<button class="btn ghost editObs" data-id="${r.id}">Edit</button>`:''} ${canDelete()?`<button class="btn ghost del" data-id="${r.id}">Hapus</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada data yang sesuai filter.</div>';$$('.del').forEach(b=>b.onclick=async()=>{const id=b.dataset.id;if(!confirm('Hapus observasi ini?'))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteObservation(id);observations=observations.filter(o=>o.id!==id);saveLocalOnly();draw()}catch(err){console.error(err);alert('Observasi gagal dihapus dari cloud: '+(err.message||err));}});$$('.editObs').forEach(b=>b.onclick=()=>{const o=observations.find(x=>x.id===b.dataset.id);if(!o)return;const nt=prompt('Observed Time (detik)',Number(o.time||0).toFixed(2));if(nt==null)return;const ns=prompt('Kategori Ukuran: Small / Medium / Big',o.size);if(ns==null)return;o.time=+nt||o.time;o.size=['Small','Medium','Big'].includes(ns)?ns:o.size;save();draw()})}['fProc','fSize','search'].forEach(id=>$('#'+id).oninput=draw);draw();}
@@ -463,11 +467,11 @@ function renderMaster(){
   $('#closeMaster').onclick=()=>{$('#masterModal')?.remove();clearDraft('master');};
   $('#saveMaster').onclick=()=>{const v={id:existing.id||((typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():('m-'+Date.now()+'-'+Math.random().toString(16).slice(2))),process:$('#mProcess').value.trim(),activity:$('#mActivity').value.trim(),element:$('#mElement').value.trim(),classification:$('#mClass').value,waste:$('#mWaste').value,method:normalizeMasterMethod($('#mMethod').value),equipment:$('#mEquipment').value.trim()||'-',frequency:+$('#mFreq').value||0,notes:$('#mNotes').value.trim()};if(!v.process||!v.activity||!v.element)return alert('Process, Activity, dan Element Kerja wajib diisi.');let a=masterData();if(editIndex==null)a.push(v);else a[editIndex]=v;clearDraft('master');saveMaster(a);save();$('#masterModal').remove();renderMaster();};
   saveMasterDraft();
-  registerDraftCapture(captureMasterDraft);
+  registerDraftCapture(()=>saveDraft('master',captureMasterDraft()));
  }
  if($('#addMaster')) $('#addMaster').onclick=()=>{if(ensureWrite())modal()};
  $$('.editMaster').forEach(b=>b.onclick=()=>modal(masterData()[+b.dataset.i],+b.dataset.i));
- $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!confirm('Hapus master element ini? Observasi lama tidak otomatis dihapus.'))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteMaster(row?.id);a.splice(i,1);localStorage.setItem(MASTER_KEY,JSON.stringify(a));renderMaster()}catch(err){console.error(err);alert('Master gagal dihapus dari cloud: '+(err.message||err));}});
+ $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!confirm('Hapus master element ini? Observasi lama tidak otomatis dihapus.'))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteMaster(row?.id);a.splice(i,1);safeWrite(MASTER_KEY,a);idbSet(MASTER_KEY,a).catch(()=>{});renderMaster()}catch(err){console.error(err);alert('Master gagal dihapus dari cloud: '+(err.message||err));}});
 }
 
 function renderUsers(){
@@ -540,7 +544,7 @@ async function tskkLoadCloud(){
 async function tskkPersistCloud(study){
   const sb=window.tmsAuth?.getClient?.();if(!sb||!canWrite())return false;
   const row={id:study.id,tskk_no:study.tskkNo||null,observation_session_id:study.observationSessionId||study.observationCycleId||null,observation_cycle_id:study.observationCycleId||study.observationSessionId||null,source_observation_ids:study.sourceObservationIds||[],part_name:study.partName||null,area:study.area||null,process:study.process||null,activity:study.activity||null,operator_name:study.operator||null,study_date:study.studyDate||null,size_category:study.sizeCategory||'Small',shift:study.shift||null,available_minutes:+study.availableMinutes||0,required_units:+study.requiredUnits||0,takt_time:+study.taktTime||0,notes:study.notes||null,updated_at:new Date().toISOString()};
-  try{const q=await sb.from('tskk_studies').upsert(row,{onConflict:'id'});if(q.error){if(/column .*observation_session_id.*does not exist/i.test(q.error.message||'')){alert('TSKK cloud perlu migration terbaru: supabase/tskk_observation_source_migration.sql');return false;}if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return false;throw q.error;}const d=await sb.from('tskk_items').delete().eq('study_id',study.id);if(d.error)throw d.error;const items=(study.items||[]).map((x,i)=>({id:x.id||newId(),study_id:study.id,seq:i+1,element_name:x.element||'',work_type:tskkTypeFromMaster(x.element||'')||x.type||'manual',time_seconds:study.observationMethod==='manual'?(i===0?(+study.manualCycleTime||+x.time||0):0):(+x.time||0),start_seconds:+x.start||0,end_seconds:study.observationMethod==='manual'?0:(+x.end||((+x.start||0)+(+x.time||0))),notes:x.note||null}));if(items.length){const ins=await sb.from('tskk_items').insert(items);if(ins.error)throw ins.error;}return true;}catch(err){console.error('TSKK cloud save failed:',err);alert('TSKK tersimpan lokal, tetapi sinkronisasi cloud gagal: '+(err.message||err));return false}
+  try{const q=await sb.from('tskk_studies').upsert(row,{onConflict:'id'});if(q.error){if(/column .*observation_session_id.*does not exist/i.test(q.error.message||'')){alert('TSKK cloud belum menggunakan schema terbaru. Jalankan supabase/schema.sql lalu coba lagi.');return false;}if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return false;throw q.error;}const d=await sb.from('tskk_items').delete().eq('study_id',study.id);if(d.error)throw d.error;const items=(study.items||[]).map((x,i)=>({id:x.id||newId(),study_id:study.id,seq:i+1,element_name:x.element||'',work_type:tskkTypeFromMaster(x.element||'')||x.type||'manual',time_seconds:study.observationMethod==='manual'?(i===0?(+study.manualCycleTime||+x.time||0):0):(+x.time||0),start_seconds:+x.start||0,end_seconds:study.observationMethod==='manual'?0:(+x.end||((+x.start||0)+(+x.time||0))),notes:x.note||null}));if(items.length){const ins=await sb.from('tskk_items').insert(items);if(ins.error)throw ins.error;}return true;}catch(err){console.error('TSKK cloud save failed:',err);alert('TSKK tersimpan lokal, tetapi sinkronisasi cloud gagal: '+(err.message||err));return false}
 }
 async function tskkDeleteCloud(id){const sb=window.tmsAuth?.getClient?.();if(!sb||!canDelete())return false;const q=await sb.from('tskk_studies').delete().eq('id',id);if(q.error)throw q.error;return true}
 function tskkGraphVisual(type,left,width,timeLabel){
@@ -669,7 +673,7 @@ function renderTSKK(skipCloud=false){
   $$('.tskk-open').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;const s=localStudies.find(x=>String(x.id)===String(b.dataset.id));if(s){try{open(s)}catch(err){console.error('Buka TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}}});
   $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!confirm('Hapus TSKK ini?'))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
   $$('.tskk-create-from-session').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;if(!ensureWrite())return;const session=sessions.find(x=>String(x.id)===String(b.dataset.session));if(!session){console.error('TSKK session not found:',b.dataset.session,sessions);alert('Observation untuk TSKK tidak ditemukan. Silakan refresh halaman.');return}try{open(tskkDefaultStudyFromSession(session))}catch(err){console.error('Buat TSKK gagal:',err);alert('TSKK gagal dibuka: '+(err?.message||err))}});
-  registerDraftCapture(captureTSKKDraft);
+  registerDraftCapture(()=>saveDraft('tskk',captureTSKKDraft()));
   if(state.tskkEditor&&state.tskkDraftId){const resume=getDraft('tskk');if(resume&&String(resume.id)===String(state.tskkDraftId))setTimeout(()=>open(resume),0);}
   if(!skipCloud) tskkLoadCloud().then(remote=>{
     // Cloud is loaded once for this list render. Never start another cloud-load
@@ -760,30 +764,33 @@ async function bootCloud(){
       if(window.tmsCloud.hasPending()){
         const x=$('#storageStatus'); if(x)x.textContent='Ada data lokal belum tersinkron • mencoba otomatis…';
       }
+      const pendingBeforeLoad=window.tmsCloud.hasPending();
+      if(pendingBeforeLoad) await window.tmsCloud.flushPending();
       const cloud=await window.tmsCloud.loadState();
       if(cloud){
-        // Jangan pernah menimpa cache/data yang ada dengan respons cloud kosong.
         if(Array.isArray(cloud.observations)) observations=mergeObservations(cloud.observations,observations);
         settings={...settings,...(cloud.settings||{})};
-        if(Array.isArray(cloud.master)&&cloud.master.length){safeWrite(MASTER_KEY,cloud.master);idbSet(MASTER_KEY,cloud.master).catch(()=>{});}
+        if(Array.isArray(cloud.master)&&(!window.tmsCloud.hasPending()||!pendingBeforeLoad)){safeWrite(MASTER_KEY,cloud.master);idbSet(MASTER_KEY,cloud.master).catch(()=>{});}
         saveLocalOnly();
       }
-      window.tmsCloud.subscribe(async(remote)=>{
+      window.tmsCloud.subscribe(async(remote,event)=>{
         if(!remote)return;
         if(Array.isArray(remote.observations)) observations=mergeObservations(remote.observations,observations);
         settings={...settings,...(remote.settings||{})};
-        if(Array.isArray(remote.master)&&remote.master.length){safeWrite(MASTER_KEY,remote.master);idbSet(MASTER_KEY,remote.master).catch(()=>{});}
+        if(Array.isArray(remote.master)&&!window.tmsCloud.hasPending()){safeWrite(MASTER_KEY,remote.master);idbSet(MASTER_KEY,remote.master).catch(()=>{});}
         saveLocalOnly();
-        // Saat halaman Observation sedang aktif, jangan re-render seluruh halaman akibat
-        // event realtime. Re-render akan membuat elemen <video> dibuat ulang sehingga
-        // video lokal/blob URL terlihat seperti tertutup dan pengguna harus upload ulang.
-        // Data cloud tetap diperbarui di memori; tampilan lain akan memakai data terbaru
-        // saat pengguna berpindah halaman.
-        // Realtime data is merged into memory/local cache only. Do not rebuild
-        // the active page here: doing so can replace the button DOM while the
-        // user is clicking and reset scroll/form/video state. The next explicit
-        // navigation or refresh renders the latest cloud state.
-        // This is intentionally a no-render realtime listener.
+
+        // Update the visible page only when it is safe. Never rebuild an active
+        // form, modal, or video editor because doing so would reset user input.
+        const active=document.activeElement;
+        const editing=!!document.querySelector('.modal-backdrop')||!!active&&['INPUT','TEXTAREA','SELECT'].includes(active.tagName);
+        const inObservation=state.view==='observe';
+        const inTSKKEditor=state.view==='tskk'&&state.tskkEditor;
+        if(event?.table==='tskk_studies'||event?.table==='tskk_items'){
+          if(!inTSKKEditor&&!editing) setTimeout(()=>renderTSKK(),0);
+          return;
+        }
+        if(!editing&&!inObservation) setTimeout(()=>render(),0);
       });
     }
   }catch(err){console.error(err);alert(err?.code==='AUTH_ACCESS_DENIED'?'Akun belum memiliki akses aktif. Hubungi administrator.':(err?.message||'Backend cloud belum dapat dimuat.'));$('#loginScreen').classList.remove('hidden');$('#appShell').classList.add('hidden');return;}

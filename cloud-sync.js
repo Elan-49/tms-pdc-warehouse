@@ -1,6 +1,7 @@
 /* TMS PDC Warehouse — Supabase cloud adapter.
-   Local-first tetap aktif. Jika SUPABASE_URL dan SUPABASE_ANON_KEY diisi,
-   Supabase menjadi sumber data bersama dan perubahan dipantau secara realtime. */
+   Saat Supabase dikonfigurasi, data cloud adalah source of truth bersama.
+   LocalStorage/IndexedDB dipakai sebagai cache dan draft/offline recovery, bukan
+   sebagai sumber kebenaran yang boleh menghidupkan kembali record cloud yang dihapus. */
 (function(){
   const configured=typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL&&typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY;
   let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tms-pdc-pending-observations'; const CLOUD_PENDING_KEY='tms-pdc-pending-cloud-snapshot';
@@ -143,10 +144,41 @@
     const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observation_session_id:o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`,observation_cycle_id:o.observationCycleId||o.observationSessionId||`LEGACY-${o.id}`,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
     if(obs.length){const {error}=await sb.from('observations').upsert(obs,{onConflict:'id'});if(error)throw error;}
   }
+  let refreshTimer=null,refreshQueuedEvent=null;
   async function subscribe(cb){
-    const sb=await getClient(); if(!sb||channel)return;
-    channel=sb.channel('tms-realtime').on('postgres_changes',{event:'*',schema:'public',table:'observations'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'operators'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'master_elements'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'rating_factors'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'study_settings'},refresh).subscribe();
-    async function refresh(){if(applying)return;applying=true;try{const data=await loadState();cb(data)}finally{setTimeout(()=>applying=false,500)}}
+    const sb=await getClient(); if(!sb)return;
+    if(channel){
+      const status=channel.state;
+      if(status==='joined'||status==='joining'||status==='joining'||status==='leaving')return;
+      try{await sb.removeChannel(channel)}catch(e){}
+      channel=null;
+    }
+    const tables=['observations','operators','master_elements','rating_factors','study_settings','tskk_studies','tskk_items'];
+    channel=sb.channel('tms-realtime');
+    tables.forEach(table=>channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>refresh(payload)));
+    channel.subscribe(status=>{
+      if(status==='SUBSCRIBED')setStatus('synced');
+      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+        setStatus('pending');
+        setTimeout(()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT'].includes(channel.state))subscribe(cb).catch(()=>{})},1500);
+      }
+    });
+    async function refresh(payload){
+      refreshQueuedEvent=payload||refreshQueuedEvent;
+      clearTimeout(refreshTimer);
+      refreshTimer=setTimeout(async()=>{
+        const event=refreshQueuedEvent;refreshQueuedEvent=null;
+        if(applying)return;
+        applying=true;
+        try{const data=await loadState();await cb(data,event)}
+        catch(err){console.warn('Realtime refresh failed:',err);setStatus('pending')}
+        finally{setTimeout(()=>applying=false,150)}
+      },80);
+    }
+  }
+  if(typeof window!=='undefined'){
+    window.addEventListener('online',()=>{flushPending();if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)){subscribe(window.__tmsRealtimeCallback||(()=>{})).catch(()=>{})}});
+    window.addEventListener('pageshow',()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)&&window.__tmsRealtimeCallback)subscribe(window.__tmsRealtimeCallback).catch(()=>{})});
   }
   async function deleteObservation(id){
     await ensureAuthSession();
@@ -167,7 +199,7 @@
     if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
     const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;
   }
-  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe,deleteObservation,deleteOperator,deleteMaster,
+  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe(cb){window.__tmsRealtimeCallback=cb;return subscribe(cb)},deleteObservation,deleteOperator,deleteMaster,
     hasPending,flushPending,
     onStatus(cb){statusCb=cb}
   };
