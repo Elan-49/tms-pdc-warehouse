@@ -124,8 +124,6 @@ function fmtFreq(n){return Number(n||0).toLocaleString('id-ID',{minimumFractionD
 function timeUnitFor(seconds){const n=Math.abs(Number(seconds)||0);return n>=60?{label:'menit',divisor:60}:{label:'dtk',divisor:1}}
 function fmtDurationNumber(value){return Number(value||0).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2})}
 function fmtTimeValue(seconds){const n=Number(seconds);if(!Number.isFinite(n))return '—';const u=timeUnitFor(n);return `${fmtDurationNumber(n/u.divisor)} ${u.label}`}
-function fmtTimeNumber(seconds){const n=Number(seconds);if(!Number.isFinite(n))return '—';const u=timeUnitFor(n);return fmtDurationNumber(n/u.divisor)}
-function fmtTimeUnitLabel(seconds){return timeUnitFor(seconds).label}
 function t(sec){if(sec==null||!isFinite(sec))return '—';sec=Math.max(0,Math.round(sec*100)/100);let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),whole=Math.floor(sec%60),cs=Math.round((sec-Math.floor(sec))*100);if(cs===100){whole++;cs=0}if(whole===60){whole=0;m++}if(m===60){m=0;h++}return `${h?String(h).padStart(2,'0')+':':''}${String(m).padStart(2,'0')}:${String(whole).padStart(2,'0')}.${String(cs).padStart(2,'0')}`}
 function unique(a){return [...new Set(a)]}
 function opt(list,placeholder='Pilih...'){return `<option value="">${placeholder}</option>`+list.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}
@@ -224,7 +222,7 @@ function renderObserve(){
     state.observationMethod=method==='manual'?'manual':'video';
     const isManual=state.observationMethod==='manual';
     $('#methodVideo')?.classList.toggle('active',!isManual); $('#methodManual')?.classList.toggle('active',isManual);
-    $('#videoObservationPanel')?.classList.toggle('hidden',isManual); $('#manualObservationPanel')?.classList.toggle('hidden',!isManual); $('#videoSegmentControls')?.classList.toggle('hidden',isManual);
+    $('#videoObservationPanel')?.classList.toggle('hidden',isManual); $('#manualObservationPanel')?.classList.toggle('hidden',!isManual); $('#videoSegmentControls')?.classList.toggle('hidden',isManual); document.querySelector('.time-grid')?.classList.toggle('hidden',isManual);
     if($('#observationInputTitle'))$('#observationInputTitle').textContent=isManual?'1. Manual Observation':'1. Video Observation';
     if(isManual){state.start=null;state.end=null;refreshObservationDisplay();}
   }
@@ -241,18 +239,6 @@ function wireObserve(){
   const video=$('#video'), wrap=$('#videoWrap'), seek=$('#videoSeek');
   let seeking=false;
   const hasVideo=()=>!!video.src;
-  const setObservationMethod=(method)=>{
-    state.observationMethod=method==='manual'?'manual':'video';
-    const isManual=state.observationMethod==='manual';
-    $('#methodVideo')?.classList.toggle('active',!isManual);
-    $('#methodManual')?.classList.toggle('active',isManual);
-    $('#videoObservationPanel')?.classList.toggle('hidden',isManual);
-    $('#manualObservationPanel')?.classList.toggle('hidden',!isManual);
-    $('#videoSegmentControls')?.classList.toggle('hidden',isManual);
-    if($('#observationInputTitle'))$('#observationInputTitle').textContent=isManual?'1. Manual Observation':'1. Video Observation';
-    if($('#observationSessionId')&&!state.observationSessionId)$('#observationSessionId').textContent=isManual?'Belum ada observation':'Belum ada video';
-    if(isManual){state.start=null;state.end=null;refreshTimes?.();}
-  };
   const seekBy=(seconds)=>{if(!Number.isFinite(video.duration))return;video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+seconds));};
   const updateSeek=()=>{
     const current=Number.isFinite(video.currentTime)?video.currentTime:0;
@@ -505,7 +491,6 @@ function tskkPrintGraph(type,duration){
 // Duration display is automatic everywhere: < 60 seconds = dtk; >= 60 seconds = menit.
 // Stored values remain in seconds for backward compatibility and calculation accuracy.
 function tskkTimeUnit(scaleSeconds){return timeUnitFor(scaleSeconds)}
-function tskkInputValue(seconds){return Number(seconds||0)}
 function tskkDisplayTime(value,unit){return fmtDurationNumber((Number(value)||0)/(unit?.divisor||1));}
 function tskkAxisTicks(scaleSeconds,unit){
   const divisor=unit?.divisor||1,displayScale=Math.max(0,Number(scaleSeconds)||0)/divisor;
@@ -650,7 +635,7 @@ function updateSidebarTitle(){
   el.classList.add('sidebar-title-in');      // jalankan fade-slide masuk
 }
 const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,quality:renderQuality,validation:renderValidation,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
-function setSidebar(open){const shell=$('#appShell'); if(!shell)return; shell.classList.toggle('sidebar-open',!!open); const toggle=$('#sidebarToggle'); if(toggle) toggle.setAttribute('aria-expanded',String(!!open));}
+function setSidebar(open){const shell=$('#appShell'); if(!shell)return; const isOpen=!!open; shell.classList.toggle('sidebar-open',isOpen); const toggle=$('#sidebarToggle'); if(toggle){ toggle.setAttribute('aria-expanded',String(isOpen)); toggle.setAttribute('aria-label',isOpen?'Tutup menu navigasi':'Buka menu navigasi'); }}
 function syncNavGroups(){$$('#nav .nav-group').forEach(g=>{const items=g.querySelector('.nav-group-items'),toggle=g.querySelector('.nav-group-toggle');if(!items||!toggle)return;const active=!!g.querySelector('button[data-view].active');g.classList.toggle('open',active);toggle.setAttribute('aria-expanded',String(active));items.setAttribute('aria-hidden',String(!active));});}
 function setNavGroup(group,open){if(!group)return;const items=group.querySelector('.nav-group-items'),toggle=group.querySelector('.nav-group-toggle');group.classList.toggle('open',!!open);if(toggle)toggle.setAttribute('aria-expanded',String(!!open));if(items)items.setAttribute('aria-hidden',String(!open));}
 function initNavGroups(){$$('#nav .nav-group-toggle').forEach(toggle=>{toggle.onclick=e=>{e.preventDefault();e.stopPropagation();const group=toggle.closest('.nav-group');const open=!group.classList.contains('open');$$('#nav .nav-group').forEach(g=>{if(g!==group)setNavGroup(g,false)});setNavGroup(group,open);};});syncNavGroups();}
