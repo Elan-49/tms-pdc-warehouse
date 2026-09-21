@@ -343,7 +343,7 @@
 
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'logoutBtn') {
-      if (confirm('Keluar dari aplikasi?')) logout();
+      (window.tmsDialog?.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true})||Promise.resolve(false)).then(ok=>{if(ok)logout();});
     }
   });
 

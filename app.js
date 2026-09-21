@@ -120,6 +120,36 @@ function showToast(message,type='info',duration=3600){
   toastTimer=setTimeout(close,Math.max(1800,Number(duration)||3600));
 }
 
+function createUTDialog({title,message,mode='confirm',value='',placeholder='',confirmText='Simpan',danger=false,optsInputType='text'}={}){
+  return new Promise(resolve=>{
+    const host=$('#utDialogHost')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'utDialogHost'}));
+    host.className='ut-dialog-host';
+    const backdrop=document.createElement('div');
+    backdrop.className='modal-backdrop ut-dialog-backdrop';
+    const dialog=document.createElement('div');
+    dialog.className='modal ut-dialog';
+    const input=mode==='input'?`<label class="ut-dialog-field">${esc(placeholder||title)}<input id="utDialogInput" type="${esc(optsInputType||'text')}" value="${esc(value)}" autocomplete="off"></label>`:'';
+    dialog.innerHTML=`<div class="ut-dialog-icon ${danger?'danger':''}" aria-hidden="true">${danger?'!':mode==='input'?'✎':'?'}</div><div class="ut-dialog-content"><h3>${esc(title||'Konfirmasi')}</h3><p>${esc(message||'')}</p>${input}</div><div class="ut-dialog-actions"><button type="button" class="btn ghost" data-dialog-cancel>Batal</button><button type="button" class="btn ${danger?'danger':''}" data-dialog-ok>${esc(confirmText)}</button></div>`;
+    backdrop.appendChild(dialog); host.appendChild(backdrop);
+    const field=dialog.querySelector('#utDialogInput');
+    let done=false;
+    const finish=result=>{
+      if(done)return; done=true; document.removeEventListener('keydown',onKey); backdrop.classList.remove('is-visible');
+      setTimeout(()=>backdrop.remove(),160); resolve(result);
+    };
+    const onKey=e=>{if(e.key==='Escape')finish(null);if(e.key==='Enter'&&mode==='input')finish(field?.value??'');};
+    dialog.querySelector('[data-dialog-cancel]').onclick=()=>finish(null);
+    dialog.querySelector('[data-dialog-ok]').onclick=()=>finish(mode==='input'?(field?.value??''):true);
+    backdrop.addEventListener('click',e=>{if(e.target===backdrop)finish(null)});
+    document.addEventListener('keydown',onKey);
+    requestAnimationFrame(()=>{backdrop.classList.add('is-visible');field?.focus();field?.select()});
+  });
+}
+window.tmsDialog={
+  confirm:(message,opts={})=>createUTDialog({mode:'confirm',message,title:opts.title||'Konfirmasi',confirmText:opts.confirmText||'Lanjutkan',danger:!!opts.danger}),
+  input:(title,value='',opts={})=>createUTDialog({mode:'input',title,value,message:opts.message||'Masukkan nilai yang diperlukan.',placeholder:opts.placeholder||title,confirmText:opts.confirmText||'Simpan',optsInputType:opts.inputType||'text'})
+};
+
 function newId(){
   try{
     if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -380,7 +410,7 @@ function wireObserve(){
     if(!hasVideo())return showToast('Pilih video terlebih dahulu.','warning');
     try{if(video.requestFullscreen)await video.requestFullscreen();else if(wrap.requestFullscreen)await wrap.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen();}catch(e){console.warn(e);}
   };
-  $('#removeVideo').onclick=()=>{if(confirm('Tutup video ini? Video tidak akan menghapus data observasi yang sudah disimpan.'))removeVideo();};
+  $('#removeVideo').onclick=()=>{tmsDialog.confirm('Video akan ditutup. Data observasi yang sudah disimpan tetap aman.',{title:'Tutup video?',confirmText:'Tutup',danger:true}).then(ok=>{if(ok)removeVideo()});};
   $('#videoInput').onchange=async e=>{const f=e.target.files[0];loadVideoFile(f);if(f){try{await idbSet(OBS_VIDEO_DRAFT_KEY,f)}catch(err){console.warn('Observation video draft save skipped:',err)}saveObserveDraft();}};
   seek.onpointerdown=()=>{seeking=true;};
   seek.oninput=()=>{if(!hasVideo())return;const value=Number(seek.value);$('#seekCurrent').textContent=t(value);$('#cur').textContent=t(value);video.currentTime=value;};
@@ -428,7 +458,127 @@ function wireObserve(){
   registerDraftCapture(()=>saveDraft('observe',captureObserveDraft()));
   restoreObserveVideo();
 }
-function renderData(){setHeader('Data Waktu','RAW OBSERVATION MANAGEMENT');let proc=unique(masterData().map(x=>x.process));$('#app').innerHTML=`<div class="content"><div class="card"><div class="filters"><select id="fProc">${opt(proc,'All Process')}</select><select id="fSize"><option value="">All Size</option><option>Small</option><option>Medium</option><option>Big</option></select><input id="search" placeholder="Search element / PIC"></div><div id="dataTable"></div></div></div>`;function draw(){let rows=[...observations].filter(o=>(!$('#fProc').value||o.process===$('#fProc').value)&&(!$('#fSize').value||o.size===$('#fSize').value)&&(`${o.element} ${o.operator}`.toLowerCase().includes($('#search').value.toLowerCase()))).sort((a,b)=>b.createdAt-a.createdAt);$('#dataTable').innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>No</th><th>Date</th><th>PIC</th><th>Process</th><th>Activity</th><th>Element</th><th>Size</th><th>Start</th><th>End</th><th>Time</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.date}</td><td>${esc(r.operator)}</td><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${r.size}</td><td>${t(r.start)}</td><td>${t(r.end)}</td><td><b>${fmtTimeValue(r.time)}</b></td><td>${canWrite()?`<button class="btn ghost editObs" data-id="${r.id}">Edit</button>`:''} ${canDelete()?`<button class="btn ghost del" data-id="${r.id}">Hapus</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada data yang sesuai filter.</div>';$$('.del').forEach(b=>b.onclick=async()=>{const id=b.dataset.id;if(!confirm('Hapus observasi ini?'))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteObservation(id);observations=observations.filter(o=>o.id!==id);forgetPending([id]);saveLocalOnly();draw()}catch(err){console.error(err);showToast('Observasi gagal dihapus dari cloud: '+(err.message||err),'error');}});$$('.editObs').forEach(b=>b.onclick=()=>{const o=observations.find(x=>x.id===b.dataset.id);if(!o)return;const nt=prompt('Observed Time (detik)',Number(o.time||0).toFixed(2));if(nt==null)return;const ns=prompt('Kategori Ukuran: Small / Medium / Big',o.size);if(ns==null)return;o.time=+nt||o.time;o.size=['Small','Medium','Big'].includes(ns)?ns:o.size;save();draw()})}['fProc','fSize','search'].forEach(id=>$('#'+id).oninput=draw);draw();}
+function renderData(){
+ setHeader('Data Waktu','RAW OBSERVATION MANAGEMENT');
+ const proc=unique(masterData().map(x=>x.process).filter(Boolean));
+ $('#app').innerHTML=`<div class="content"><div class="card"><div class="filters"><select id="fProc">${opt(proc,'All Process')}</select><select id="fSize"><option value="">All Size</option><option>Small</option><option>Medium</option><option>Big</option></select><input id="search" placeholder="Search element / PIC"></div><div id="dataTable"></div></div></div>`;
+ function draw(){
+  let rows=[...observations]
+   .filter(o=>(!$('#fProc').value||o.process===$('#fProc').value)&&(!$('#fSize').value||o.size===$('#fSize').value)&&(`${o.element} ${o.operator}`.toLowerCase().includes($('#search').value.toLowerCase())))
+   .sort((a,b)=>b.createdAt-a.createdAt);
+  $('#dataTable').innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>No</th><th>Date</th><th>PIC</th><th>Process</th><th>Activity</th><th>Element</th><th>Size</th><th>Start</th><th>End</th><th>Time</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.date}</td><td>${esc(r.operator)}</td><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${esc(r.size||'-')}</td><td>${t(r.start)}</td><td>${t(r.end)}</td><td><b>${fmtTimeValue(r.time)}</b></td><td>${canWrite()?`<button class="btn ghost editObs" data-id="${r.id}">Edit</button>`:''} ${canDelete()?`<button class="btn ghost del" data-id="${r.id}">Hapus</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada data yang sesuai filter.</div>';
+
+  $$('.del').forEach(b=>b.onclick=async()=>{
+   const id=b.dataset.id;
+   if(!(await tmsDialog.confirm('Observasi ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus observasi?',confirmText:'Hapus',danger:true})))return;
+   try{
+    if(window.tmsCloud?.enabled)await window.tmsCloud.deleteObservation(id);
+    observations=observations.filter(o=>o.id!==id);forgetPending([id]);saveLocalOnly();draw();
+   }catch(err){console.error(err);showToast('Observasi gagal dihapus dari cloud: '+(err.message||err),'error');}
+  });
+
+  $$('.editObs').forEach(b=>b.onclick=()=>openObservationEditor(b.dataset.id));
+ }
+
+ function openObservationEditor(id){
+  if(!ensureWrite())return;
+  const o=observations.find(x=>x.id===id); if(!o)return;
+  const masters=masterData();
+  const processes=unique(masters.map(x=>x.process).filter(Boolean));
+  const activities=unique(masters.map(x=>x.activity).filter(Boolean));
+  const operators=unique([...(settings.operators||[]),o.operator].filter(Boolean));
+  const methods=['video','manual'];
+  const modal=document.createElement('div');
+  modal.className='modal-backdrop obs-edit-backdrop';
+  modal.innerHTML=`<div class="modal obs-edit-modal" role="dialog" aria-modal="true" aria-labelledby="obsEditTitle">
+   <div class="obs-edit-head"><div><span class="eyebrow">RAW OBSERVATION</span><h3 id="obsEditTitle">Edit Data Observasi</h3><p>Seluruh atribut observasi dapat diperbarui dalam satu form.</p></div><button type="button" class="obs-edit-close" aria-label="Tutup">×</button></div>
+   <div class="obs-edit-card">
+    <div class="obs-edit-grid">
+     <label>Tanggal<input id="oeDate" type="date" value="${esc(o.date||'')}"></label>
+     <label>PIC / Operator<input id="oeOperator" list="oeOperators" value="${esc(o.operator||'')}"><datalist id="oeOperators">${operators.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></label>
+     <label>Process<select id="oeProcess"></select></label>
+     <label>Activity<select id="oeActivity"></select></label>
+     <label class="span-2">Element Kerja<select id="oeElement"></select></label>
+     <label>Kategori Ukuran<select id="oeSize"><option ${o.size==='Small'?'selected':''}>Small</option><option ${o.size==='Medium'?'selected':''}>Medium</option><option ${o.size==='Big'?'selected':''}>Big</option></select></label>
+     <label>Metode Observasi<select id="oeObservationMethod">${methods.map(x=>`<option value="${x}" ${o.observationMethod===x?'selected':''}>${x==='video'?'Video':'Manual'}</option>`).join('')}</select></label>
+     <label>Start (detik)<input id="oeStart" type="number" step="0.01" min="0" value="${o.start==null?'':esc(o.start)}"></label>
+     <label>End (detik)<input id="oeEnd" type="number" step="0.01" min="0" value="${o.end==null?'':esc(o.end)}"></label>
+     <label>Observed Time (detik)<input id="oeTime" type="number" step="0.01" min="0" value="${esc(Number(o.time||0).toFixed(2))}"></label>
+     <label>Klasifikasi<select id="oeClassification">${CLASSIFICATIONS.map(x=>`<option value="${esc(x)}" ${o.classification===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+     <label>Lean Waste<select id="oeWaste"><option value="-">None / Tidak ada waste</option>${WASTE_TYPES.map(x=>`<option value="${esc(x)}" ${o.waste===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+     <label>Metode Kerja<select id="oeMethod">${unique(['-',...masters.map(x=>normalizeMasterMethod(x.method)).filter(Boolean)]).map(x=>`<option value="${esc(x)}" ${normalizeMasterMethod(o.method)===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+     <label>Peralatan<input id="oeEquipment" value="${esc(o.equipment||'')}"></label>
+     <label class="span-2">Catatan<textarea id="oeNote" rows="2" placeholder="Catatan observasi...">${esc(o.note||'')}</textarea></label>
+    </div>
+   </div>
+   <div class="obs-edit-footer"><span class="obs-edit-hint">Perubahan akan disimpan ke data lokal dan disinkronkan ke cloud bila tersedia.</span><div class="obs-edit-actions"><button type="button" class="btn ghost" id="oeCancel">Batal</button><button type="button" class="btn primary" id="oeSave">Simpan Perubahan</button></div></div>
+  </div>`;
+  document.body.appendChild(modal);
+
+  const close=()=>{modal.classList.remove('is-open');setTimeout(()=>modal.remove(),160)};
+  // Process -> Activity -> Element are strict dropdowns sourced from Master Data.
+  const optionHtml=(items,placeholder,current='')=>{
+   const vals=unique(items.filter(Boolean));
+   return `<option value="">${placeholder}</option>`+vals.map(x=>`<option value="${esc(x)}" ${String(x)===String(current)?'selected':''}>${esc(x)}</option>`).join('');
+  };
+  const renderEditHierarchy=(keep={process:o.process||'',activity:o.activity||'',element:o.element||''})=>{
+   const proc=$('#oeProcess'), act=$('#oeActivity'), el=$('#oeElement');
+   const processList=processes;
+   proc.innerHTML=optionHtml(processList,'Pilih Process',keep.process);
+   const selectedProcess=proc.value||keep.process||'';
+   const activityList=unique(masters.filter(x=>String(x.process||'')===String(selectedProcess)).map(x=>x.activity));
+   act.innerHTML=optionHtml(activityList,'Pilih Activity',keep.activity);
+   const selectedActivity=act.value||keep.activity||'';
+   const elementList=unique(masters.filter(x=>String(x.process||'')===String(selectedProcess)&&String(x.activity||'')===String(selectedActivity)).map(x=>x.element));
+   el.innerHTML=optionHtml(elementList,'Pilih Element Kerja',keep.element);
+  };
+  const fillFromMaster=()=>{
+   const el=$('#oeElement')?.value.trim();
+   const m=masters.find(x=>String(x.element||'').trim().toLowerCase()===el.toLowerCase()&&String(x.process||'')===$('#oeProcess').value&&String(x.activity||'')===$('#oeActivity').value);
+   if(!m)return;
+   $('#oeClassification').value=m.classification||$('#oeClassification').value;
+   $('#oeWaste').value=m.waste||'-';
+   const mm=normalizeMasterMethod(m.method);
+   if(mm&&[...$('#oeMethod').options].some(x=>x.value===mm))$('#oeMethod').value=mm;
+   $('#oeEquipment').value=m.equipment||'';
+  };
+  renderEditHierarchy();
+  $('#oeProcess').addEventListener('change',()=>{
+   const process=$('#oeProcess').value;
+   renderEditHierarchy({process,activity:'',element:''});
+  });
+  $('#oeActivity').addEventListener('change',()=>{
+   const process=$('#oeProcess').value, activity=$('#oeActivity').value;
+   renderEditHierarchy({process,activity,element:''});
+  });
+  $('#oeElement').addEventListener('change',fillFromMaster);
+  const commit=()=>{
+   const date=$('#oeDate').value;
+   const operator=$('#oeOperator').value.trim();
+   const process=$('#oeProcess').value.trim();
+   const activity=$('#oeActivity').value.trim();
+   const element=$('#oeElement').value.trim();
+   const time=Math.max(0,Number($('#oeTime').value)||0);
+   const start=$('#oeStart').value===''?null:Math.max(0,Number($('#oeStart').value)||0);
+   const end=$('#oeEnd').value===''?null:Math.max(0,Number($('#oeEnd').value)||0);
+   if(!date||!operator||!process||!activity||!element){showToast('Tanggal, PIC, Process, Activity, dan Element Kerja wajib diisi.','warning');return}
+   if(start!=null&&end!=null&&end<start){showToast('End tidak boleh lebih kecil dari Start.','warning');return}
+   const idx=observations.findIndex(x=>x.id===id); if(idx<0)return;
+   observations[idx]={...observations[idx],date,operator,process,activity,element,size:$('#oeSize').value,observationMethod:$('#oeObservationMethod').value,start,end,time,classification:$('#oeClassification').value,waste:$('#oeWaste').value,method:$('#oeMethod').value,equipment:$('#oeEquipment').value.trim(),note:$('#oeNote').value.trim(),updatedAt:Date.now()};
+   if(!save())return;
+   close();draw();showToast('Data observasi berhasil diperbarui.','success');
+  };
+  $('#oeCancel').onclick=close;
+  modal.querySelector('.obs-edit-close').onclick=close;
+  $('#oeSave').onclick=commit;
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.addEventListener('keydown',function escEdit(e){if(e.key==='Escape'){document.removeEventListener('keydown',escEdit);close()}},{once:true});
+  requestAnimationFrame(()=>modal.classList.add('is-open'));
+  setTimeout(()=>$('#oeDate')?.focus(),50);
+ }
+ ['fProc','fSize','search'].forEach(id=>$('#'+id).oninput=draw);
+ draw();
+}
 function renderQuality(){setHeader('Data Quality','COVERAGE & VALIDATION');const gs=grouped(false);const rows=masterData().map(m=>{let g=gs.find(x=>x.element===m.element),s=g?stats(g.rows):{n:0};return {...m,n:s.n,status:s.n===0?'Not observed':s.n<2?'Need more data':'Observed'}});$('#app').innerHTML=`<div class="content page-quality"><div class="grid cols-4">${kpi('Master Elements',masterData().length,'From Peta Proses')}${kpi('Observed Elements',observedElements(),`${fmt(observedElements()/masterData().length*100)}% coverage`)}${kpi('Total Raw Data',observations.length,'Saved observations')}${kpi('Invalid Duration',observations.filter(x=>!x.time||x.time<=0).length,'Must be zero')}</div><div class="card section"><h3>Master Coverage</h3><div class="analysis-note">Element yang belum pernah diobservasi tidak dihitung sebagai “insufficient”. Coverage dan sufficiency sengaja dipisahkan.</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Process</th><th>Activity</th><th>Element</th><th>Classification</th><th>N</th><th>Status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.process)}</td><td>${esc(r.activity)}</td><td>${esc(r.element)}</td><td>${esc(r.classification)}</td><td>${r.n}</td><td><span class="badge ${r.status==='Observed'?'ok':'warn'}">${r.status}</span></td></tr>`).join('')}</tbody></table></div></div></div>`}
 function analysisTable(kind){const cat=kind==='category',groups=grouped(cat);const cols=cat?'<th>Size</th>':'';let body=groups.map(g=>{let s=stats(g.rows),uniform=s.n<2?'Not testable':s.uniform?'Uniform':'Outlier detected';return `<tr><td>${esc(g.element)}</td>${cat?'<td>'+g.size+'</td>':''}<td>${s.n}</td><td>${fmtTimeValue(s.mean)}</td><td>${fmtTimeValue(s.sd)}</td><td>${fmtTimeValue(s.ucl)}</td><td>${fmtTimeValue(s.lcl)}</td><td>${s.out}</td><td><span class="badge ${s.uniform?'ok':s.n<2?'warn':'bad'}">${uniform}</span></td><td>${s.required??'—'}</td><td><span class="badge ${s.sufficient?'ok':s.n<2?'warn':'warn'}">${s.sufficient?'Sufficient':s.n<2?'Not testable':'Need data'}</span></td></tr>`}).join('');return `<div class="table-wrap"><table class="data-table stat-table"><thead><tr><th>Element</th>${cols}<th>N</th><th>Mean</th><th>St Dev</th><th>UCL</th><th>LCL</th><th>Out</th><th>Uniformity</th><th>N' Required</th><th>Sufficiency</th></tr></thead><tbody>${body||'<tr><td colspan="12">No observations yet.</td></tr>'}</tbody></table></div>`}
 function renderValidation(){setHeader('Validasi Data Waktu','KESERAGAMAN & KECUKUPAN');$('#app').innerHTML=`<div class="content page-validation"><div class="analysis-note"><b>Validasi Data Waktu</b> menggabungkan Uji Keseragaman dan Uji Kecukupan dalam satu modul. Kedua pengujian tetap dihitung secara terpisah, tetapi hasilnya ditampilkan berdampingan agar lebih mudah menentukan apakah data dapat digunakan untuk perhitungan waktu normal dan waktu baku.</div><div class="grid cols-2 validation-summary"><div class="card"><h3>Uji Keseragaman</h3><p class="muted">Memeriksa kestabilan data berdasarkan batas kendali 3-sigma.</p><div class="formula-box"><b>UCL</b> = Mean + 3 × St Dev<br><b>LCL</b> = Mean − 3 × St Dev</div><p class="muted">Data di luar UCL/LCL ditandai sebagai outlier.</p></div><div class="card"><h3>Uji Kecukupan</h3><p class="muted">Memeriksa apakah jumlah observasi aktual (N) sudah memenuhi kebutuhan observasi (N').</p><div class="formula-box"><b>N'</b> = ⌈(1.96 × St Dev / (5% × Mean))²⌉</div><p class="muted"><b>N Minimum Observasi Awal = ${settings.minInitialN} observasi.</b> Di bawah batas ini, pengujian belum dapat disimpulkan.</p></div></div><div class="card section"><div class="section-head"><div><h3>Element × Category</h3><p class="muted">Hasil validasi untuk setiap Element Kerja berdasarkan kategori Small, Medium, dan Big.</p></div></div>${analysisTable('category')}</div><div class="card section"><div class="section-head"><div><h3>Pooled per Element</h3><p class="muted">Hasil validasi gabungan seluruh kategori ukuran untuk setiap Element Kerja.</p></div></div>${analysisTable('pooled')}</div><div class="analysis-note validation-rule"><b>Aturan penggunaan data:</b> data dianggap siap digunakan untuk perhitungan Standard Time apabila hasil Uji Keseragaman berstatus <b>Uniform</b> dan Uji Kecukupan berstatus <b>Sufficient</b>. Jika salah satu belum terpenuhi, data tidak dianggap memenuhi validasi.</div></div>`}
@@ -473,7 +623,7 @@ function renderRating(){
     $$('.grade',tr).forEach(x=>x.onchange=recalc);recalc();
   });
   $('#addOperator').onclick=()=>{if(!ensureWrite())return;captureRatingDraft();const name=$('#newOperator').value.trim(),dept=$('#newOperatorDept').value;if(!name)return showToast('Masukkan nama PIC.','warning');if(!dept)return showToast('Pilih Bagian / Activity untuk PIC.','warning');if(operatorList().includes(name))return showToast('PIC sudah ada.','warning');settings.operators.push(name);settings.operatorDepartments[name]=dept;settings.westinghouse??={};settings.westinghouse[name]=defaultWestinghouse();settings.ratings[name]=1;save();renderRating()};
-  $$('.remove-pic').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;const pic=b.dataset.pic;if(!confirm(`Hapus PIC ${pic}?`))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteOperator(pic);settings.operators=settings.operators.filter(x=>x!==pic);delete settings.ratings[pic];delete settings.operatorDepartments[pic];if(settings.westinghouse)delete settings.westinghouse[pic];saveLocalOnly();renderRating()}catch(err){console.error(err);showToast('PIC gagal dihapus dari cloud: '+(err.message||err),'error');}});
+  $$('.remove-pic').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;const pic=b.dataset.pic;if(!(await tmsDialog.confirm(`PIC ${pic} akan dihapus dari daftar.`,{title:'Hapus PIC?',confirmText:'Hapus',danger:true})))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteOperator(pic);settings.operators=settings.operators.filter(x=>x!==pic);delete settings.ratings[pic];delete settings.operatorDepartments[pic];if(settings.westinghouse)delete settings.westinghouse[pic];saveLocalOnly();renderRating()}catch(err){console.error(err);showToast('PIC gagal dihapus dari cloud: '+(err.message||err),'error');}});
   $('#saveSettings').onclick=()=>{if(!ensureAdmin())return;settings.allowance=(+$('#allowance').value||0)/100;settings.minInitialN=Math.max(2,Math.round(+$('#minInitialN').value||5));captureRatingDraft();save();showToast('Rating Factor, Bagian PIC, N Minimum, dan Allowance berhasil disimpan.','success');renderRating()};
 }
 function renderStandard(){setHeader('Standard Time','NORMAL TIME → ALLOWANCE → STANDARD TIME');let rows=masterData().map(m=>{let sizes=['Small','Medium','Big'];return sizes.map(size=>({m,size,r:standardFor(m.element,size)}))}).flat().filter(x=>x.r);$('#app').innerHTML=`<div class="content"><div class="analysis-note">Jika data kategori memenuhi uniformity + sufficiency, digunakan <b>Category specific</b>. Jika belum, sistem menggunakan <b>Pooled fallback</b> untuk element tersebut.</div><div class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Process</th><th>Element</th><th>Size</th><th>N</th><th>Mean</th><th>RF</th><th>Normal Time</th><th>Allowance</th><th>Standard Time</th><th>Source</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.m.process)}</td><td>${esc(x.m.element)}</td><td>${x.size}</td><td>${x.r.n}</td><td>${fmtTimeValue(x.r.mean)}</td><td>${fmt(x.r.rf)}</td><td>${fmtTimeValue(x.r.normal)}</td><td>${fmt(settings.allowance*100)}%</td><td><b>${fmtTimeValue(x.r.standard)}</b></td><td><span class="badge ${x.r.source==='Category specific'?'ok':'warn'}">${x.r.source}</span></td></tr>`).join('')||'<tr><td colspan="10">No standard time available. Add observations first.</td></tr>'}</tbody></table></div></div></div>`}
@@ -503,7 +653,7 @@ function renderMaster(){
  }
  if($('#addMaster')) $('#addMaster').onclick=()=>{if(ensureWrite())modal()};
  $$('.editMaster').forEach(b=>b.onclick=()=>modal(masterData()[+b.dataset.i],+b.dataset.i));
- $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!confirm('Hapus master element ini? Observasi lama tidak otomatis dihapus.'))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteMaster(row?.id);a.splice(i,1);safeWrite(MASTER_KEY,a);idbSet(MASTER_KEY,a).catch(()=>{});renderMaster()}catch(err){console.error(err);showToast('Master gagal dihapus dari cloud: '+(err.message||err),'error');}});
+ $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!(await tmsDialog.confirm('Master element ini akan dihapus. Observasi lama tidak otomatis dihapus.',{title:'Hapus master element?',confirmText:'Hapus',danger:true})))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteMaster(row?.id);a.splice(i,1);safeWrite(MASTER_KEY,a);idbSet(MASTER_KEY,a).catch(()=>{});renderMaster()}catch(err){console.error(err);showToast('Master gagal dihapus dari cloud: '+(err.message||err),'error');}});
 }
 
 function renderUsers(){
@@ -703,7 +853,7 @@ function renderTSKK(skipCloud=false){
   draw();
   };
   $$('.tskk-open').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;const s=localStudies.find(x=>String(x.id)===String(b.dataset.id));if(s){try{open(s)}catch(err){console.error('Buka TSKK gagal:',err);showToast('TSKK gagal dibuka: '+(err?.message||err),'error')}}});
-  $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!confirm('Hapus TSKK ini?'))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
+  $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!(await tmsDialog.confirm('Data TSKK ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus TSKK?',confirmText:'Hapus',danger:true})))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
   $$('.tskk-create-from-session').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;if(!ensureWrite())return;const session=sessions.find(x=>String(x.id)===String(b.dataset.session));if(!session){console.error('TSKK session not found:',b.dataset.session,sessions);showToast('Observation untuk TSKK tidak ditemukan. Silakan refresh halaman.','warning');return}try{open(tskkDefaultStudyFromSession(session))}catch(err){console.error('Buat TSKK gagal:',err);showToast('TSKK gagal dibuka: '+(err?.message||err),'error')}});
   registerDraftCapture(()=>saveDraft('tskk',captureTSKKDraft()));
   if(state.tskkEditor&&state.tskkDraftId){const resume=getDraft('tskk');if(resume&&String(resume.id)===String(state.tskkDraftId))setTimeout(()=>open(resume),0);}
@@ -876,7 +1026,7 @@ startAppCloud();
   var logoutBtn = document.getElementById('profileLogout');
   if(logoutBtn) logoutBtn.addEventListener('click', function(){
     closeMenu();
-    if(confirm('Keluar dari aplikasi?')) window.tmsAuth && window.tmsAuth.logout && window.tmsAuth.logout();
+    tmsDialog.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true}).then(ok=>{if(ok)window.tmsAuth&&window.tmsAuth.logout&&window.tmsAuth.logout()});
   });
 
   var pwBtn = document.getElementById('profileChangePw');
@@ -887,11 +1037,11 @@ startAppCloud();
       showToast('Ganti password hanya tersedia saat login memakai akun cloud (Supabase).','warning');
       return;
     }
-    var pw = prompt('Masukkan password baru (minimal 6 karakter):');
+    var pw = await tmsDialog.input('Password baru','',{message:'Minimal 6 karakter.',placeholder:'Masukkan password baru',inputType:'password'});
     if(pw === null) return;
     pw = pw.trim();
     if(pw.length < 6){ showToast('Password minimal 6 karakter.','warning'); return; }
-    var confirmPw = prompt('Ketik ulang password baru untuk konfirmasi:');
+    var confirmPw = await tmsDialog.input('Konfirmasi password','',{message:'Ketik ulang password baru.',placeholder:'Ulangi password baru',inputType:'password'});
     if(confirmPw === null) return;
     if(pw !== confirmPw.trim()){ showToast('Konfirmasi password tidak cocok. Tidak ada perubahan.','warning'); return; }
     try{
