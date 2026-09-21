@@ -1853,3 +1853,21 @@ input[type="password"]{min-height:var(--ui-control-h)}
      is still loading, so it keeps animating even here. */
   .sidebar,.sidebar-backdrop,.sidebar-toggle,.sidebar button,.card,.btn{transition:none!important}
 }
+
+/* UT toast notification — replaces browser alert() dialogs */
+.toast-host{position:fixed;top:92px;right:22px;z-index:5000;display:grid;gap:10px;width:min(420px,calc(100vw - 32px));pointer-events:none}
+.ut-toast{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 28px;align-items:start;gap:11px;min-height:70px;padding:13px 13px 14px 12px;border:1px solid #dfe5ec;border-left:4px solid var(--ut-navy,#0A192F);border-radius:12px;background:#fff;box-shadow:0 14px 32px rgba(10,25,47,.16),0 3px 10px rgba(10,25,47,.08);overflow:hidden;opacity:0;transform:translate3d(18px,-8px,0);transition:opacity .2s ease,transform .2s ease}
+.ut-toast.is-visible{opacity:1;transform:translate3d(0,0,0)}
+.ut-toast-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;font-weight:900;line-height:1;background:#eef2f7;color:var(--ut-navy,#0A192F)}
+.ut-toast-body{min-width:0;display:grid;gap:3px;padding-top:1px}
+.ut-toast-body b{font-size:12px;line-height:1.2;color:var(--ut-navy,#0A192F);letter-spacing:.1px}
+.ut-toast-body span{font-size:12px;line-height:1.45;color:#526174;overflow-wrap:anywhere}
+.ut-toast-close{width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:#7b8797;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.ut-toast-close:hover{background:#f3f5f7;color:var(--ut-navy,#0A192F)}
+.ut-toast-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--ut-navy,#0A192F);transform-origin:left center;animation:utToastProgress var(--toast-duration,3.6s) linear forwards}
+.ut-toast-success{border-left-color:#1f7a4d}.ut-toast-success .ut-toast-icon{background:#e8f6ef;color:#1f7a4d}.ut-toast-success .ut-toast-progress{background:#1f7a4d}
+.ut-toast-error{border-left-color:#b42318}.ut-toast-error .ut-toast-icon{background:#fff0ee;color:#b42318}.ut-toast-error .ut-toast-progress{background:#b42318}
+.ut-toast-warning{border-left-color:#d39a00}.ut-toast-warning .ut-toast-icon{background:#fff8df;color:#9a6a00}.ut-toast-warning .ut-toast-progress{background:var(--ut-yellow,#FFD100)}
+.ut-toast-info{border-left-color:var(--ut-navy,#0A192F)}
+@keyframes utToastProgress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media (max-width:700px){.toast-host{top:auto;right:12px;bottom:max(14px,env(safe-area-inset-bottom));left:12px;width:auto}.ut-toast{grid-template-columns:36px minmax(0,1fr) 28px;min-height:66px;padding:12px 11px 13px 10px}.ut-toast-icon{width:32px;height:32px;font-size:16px}.ut-toast-body span{font-size:11.5px}}
