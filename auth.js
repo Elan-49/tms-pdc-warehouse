@@ -18,6 +18,12 @@
     $('#loginScreen').classList.add('hidden');
     $('#appShell').classList.remove('hidden');
   }
+  // The app shell may be prepared before the first cloud render, but the
+  // boot loader remains visible until app.js finishes the authoritative
+  // initial render. This prevents a blank white frame between loader and app.
+  document.addEventListener('tms-app-ready', () => {
+    document.body.classList.remove('auth-booting');
+  });
   function showLogin() {
     $('#loginScreen').classList.remove('hidden');
     const shell = $('#appShell');
@@ -270,9 +276,7 @@
 
   const isRecoveryLink = /type=recovery/.test(window.location.hash);
 
-  restoreAuthSession().finally(() => {
-    document.body.classList.remove('auth-booting');
-  });
+  restoreAuthSession();
   // A recovery link carries its own short-lived session. Do not let the
   // normal restore flow above race it into the main app — force the
   // reset-password tab the moment we can see it in the URL.
@@ -292,6 +296,7 @@
     btn.disabled = true; const original = btn.textContent; btn.textContent = 'Memeriksa...';
     try {
       await doLogin(user, pass);
+      document.body.classList.add('auth-booting');
       showApp();
       document.dispatchEvent(new CustomEvent('tms-auth-ready'));
     } catch (err) {

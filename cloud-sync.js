@@ -114,6 +114,7 @@
         try{
           await write(snapshot);
           clearPending();
+          try{localStorage.removeItem(PENDING_KEY)}catch(e){}
           setStatus('synced');
           resolvers.forEach(resolve=>resolve(true));
         }catch(err){
