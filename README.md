@@ -151,3 +151,8 @@ Pastikan konfigurasi Supabase dan authentication sudah tersedia pada environment
 Versi TMWA melakukan migrasi otomatis terhadap data lokal dari versi aplikasi sebelumnya saat pertama kali dibuka pada browser yang sama. Data dipindahkan ke namespace TMWA tanpa menghapus data sumber lama. Setelah migrasi berhasil, aplikasi menggunakan penyimpanan TMWA untuk penggunaan berikutnya.
 
 Migrasi ini hanya berlaku untuk data yang tersimpan di browser/perangkat tersebut. Data Supabase tidak perlu dipindahkan karena tetap menggunakan project, tabel, Auth, dan konfigurasi backend yang sama.
+
+
+## Perbaikan loader autentikasi
+
+Build V4.5.74 memperbaiki kondisi ketika halaman produksi berhenti pada loader orbit. Loader sekarang otomatis dihentikan jika sesi tidak ada, sesi kedaluwarsa, atau pemeriksaan profil/auth gagal sehingga halaman login dapat tampil. Jika autentikasi berhasil, loader tetap menunggu render awal aplikasi selesai.

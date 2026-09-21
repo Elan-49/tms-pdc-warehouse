@@ -25,6 +25,10 @@
     document.body.classList.remove('auth-booting');
   });
   function showLogin() {
+    // Stop the boot loader whenever the app must show the login screen.
+    // Otherwise an auth/profile error or an expired session can leave the
+    // production site permanently showing the orbit loader.
+    document.body.classList.remove('auth-booting');
     $('#loginScreen').classList.remove('hidden');
     const shell = $('#appShell');
     shell.classList.add('hidden');
