@@ -1,5 +1,5 @@
 /* ==========================================================================
-   KONFIGURASI LOGIN — TMS PDC WAREHOUSE
+   KONFIGURASI LOGIN — TMWA PDC WAREHOUSE
    File ini boleh diedit sendiri tanpa perlu paham coding.
    Lihat AUTH-SETUP.md untuk panduan lengkap langkah demi langkah.
    ========================================================================== */

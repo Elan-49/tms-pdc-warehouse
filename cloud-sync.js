@@ -1,10 +1,10 @@
-/* TMS PDC Warehouse — Supabase cloud adapter.
+/* TMWA PDC Warehouse — Supabase cloud adapter.
    Saat Supabase dikonfigurasi, data cloud adalah source of truth bersama.
    LocalStorage/IndexedDB dipakai sebagai cache dan draft/offline recovery, bukan
    sebagai sumber kebenaran yang boleh menghidupkan kembali record cloud yang dihapus. */
 (function(){
   const configured=typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL&&typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY;
-  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tms-pdc-pending-observations'; const CLOUD_PENDING_KEY='tms-pdc-pending-cloud-snapshot';
+  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tmwa-pdc-pending-observations'; const CLOUD_PENDING_KEY='tmwa-pdc-pending-cloud-snapshot';
   async function sdk(){
     if(window.supabase)return window.supabase;
     await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});
@@ -13,25 +13,25 @@
   async function getClient(){
     if(!configured)return null;
     if(client)return client;
-    if(window.__tmsSupabaseClient){client=window.__tmsSupabaseClient;window.tmsSupabaseClient=client;return client}
-    if(!window.__tmsSupabaseClientPromise){
-      window.__tmsSupabaseClientPromise=sdk().then(sb=>{
-        const existing=window.tmsSupabaseClient||window.__tmsSupabaseClient;
+    if(window.__tmwaSupabaseClient){client=window.__tmwaSupabaseClient;window.tmwaSupabaseClient=client;return client}
+    if(!window.__tmwaSupabaseClientPromise){
+      window.__tmwaSupabaseClientPromise=sdk().then(sb=>{
+        const existing=window.tmwaSupabaseClient||window.__tmwaSupabaseClient;
         const instance=existing||sb.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-        window.__tmsSupabaseClient=instance;
-        window.tmsSupabaseClient=instance;
+        window.__tmwaSupabaseClient=instance;
+        window.tmwaSupabaseClient=instance;
         return instance;
       });
     }
-    client=await window.__tmsSupabaseClientPromise;
-    window.tmsSupabaseClient=client;
+    client=await window.__tmwaSupabaseClientPromise;
+    window.tmwaSupabaseClient=client;
     return client;
   }
   function n(v){return v==null?null:+v}
 
   async function ensureAuthSession(){
     if(!configured)return null;
-    const mw=window.tmsAuthMiddleware;
+    const mw=window.tmwaAuthMiddleware;
     if(mw&&typeof mw.requireSession==='function') return mw.requireSession();
     const sb=await getClient();
     if(!sb)return null;
@@ -127,7 +127,7 @@
   }
   async function write(state){
     const authState=await ensureAuthSession();
-    const currentRole=window.tmsAuth?.getRole?.()||authState?.profile?.role||null;
+    const currentRole=window.tmwaAuth?.getRole?.()||authState?.profile?.role||null;
     if(!['admin','analyst'].includes(currentRole)) return;
     const sb=await getClient(); if(!sb)return;
     if(configured&&!authState?.session&&!authState?.user)throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
@@ -155,7 +155,7 @@
       channel=null;
     }
     const tables=['observations','operators','master_elements','rating_factors','study_settings','tskk_studies','tskk_items'];
-    channel=sb.channel('tms-realtime');
+    channel=sb.channel('tmwa-realtime');
     tables.forEach(table=>channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>refresh(payload)));
     channel.subscribe(status=>{
       if(status==='SUBSCRIBED')setStatus('synced');
@@ -178,29 +178,29 @@
     }
   }
   if(typeof window!=='undefined'){
-    window.addEventListener('online',()=>{flushPending();if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)){subscribe(window.__tmsRealtimeCallback||(()=>{})).catch(()=>{})}});
-    window.addEventListener('pageshow',()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)&&window.__tmsRealtimeCallback)subscribe(window.__tmsRealtimeCallback).catch(()=>{})});
+    window.addEventListener('online',()=>{flushPending();if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)){subscribe(window.__tmwaRealtimeCallback||(()=>{})).catch(()=>{})}});
+    window.addEventListener('pageshow',()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)&&window.__tmwaRealtimeCallback)subscribe(window.__tmwaRealtimeCallback).catch(()=>{})});
   }
   async function deleteObservation(id){
     await ensureAuthSession();
-    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Delete observasi hanya diizinkan untuk Admin.');
+    if((window.tmwaAuth?.getRole?.()||'')!=='admin')throw new Error('Delete observasi hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('observations').delete().eq('id',id); if(error)throw error;
   }
   async function deleteOperator(name){
     await ensureAuthSession();
-    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus PIC hanya diizinkan untuk Admin.');
+    if((window.tmwaAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus PIC hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     const {error}=await sb.from('operators').delete().eq('name',name); if(error)throw error;
   }
   async function deleteMaster(id){
     await ensureAuthSession();
-    if((window.tmsAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus master hanya diizinkan untuk Admin.');
+    if((window.tmwaAuth?.getRole?.()||'')!=='admin')throw new Error('Hapus master hanya diizinkan untuk Admin.');
     const sb=await getClient(); if(!sb)throw new Error('Supabase belum terhubung.');
     if(!id)throw new Error('ID master tidak tersedia. Muat ulang data cloud terlebih dahulu.');
     const {error}=await sb.from('master_elements').delete().eq('id',id); if(error)throw error;
   }
-  window.tmsCloud={enabled:!!configured,loadState,saveSnapshot,subscribe(cb){window.__tmsRealtimeCallback=cb;return subscribe(cb)},deleteObservation,deleteOperator,deleteMaster,
+  window.tmwaCloud={enabled:!!configured,loadState,saveSnapshot,subscribe(cb){window.__tmwaRealtimeCallback=cb;return subscribe(cb)},deleteObservation,deleteOperator,deleteMaster,
     hasPending,flushPending,
     onStatus(cb){statusCb=cb}
   };

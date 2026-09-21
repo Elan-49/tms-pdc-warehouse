@@ -1,4 +1,4 @@
--- TMS PDC Warehouse — Supabase production security hardening
+-- TMWA PDC Warehouse — Supabase production security hardening
 -- Safe to run on the existing V3.0.x database: uses CREATE/ALTER IF NOT EXISTS and
 -- replaces only authorization/audit objects. Existing study data is preserved.
 
@@ -353,7 +353,7 @@ grant execute on function public.has_role(text) to authenticated;
 
 
 -- TSKK / SWCT migration appended by V3.0.29
--- TMS PDC Warehouse — TSKK / SWCT migration
+-- TMWA PDC Warehouse — TSKK / SWCT migration
 -- Run this once in Supabase SQL Editor after the main security schema.
 
 create table if not exists public.tskk_studies (
@@ -425,7 +425,7 @@ alter table public.tskk_studies add column if not exists created_by uuid referen
 alter table public.tskk_studies add column if not exists updated_by uuid references auth.users(id) on delete set null;
 
 -- ===========================================================================
--- FINAL TMS PDC WAREHOUSE / TSKK additions
+-- FINAL TMWA PDC WAREHOUSE / TSKK additions
 -- Consolidated from the historical TSKK observation-cycle/source migrations.
 -- Safe to run against the current database; existing rows are preserved.
 -- ===========================================================================

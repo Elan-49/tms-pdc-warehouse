@@ -1,8 +1,53 @@
-const KEY='tms-pdc-v2-data'; const SETTINGS_KEY='tms-pdc-v2-settings'; const MASTER_KEY='tms-pdc-v2-master';
-const IDB_NAME='tms-pdc-warehouse'; const IDB_STORE='kv'; const PENDING_KEY='tms-pdc-pending-observations';
+const KEY='tmwa-pdc-v2-data'; const SETTINGS_KEY='tmwa-pdc-v2-settings'; const MASTER_KEY='tmwa-pdc-v2-master';
+const IDB_NAME='tmwa-pdc-warehouse'; const IDB_STORE='kv'; const PENDING_KEY='tmwa-pdc-pending-observations';
 function safeRead(key,fallback){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(err){console.warn('Local storage read failed:',key,err);return fallback}}
 function safeWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(err){console.warn('Local storage write failed:',key,err);return false}}
-const DRAFT_KEY='tms-pdc-v2-drafts'; const OBS_VIDEO_DRAFT_KEY='tms-pdc-v2-draft-observation-video';
+function legacyStorageKey(suffix){return ['t','m','s'].join('')+'-'+suffix}
+const LEGACY_KEYS={
+  data:legacyStorageKey('pdc-v2-data'),settings:legacyStorageKey('pdc-v2-settings'),master:legacyStorageKey('pdc-v2-master'),
+  drafts:legacyStorageKey('pdc-v2-drafts'),videoDraft:legacyStorageKey('pdc-v2-draft-observation-video'),pending:legacyStorageKey('pdc-pending-observations'),
+  tskk:'tmwa-pdc-tskk-studies',session:['t','m','s'].join('')+'_pdc_session'
+};
+async function migrateLegacyLocalData(){
+  const report={migrated:[],skipped:[],failed:[]};
+  const copyLocal=(from,to,validator)=>{
+    try{
+      if(localStorage.getItem(to)!=null){report.skipped.push(to);return}
+      const raw=localStorage.getItem(from); if(raw==null)return;
+      const value=JSON.parse(raw); if(validator&&!validator(value))return;
+      localStorage.setItem(to,raw); report.migrated.push(to);
+    }catch(e){report.failed.push(to);console.warn('Local migration failed:',to,e)}
+  };
+  copyLocal(LEGACY_KEYS.data,KEY,v=>Array.isArray(v));
+  copyLocal(LEGACY_KEYS.settings,SETTINGS_KEY,v=>v&&typeof v==='object'&&!Array.isArray(v));
+  copyLocal(LEGACY_KEYS.master,MASTER_KEY,v=>Array.isArray(v));
+  copyLocal(LEGACY_KEYS.drafts,DRAFT_KEY,v=>v&&typeof v==='object'&&!Array.isArray(v));
+  copyLocal(LEGACY_KEYS.videoDraft,OBS_VIDEO_DRAFT_KEY,()=>true);
+  copyLocal(LEGACY_KEYS.pending,PENDING_KEY,v=>Array.isArray(v));
+  copyLocal(LEGACY_KEYS.session,'tmwa_pdc_session',v=>v&&typeof v==='object');
+  try{
+    const oldDb=await new Promise((resolve,reject)=>{
+      if(!('indexedDB' in window))return resolve(null);
+      const req=indexedDB.open(['t','m','s'].join('')+'-pdc-warehouse',1);
+      req.onsuccess=()=>resolve(req.result); req.onerror=()=>resolve(null);
+      req.onupgradeneeded=()=>{try{req.transaction.abort()}catch(e){}}
+    });
+    if(oldDb){
+      const names=[KEY,SETTINGS_KEY,MASTER_KEY,DRAFT_KEY];
+      for(const key of names){
+        const targetExists=await idbGet(key).catch(()=>null); if(targetExists!=null)continue;
+        const legacyKey=key===KEY?LEGACY_KEYS.data:key===SETTINGS_KEY?LEGACY_KEYS.settings:key===MASTER_KEY?LEGACY_KEYS.master:key===DRAFT_KEY?LEGACY_KEYS.drafts:null;
+        if(!legacyKey)continue;
+        const value=await new Promise(resolve=>{try{const tx=oldDb.transaction('kv','readonly');const req=tx.objectStore('kv').get(legacyKey);req.onsuccess=()=>resolve(req.result??null);req.onerror=()=>resolve(null)}catch(e){resolve(null)}});
+        if(value!=null){await idbSet(key,value).catch(()=>{});report.migrated.push('indexedDB:'+key)}
+      }
+      try{oldDb.close()}catch(e){}
+    }
+  }catch(e){console.warn('IndexedDB migration skipped:',e)}
+  if(report.migrated.length) console.info('Data lokal lama berhasil dimigrasikan ke TMWA:',report.migrated);
+  return report;
+}
+const DRAFT_KEY='tmwa-pdc-v2-drafts'; const OBS_VIDEO_DRAFT_KEY='tmwa-pdc-v2-draft-observation-video';
 function readDrafts(){const value=safeRead(DRAFT_KEY,{});return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}
 let drafts=readDrafts();
 const draftTimers={};
@@ -21,6 +66,7 @@ function pendingIds(){const value=safeRead(PENDING_KEY,[]);return new Set(Array.
 function rememberPending(ids){const set=pendingIds();ids.forEach(id=>set.add(id));safeWrite(PENDING_KEY,[...set])}
 function forgetPending(ids){const set=pendingIds();ids.forEach(id=>set.delete(id));safeWrite(PENDING_KEY,[...set])}
 async function hydrateLocalData(){
+  await migrateLegacyLocalData();
   let localObs=safeRead(KEY,[]), localSettings=safeRead(SETTINGS_KEY,{}), localMaster=safeRead(MASTER_KEY,null);
   try{const [io,is,im]=await Promise.all([idbGet(KEY),idbGet(SETTINGS_KEY),idbGet(MASTER_KEY)]);
     if((!Array.isArray(localObs)||!localObs.length)&&Array.isArray(io)) localObs=io;
@@ -145,7 +191,7 @@ function createUTDialog({title,message,mode='confirm',value='',placeholder='',co
     requestAnimationFrame(()=>{backdrop.classList.add('is-visible');field?.focus();field?.select()});
   });
 }
-window.tmsDialog={
+window.tmwaDialog={
   confirm:(message,opts={})=>createUTDialog({mode:'confirm',message,title:opts.title||'Konfirmasi',confirmText:opts.confirmText||'Lanjutkan',danger:!!opts.danger}),
   input:(title,value='',opts={})=>createUTDialog({mode:'input',title,value,message:opts.message||'Masukkan nilai yang diperlukan.',placeholder:opts.placeholder||title,confirmText:opts.confirmText||'Simpan',optsInputType:opts.inputType||'text'})
 };
@@ -163,7 +209,7 @@ function newId(){
   return 'local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
 }
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[m]));
-function role(){const r=window.tmsAuth?.getRole?.();return r==null?null:String(r).trim().toLowerCase()}
+function role(){const r=window.tmwaAuth?.getRole?.();return r==null?null:String(r).trim().toLowerCase()}
 function isAdmin(){return role()==='admin'}
 function canWrite(){return role()==='admin'||role()==='analyst'}
 function canDelete(){return role()==='admin'}
@@ -188,10 +234,10 @@ function save(){
     showToast('Penyimpanan lokal tidak terverifikasi. Data belum dianggap tersimpan. Gunakan localhost untuk pengujian lokal.','warning');
     return false;
   }
-  const x=$('#storageStatus');if(x)x.textContent=(window.tmsCloud?.enabled?'Saved locally • syncing cloud…':'Auto-saved ')+new Date().toLocaleTimeString('id-ID');
-  if(window.tmsCloud?.enabled && canWrite()){
+  const x=$('#storageStatus');if(x)x.textContent=(window.tmwaCloud?.enabled?'Saved locally • syncing cloud…':'Auto-saved ')+new Date().toLocaleTimeString('id-ID');
+  if(window.tmwaCloud?.enabled && canWrite()){
     const snapshot={observations:[...observations],settings:{...settings},master:masterData()};
-    window.tmsCloud.saveSnapshot(snapshot).catch(err=>console.warn('Cloud sync queued failed:',err));
+    window.tmwaCloud.saveSnapshot(snapshot).catch(err=>console.warn('Cloud sync queued failed:',err));
   }
   return true;
 }
@@ -245,7 +291,7 @@ function dashboardPareto(top){
   return `<div class="pareto-chart"><div class="pareto-scale"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="pareto-bars">${top.map((x,i)=>{cum+=x.contribution;const h=Math.max(6,x.time/max*100);return `<div class="pareto-item"><div class="pareto-bar-wrap"><div class="pareto-bar" style="height:${h}%"><b>${fmtTimeValue(x.time)}</b></div><span class="pareto-dot" style="bottom:${Math.min(100,cum)}%"><i></i><em>${fmt(cum)}%</em></span></div><small title="${esc(x.element)}">${i+1}. ${esc(x.waste)}</small></div>`}).join('')}</div></div>`;
 }
 function renderDashboard(){
-  setHeader('Dashboard','TMS PDC WAREHOUSE • LEAN TIME & MOTION');
+  setHeader('Dashboard','TMWA PDC WAREHOUSE • LEAN TIME & MOTION');
   const processes=unique(masterData().map(x=>x.process));
   $('#app').innerHTML=`<div class="content dashboard-content">
     <div class="card dashboard-filter">
@@ -410,7 +456,7 @@ function wireObserve(){
     if(!hasVideo())return showToast('Pilih video terlebih dahulu.','warning');
     try{if(video.requestFullscreen)await video.requestFullscreen();else if(wrap.requestFullscreen)await wrap.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen();}catch(e){console.warn(e);}
   };
-  $('#removeVideo').onclick=()=>{tmsDialog.confirm('Video akan ditutup. Data observasi yang sudah disimpan tetap aman.',{title:'Tutup video?',confirmText:'Tutup',danger:true}).then(ok=>{if(ok)removeVideo()});};
+  $('#removeVideo').onclick=()=>{tmwaDialog.confirm('Video akan ditutup. Data observasi yang sudah disimpan tetap aman.',{title:'Tutup video?',confirmText:'Tutup',danger:true}).then(ok=>{if(ok)removeVideo()});};
   $('#videoInput').onchange=async e=>{const f=e.target.files[0];loadVideoFile(f);if(f){try{await idbSet(OBS_VIDEO_DRAFT_KEY,f)}catch(err){console.warn('Observation video draft save skipped:',err)}saveObserveDraft();}};
   seek.onpointerdown=()=>{seeking=true;};
   seek.oninput=()=>{if(!hasVideo())return;const value=Number(seek.value);$('#seekCurrent').textContent=t(value);$('#cur').textContent=t(value);video.currentTime=value;};
@@ -470,9 +516,9 @@ function renderData(){
 
   $$('.del').forEach(b=>b.onclick=async()=>{
    const id=b.dataset.id;
-   if(!(await tmsDialog.confirm('Observasi ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus observasi?',confirmText:'Hapus',danger:true})))return;
+   if(!(await tmwaDialog.confirm('Observasi ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus observasi?',confirmText:'Hapus',danger:true})))return;
    try{
-    if(window.tmsCloud?.enabled)await window.tmsCloud.deleteObservation(id);
+    if(window.tmwaCloud?.enabled)await window.tmwaCloud.deleteObservation(id);
     observations=observations.filter(o=>o.id!==id);forgetPending([id]);saveLocalOnly();draw();
    }catch(err){console.error(err);showToast('Observasi gagal dihapus dari cloud: '+(err.message||err),'error');}
   });
@@ -623,12 +669,12 @@ function renderRating(){
     $$('.grade',tr).forEach(x=>x.onchange=recalc);recalc();
   });
   $('#addOperator').onclick=()=>{if(!ensureWrite())return;captureRatingDraft();const name=$('#newOperator').value.trim(),dept=$('#newOperatorDept').value;if(!name)return showToast('Masukkan nama PIC.','warning');if(!dept)return showToast('Pilih Bagian / Activity untuk PIC.','warning');if(operatorList().includes(name))return showToast('PIC sudah ada.','warning');settings.operators.push(name);settings.operatorDepartments[name]=dept;settings.westinghouse??={};settings.westinghouse[name]=defaultWestinghouse();settings.ratings[name]=1;save();renderRating()};
-  $$('.remove-pic').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;const pic=b.dataset.pic;if(!(await tmsDialog.confirm(`PIC ${pic} akan dihapus dari daftar.`,{title:'Hapus PIC?',confirmText:'Hapus',danger:true})))return;try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteOperator(pic);settings.operators=settings.operators.filter(x=>x!==pic);delete settings.ratings[pic];delete settings.operatorDepartments[pic];if(settings.westinghouse)delete settings.westinghouse[pic];saveLocalOnly();renderRating()}catch(err){console.error(err);showToast('PIC gagal dihapus dari cloud: '+(err.message||err),'error');}});
+  $$('.remove-pic').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;const pic=b.dataset.pic;if(!(await tmwaDialog.confirm(`PIC ${pic} akan dihapus dari daftar.`,{title:'Hapus PIC?',confirmText:'Hapus',danger:true})))return;try{if(window.tmwaCloud?.enabled)await window.tmwaCloud.deleteOperator(pic);settings.operators=settings.operators.filter(x=>x!==pic);delete settings.ratings[pic];delete settings.operatorDepartments[pic];if(settings.westinghouse)delete settings.westinghouse[pic];saveLocalOnly();renderRating()}catch(err){console.error(err);showToast('PIC gagal dihapus dari cloud: '+(err.message||err),'error');}});
   $('#saveSettings').onclick=()=>{if(!ensureAdmin())return;settings.allowance=(+$('#allowance').value||0)/100;settings.minInitialN=Math.max(2,Math.round(+$('#minInitialN').value||5));captureRatingDraft();save();showToast('Rating Factor, Bagian PIC, N Minimum, dan Allowance berhasil disimpan.','success');renderRating()};
 }
 function renderStandard(){setHeader('Standard Time','NORMAL TIME → ALLOWANCE → STANDARD TIME');let rows=masterData().map(m=>{let sizes=['Small','Medium','Big'];return sizes.map(size=>({m,size,r:standardFor(m.element,size)}))}).flat().filter(x=>x.r);$('#app').innerHTML=`<div class="content"><div class="analysis-note">Jika data kategori memenuhi uniformity + sufficiency, digunakan <b>Category specific</b>. Jika belum, sistem menggunakan <b>Pooled fallback</b> untuk element tersebut.</div><div class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Process</th><th>Element</th><th>Size</th><th>N</th><th>Mean</th><th>RF</th><th>Normal Time</th><th>Allowance</th><th>Standard Time</th><th>Source</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.m.process)}</td><td>${esc(x.m.element)}</td><td>${x.size}</td><td>${x.r.n}</td><td>${fmtTimeValue(x.r.mean)}</td><td>${fmt(x.r.rf)}</td><td>${fmtTimeValue(x.r.normal)}</td><td>${fmt(settings.allowance*100)}%</td><td><b>${fmtTimeValue(x.r.standard)}</b></td><td><span class="badge ${x.r.source==='Category specific'?'ok':'warn'}">${x.r.source}</span></td></tr>`).join('')||'<tr><td colspan="10">No standard time available. Add observations first.</td></tr>'}</tbody></table></div></div></div>`}
 function renderWaste(){setHeader('Waste & Pareto','LEAN ANALYSIS');const map={};masterData().forEach(m=>{if(!m.waste||m.waste==='-')return;let vals=['Small','Medium','Big'].map(s=>standardFor(m.element,s)).filter(Boolean);if(!vals.length)return;let avg=vals.reduce((a,x)=>a+x.standard,0)/vals.length;map[m.waste]=(map[m.waste]||0)+avg*(m.frequency||0)});let rows=Object.entries(map).sort((a,b)=>b[1]-a[1]);let total=rows.reduce((a,x)=>a+x[1],0),cum=0,max=rows[0]?.[1]||1;$('#app').innerHTML=`<div class="content page-waste"><div class="grid cols-3">${kpi('Waste Types',rows.length,'With measurable standard time')}${kpi('ESTIMATED WASTE TIME / DAY',fmtTimeValue(total),'Standard Time × Frequency/Day (waste elements)')}${kpi('Top Waste',rows[0]?.[0]||'—',rows[0]?fmtTimeValue(rows[0][1])+'/day':'')}</div><div class="card section"><h3>Pareto Waste</h3>${rows.length?rows.map(([k,v])=>{cum+=v;return `<div class="chart-row"><div class="chart-label">${esc(k)}</div><div class="bar" style="width:${Math.max(8,v/max*100)}%"><i style="width:100%"></i><small>${fmtTimeValue(v)}</small></div></div>`}).join(''):'<div class="empty">Waste master belum memiliki kategori yang dapat dianalisis atau belum ada data observasi.</div>'}</div><div class="card section"><h3>Contribution Detail</h3><div class="table-wrap"><table class="data-table"><thead><tr><th>Waste</th><th>Time / Day</th><th>%</th><th>Cumulative %</th></tr></thead><tbody>${rows.map(([k,v])=>{cum=(cum||0);return ''}).join('')}${(()=>{let c=0;return rows.map(([k,v])=>{c+=v;return `<tr><td>${esc(k)}</td><td>${fmtTimeValue(v)}</td><td>${fmt(v/total*100)}%</td><td>${fmt(c/total*100)}%</td></tr>`}).join('')})()}</tbody></table></div></div></div>`}
-function exportCsv(){const headers=['No','Tanggal','PIC','Process','Activity','Element Kerja','Klasifikasi','Waste','Waktu','Waktu Detik','Kategori Ukuran','Metode','Peralatan','RF PIC','Start','Start Display','End','End Display','Catatan'];const rows=observations.map((o,i)=>[i+1,o.date,o.operator,o.process,o.activity,o.element,o.classification,o.waste,fmtTimeValue(o.time),o.time,o.size,o.method,o.equipment,settings.ratings[o.operator]||1,o.start,fmtTimeValue(o.start),o.end,fmtTimeValue(o.end),o.note]);const csvSafe=v=>{let s=String(v??'');return /^[=+\-@\t\r]/.test(s)?"'"+s:s};const csv=[headers,...rows].map(r=>r.map(x=>'"'+csvSafe(x).replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TMS_PDC_Warehouse_Data_Waktu.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),0)}
+function exportCsv(){const headers=['No','Tanggal','PIC','Process','Activity','Element Kerja','Klasifikasi','Waste','Waktu','Waktu Detik','Kategori Ukuran','Metode','Peralatan','RF PIC','Start','Start Display','End','End Display','Catatan'];const rows=observations.map((o,i)=>[i+1,o.date,o.operator,o.process,o.activity,o.element,o.classification,o.waste,fmtTimeValue(o.time),o.time,o.size,o.method,o.equipment,settings.ratings[o.operator]||1,o.start,fmtTimeValue(o.start),o.end,fmtTimeValue(o.end),o.note]);const csvSafe=v=>{let s=String(v??'');return /^[=+\-@\t\r]/.test(s)?"'"+s:s};const csv=[headers,...rows].map(r=>r.map(x=>'"'+csvSafe(x).replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TMWA_PDC_Warehouse_Data_Waktu.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),0)}
 function importCsv(file){if(!ensureWrite())return;const reader=new FileReader();reader.onload=e=>{let text=e.target.result.replace(/^\ufeff/,'');let lines=text.split(/\r?\n/).filter(Boolean);if(!lines.length)return;const delimiter=(lines[0].includes(';')&&!lines[0].includes(','))?';':',';const parseLine=line=>{let cols=[],re=new RegExp('(?:^|'+(delimiter===';'?'\\;':',')+')((?:\"(?:[^\"]|\"\")*\")|[^'+(delimiter===';'?';':',')+']*)','g'),m;while((m=re.exec(line))!==null){cols.push(m[1].replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'));}return cols};let head=parseLine(lines.shift()),added=0;lines.forEach(line=>{let cols=parseLine(line),get=n=>cols[head.indexOf(n)]||'',el=get('Element Kerja'),master=getMaster(el);if(master){observations.push({id:newId(),date:get('Tanggal'),operator:get('PIC'),process:master.process,activity:master.activity,element:el,size:get('Kategori Ukuran')||'Small',time:+get('Waktu Detik'),start:+get('Start')||0,end:+get('End')||0,classification:master.classification,waste:master.waste,method:master.method,equipment:master.equipment,note:get('Catatan'),createdAt:Date.now()});added++}});save();showToast(added+' observations imported.','success');render();};reader.readAsText(file)}
 
 function renderMaster(){
@@ -653,13 +699,13 @@ function renderMaster(){
  }
  if($('#addMaster')) $('#addMaster').onclick=()=>{if(ensureWrite())modal()};
  $$('.editMaster').forEach(b=>b.onclick=()=>modal(masterData()[+b.dataset.i],+b.dataset.i));
- $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!(await tmsDialog.confirm('Master element ini akan dihapus. Observasi lama tidak otomatis dihapus.',{title:'Hapus master element?',confirmText:'Hapus',danger:true})))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmsCloud?.enabled)await window.tmsCloud.deleteMaster(row?.id);a.splice(i,1);safeWrite(MASTER_KEY,a);idbSet(MASTER_KEY,a).catch(()=>{});renderMaster()}catch(err){console.error(err);showToast('Master gagal dihapus dari cloud: '+(err.message||err),'error');}});
+ $$('.delMaster').forEach(b=>b.onclick=async()=>{if(!(await tmwaDialog.confirm('Master element ini akan dihapus. Observasi lama tidak otomatis dihapus.',{title:'Hapus master element?',confirmText:'Hapus',danger:true})))return;const i=+b.dataset.i;let a=masterData();const row=a[i];try{if(window.tmwaCloud?.enabled)await window.tmwaCloud.deleteMaster(row?.id);a.splice(i,1);safeWrite(MASTER_KEY,a);idbSet(MASTER_KEY,a).catch(()=>{});renderMaster()}catch(err){console.error(err);showToast('Master gagal dihapus dari cloud: '+(err.message||err),'error');}});
 }
 
 function renderUsers(){
   setHeader('User Management','ACCESS CONTROL • ADMIN ONLY');
   if(!ensureAdmin()){state.view='dashboard';return renderDashboard();}
-  const sb=window.tmsAuth?.getClient?.();
+  const sb=window.tmwaAuth?.getClient?.();
   if(!sb){$('#app').innerHTML='<div class="content"><div class="card"><div class="analysis-note">Supabase client belum siap.</div></div></div>';return;}
   $('#app').innerHTML='<div class="content"><div class="card user-management-page"><div class="section-head user-management-title"><div><h2>User Management</h2><h3>Pengguna Aplikasi</h3><p class="muted">Akun baru masuk dengan status Pending untuk ditinjau oleh admin.</p></div></div><div id="userTable"><div class="empty">Memuat pengguna...</div></div></div></div>';
   (async()=>{
@@ -670,8 +716,8 @@ function renderUsers(){
     $$('.user-status-select').forEach(sel=>sel.addEventListener('change',()=>{const v=sel.value;sel.className='user-status user-status-select user-status-'+v;}));
     $$('.user-save').forEach(btn=>btn.onclick=async()=>{
       if(!ensureAdmin())return; const tr=btn.closest('tr'); const id=btn.dataset.id; const newRole=tr.querySelector('.user-role').value; const newStatus=tr.querySelector('.user-status').value;
-      if(id===window.tmsAuth?.getProfile?.()?.id && (newRole!=='admin'||newStatus!=='approved')){showToast('Admin tidak dapat menurunkan atau menonaktifkan akun sendiri.','warning');return;}
-      btn.disabled=true; const {error}=await sb.from('user_profiles').update({role:newRole,status:newStatus,approved_at:newStatus==='approved'?new Date().toISOString():null,approved_by:newStatus==='approved'?window.tmsAuth?.getProfile?.()?.id:null,updated_at:new Date().toISOString()}).eq('id',id); btn.disabled=false;
+      if(id===window.tmwaAuth?.getProfile?.()?.id && (newRole!=='admin'||newStatus!=='approved')){showToast('Admin tidak dapat menurunkan atau menonaktifkan akun sendiri.','warning');return;}
+      btn.disabled=true; const {error}=await sb.from('user_profiles').update({role:newRole,status:newStatus,approved_at:newStatus==='approved'?new Date().toISOString():null,approved_by:newStatus==='approved'?window.tmwaAuth?.getProfile?.()?.id:null,updated_at:new Date().toISOString()}).eq('id',id); btn.disabled=false;
       if(error) showToast('Perubahan gagal: '+error.message,'error'); else {showToast('Profil berhasil diperbarui.','success');renderUsers();}
     });
   })();
@@ -683,7 +729,7 @@ function renderUsers(){
    Source = saved observation cycles. Master Data remains the single source
    for Process / Activity / Element during observation capture.
    ======================================================================== */
-const TSKK_KEY='tms-pdc-tskk-studies';
+const TSKK_KEY='tmwa-pdc-tskk-studies';
 const TSKK_TYPES=[
   {value:'manual',label:'Manual / Hand'},
   {value:'auto',label:'Auto / Machine'},
@@ -713,7 +759,7 @@ function tskkDefaultStudyFromSession(session){
 }
 function tskkEscDate(v){return v||new Date().toISOString().slice(0,10)}
 async function tskkLoadCloud(){
-  const sb=window.tmsAuth?.getClient?.();if(!sb)return null;
+  const sb=window.tmwaAuth?.getClient?.();if(!sb)return null;
   try{
     const q=await sb.from('tskk_studies').select('id,tskk_no,observation_session_id,observation_cycle_id,source_observation_ids,part_name,area,process,activity,operator_name,study_date,size_category,shift,available_minutes,required_units,takt_time,notes,created_at,updated_at').order('created_at',{ascending:false});
     if(q.error){if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return null;throw q.error;}
@@ -724,11 +770,11 @@ async function tskkLoadCloud(){
   }catch(err){console.warn('TSKK cloud load skipped:',err);return null}
 }
 async function tskkPersistCloud(study){
-  const sb=window.tmsAuth?.getClient?.();if(!sb||!canWrite())return false;
+  const sb=window.tmwaAuth?.getClient?.();if(!sb||!canWrite())return false;
   const row={id:study.id,tskk_no:study.tskkNo||null,observation_session_id:study.observationSessionId||study.observationCycleId||null,observation_cycle_id:study.observationCycleId||study.observationSessionId||null,source_observation_ids:study.sourceObservationIds||[],part_name:study.partName||null,area:study.area||null,process:study.process||null,activity:study.activity||null,operator_name:study.operator||null,study_date:study.studyDate||null,size_category:study.sizeCategory||'Small',shift:study.shift||null,available_minutes:+study.availableMinutes||0,required_units:+study.requiredUnits||0,takt_time:+study.taktTime||0,notes:study.notes||null,updated_at:new Date().toISOString()};
   try{const q=await sb.from('tskk_studies').upsert(row,{onConflict:'id'});if(q.error){if(/column .*observation_session_id.*does not exist/i.test(q.error.message||'')){showToast('TSKK cloud belum menggunakan schema terbaru. Jalankan supabase/schema.sql lalu coba lagi.','warning');return false;}if(/relation .*tskk_studies.*does not exist/i.test(q.error.message||''))return false;throw q.error;}const d=await sb.from('tskk_items').delete().eq('study_id',study.id);if(d.error)throw d.error;const items=(study.items||[]).map((x,i)=>({id:x.id||newId(),study_id:study.id,seq:i+1,element_name:x.element||'',work_type:tskkTypeFromMaster(x.element||'')||x.type||'manual',time_seconds:study.observationMethod==='manual'?(i===0?(+study.manualCycleTime||+x.time||0):0):(+x.time||0),start_seconds:+x.start||0,end_seconds:study.observationMethod==='manual'?0:(+x.end||((+x.start||0)+(+x.time||0))),notes:x.note||null}));if(items.length){const ins=await sb.from('tskk_items').insert(items);if(ins.error)throw ins.error;}return true;}catch(err){console.error('TSKK cloud save failed:',err);showToast('TSKK tersimpan lokal, tetapi sinkronisasi cloud gagal: '+(err.message||err),'error');return false}
 }
-async function tskkDeleteCloud(id){const sb=window.tmsAuth?.getClient?.();if(!sb||!canDelete())return false;const q=await sb.from('tskk_studies').delete().eq('id',id);if(q.error)throw q.error;return true}
+async function tskkDeleteCloud(id){const sb=window.tmwaAuth?.getClient?.();if(!sb||!canDelete())return false;const q=await sb.from('tskk_studies').delete().eq('id',id);if(q.error)throw q.error;return true}
 function tskkGraphVisual(type,left,width,timeLabel){
   const t=String(type||'').toLowerCase();
   if(t==='auto') return `<svg class="tskk-line-svg auto-line" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><path class="tskk-line-path dashed" d="M0 10 L100 10"/></svg>`;
@@ -795,7 +841,7 @@ function renderTSKK(skipCloud=false){
   $('#tskkUnits')?.addEventListener('input',updateTakt);
   const draw=()=>{selected.items=selected.items.map(x=>{const start=Number.isFinite(+x.start)?Math.max(0,+x.start):0;const time=Math.max(0,+x.time||0);const derivedType=tskkTypeFromMaster(x.element||'');const safeType=['manual','auto','walk'].includes(derivedType)?derivedType:(['manual','auto','walk'].includes(x.type)?x.type:'manual');return {...x,type:safeType,start,end:(Number.isFinite(+x.end)?Math.max(start,+x.end):start+time),time}});const cc=tskkCalc(selected);const displayUnit=tskkTimeUnit(Math.max(cc.cycle,cc.takt,1));$('#tskkWorkBody').innerHTML=isManualObservation?(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><div class="tskk-readonly-type ${x.type||'manual'}">${esc(tskkTypeLabel(x.type||'manual'))}</div></td><td>${i===0?`<div class="tskk-readonly-number"><b>${tskkDisplayTime(cc.cycle,displayUnit)} ${displayUnit.label}</b></div>`:'<span class="muted">Satu cycle untuk seluruh observation</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Observation belum memiliki element context.</td></tr>'):(selected.items.length?selected.items.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tskk-readonly-element">${esc(x.element||'—')}</div></td><td><div class="tskk-readonly-type ${x.type||'manual'}">${esc(tskkTypeLabel(x.type||'manual'))}</div></td><td><div class="tskk-readonly-number">${tskkDisplayTime(x.time,displayUnit)}</div></td><td><div class="tskk-readonly-number">${tskkDisplayTime(x.start,displayUnit)}</div></td><td><div class="tskk-readonly-number">${tskkDisplayTime(x.end,displayUnit)}</div></td><td><input class="tskk-item-note" data-i="${i}" value="${esc(x.note||'')}" ${readOnly?'disabled':''}></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Observation belum memiliki element.</td></tr>');$('#tskkKpis').innerHTML=`${kpi('TAKT TIME',tskkDisplayTime(cc.takt,displayUnit)+' '+displayUnit.label,'Target pace')}${kpi('ACTUAL CYCLE TIME',tskkDisplayTime(cc.cycle,displayUnit)+' '+displayUnit.label,cc.gap>=0?'Masih di bawah takt':'Melebihi takt')}${isManualObservation?'':kpi('MANUAL + WALK',tskkDisplayTime(cc.operatorWork,displayUnit)+' '+displayUnit.label,`Load operator ${fmt(cc.operatorLoad)}%`)}${isManualObservation?'':kpi('AUTO / MACHINE',tskkDisplayTime(cc.auto,displayUnit)+' '+displayUnit.label,`Proporsi ${fmt(cc.machineShare)}%`)}`;$('#tskkTimeline').innerHTML=isManualObservation?`<div class="manual-cycle-summary"><div><span>ACTUAL CYCLE</span><b>${tskkDisplayTime(cc.cycle,displayUnit)} ${displayUnit.label}</b></div><div><span>TAKT TIME</span><b>${tskkDisplayTime(cc.takt,displayUnit)} ${displayUnit.label}</b></div><div><span>VARIANCE</span><b>${tskkDisplayTime(cc.gap,displayUnit)} ${displayUnit.label}</b></div><div><span>STATUS</span><b>${esc(cc.status)}</b></div></div>`:`<div class="tskk-chart-scroll">${tskkTimeline(selected)}</div>`;$('#tskkInsight').innerHTML=`<b>Evaluasi:</b> ${tskkStatusBadge(cc)} <span>${cc.walk>0?`Walking ${tskkDisplayTime(cc.walk,displayUnit)} ${displayUnit.label}.`:'Belum ada aktivitas walking.'}</span>`;$$('.tskk-item-note').forEach(el=>el.oninput=()=>{selected.items[+el.dataset.i].note=el.value;saveTSKKDraft()})};
   updateTakt();
-  if(!readOnly)$('#tskkSave').onclick=async()=>{if(!ensureWrite())return;syncInputs();if(!selected.items.length){showToast('Tidak ada Work Element dari Observation.','warning');return}selected.items=selected.items.map(x=>({...x,time:Math.max(0,+x.time||0),start:Math.max(0,+x.start||0),end:Math.max(Math.max(0,+x.start||0),Number.isFinite(+x.end)?+x.end:(Math.max(0,+x.start||0)+Math.max(0,+x.time||0)))}));const rows=tskkStudies();const idx=rows.findIndex(x=>x.id===selected.id);if(idx>=0)rows[idx]=selected;else rows.unshift(selected);saveTSKKLocal(rows);const ok=await tskkPersistCloud(selected);if(!ok&&window.tmsAuth?.getClient?.())return;clearDraft('tskk');state.tskkEditor=false;state.tskkDraftId=null;showToast('TSKK berhasil disimpan.','success');history.replaceState({appView:'tskk',tskkEditor:false,tskkId:null},'',location.href);renderTSKK()};
+  if(!readOnly)$('#tskkSave').onclick=async()=>{if(!ensureWrite())return;syncInputs();if(!selected.items.length){showToast('Tidak ada Work Element dari Observation.','warning');return}selected.items=selected.items.map(x=>({...x,time:Math.max(0,+x.time||0),start:Math.max(0,+x.start||0),end:Math.max(Math.max(0,+x.start||0),Number.isFinite(+x.end)?+x.end:(Math.max(0,+x.start||0)+Math.max(0,+x.time||0)))}));const rows=tskkStudies();const idx=rows.findIndex(x=>x.id===selected.id);if(idx>=0)rows[idx]=selected;else rows.unshift(selected);saveTSKKLocal(rows);const ok=await tskkPersistCloud(selected);if(!ok&&window.tmwaAuth?.getClient?.())return;clearDraft('tskk');state.tskkEditor=false;state.tskkDraftId=null;showToast('TSKK berhasil disimpan.','success');history.replaceState({appView:'tskk',tskkEditor:false,tskkId:null},'',location.href);renderTSKK()};
   $('#tskkBack').onclick=()=>{
   if(!state.tskkEditor)return;
   captureActiveDraft();
@@ -846,14 +892,14 @@ function renderTSKK(skipCloud=false){
       <div class="summary-title">RINGKASAN</div>
       <div class="summary"><div class="sum"><b>Manual / Hand</b><strong>${totalType(manualTotal)}</strong></div><div class="sum"><b>Auto / Machine</b><strong>${totalType(autoTotal)}</strong></div><div class="sum"><b>Walk / Walking</b><strong>${totalType(walkTotal)}</strong></div><div class="sum"><b>Actual Cycle</b><strong>${tskkDisplayTime(cc.cycle,printUnit)} ${printUnit.label}</strong></div><div class="sum"><b>Takt Time</b><strong>${tskkDisplayTime(cc.takt,printUnit)} ${printUnit.label}</strong><span class="status ${cc.status==='Target tercapai'?'ok':'bad'}">${esc(cc.status)}</span></div></div>
       <div class="sign"><div class="sig"><b>Mengetahui,</b><div class="sig-line">(                                  )</div></div><div class="sig"><b>Diperiksa,</b><div class="sig-line">(                                  )</div></div><div class="sig"><b>Dibuat,</b><div class="sig-line">(                                  )</div></div></div>
-      <div class="footer">Generated from TMS PDC Warehouse • ${new Date().toLocaleString('id-ID')}</div>
+      <div class="footer">Generated from TMWA PDC Warehouse • ${new Date().toLocaleString('id-ID')}</div>
       </div><script>window.onload=()=>setTimeout(()=>window.print(),150)</script></body></html>`);
     w.document.close();
   };
   draw();
   };
   $$('.tskk-open').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;const s=localStudies.find(x=>String(x.id)===String(b.dataset.id));if(s){try{open(s)}catch(err){console.error('Buka TSKK gagal:',err);showToast('TSKK gagal dibuka: '+(err?.message||err),'error')}}});
-  $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!(await tmsDialog.confirm('Data TSKK ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus TSKK?',confirmText:'Hapus',danger:true})))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
+  $$('.tskk-delete').forEach(b=>b.onclick=async()=>{if(!ensureAdmin())return;if(!(await tmwaDialog.confirm('Data TSKK ini akan dihapus dan tidak dapat dikembalikan.',{title:'Hapus TSKK?',confirmText:'Hapus',danger:true})))return;const id=b.dataset.id;try{await tskkDeleteCloud(id)}catch(e){console.warn(e)}saveTSKKLocal(localStudies.filter(x=>x.id!==id));renderTSKK()});
   $$('.tskk-create-from-session').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();ev.stopImmediatePropagation();if(state.tskkEditor)return;if(!ensureWrite())return;const session=sessions.find(x=>String(x.id)===String(b.dataset.session));if(!session){console.error('TSKK session not found:',b.dataset.session,sessions);showToast('Observation untuk TSKK tidak ditemukan. Silakan refresh halaman.','warning');return}try{open(tskkDefaultStudyFromSession(session))}catch(err){console.error('Buat TSKK gagal:',err);showToast('TSKK gagal dibuka: '+(err?.message||err),'error')}});
   registerDraftCapture(()=>saveDraft('tskk',captureTSKKDraft()));
   if(state.tskkEditor&&state.tskkDraftId){const resume=getDraft('tskk');if(resume&&String(resume.id)===String(state.tskkDraftId))setTimeout(()=>open(resume),0);}
@@ -898,8 +944,8 @@ function setSidebar(open){const shell=$('#appShell'); if(!shell)return; const is
 function syncNavGroups(){$$('#nav .nav-group').forEach(g=>{const items=g.querySelector('.nav-group-items'),toggle=g.querySelector('.nav-group-toggle');if(!items||!toggle)return;const active=!!g.querySelector('button[data-view].active');g.classList.toggle('open',active);toggle.setAttribute('aria-expanded',String(active));items.setAttribute('aria-hidden',String(!active));});}
 function setNavGroup(group,open){if(!group)return;const items=group.querySelector('.nav-group-items'),toggle=group.querySelector('.nav-group-toggle');group.classList.toggle('open',!!open);if(toggle)toggle.setAttribute('aria-expanded',String(!!open));if(items)items.setAttribute('aria-hidden',String(!open));}
 function initNavGroups(){$$('#nav .nav-group-toggle').forEach(toggle=>{toggle.onclick=e=>{e.preventDefault();e.stopPropagation();const group=toggle.closest('.nav-group');const open=!group.classList.contains('open');$$('#nav .nav-group').forEach(g=>{if(g!==group)setNavGroup(g,false)});setNavGroup(group,open);};});syncNavGroups();}
-function syncProfileUI(){const p=window.tmsAuth?.getProfile?.()||{};const name=(p.full_name||p.email||'Pengguna').trim();const email=(p.email||'').trim()||'—';const r=String(p.role||window.tmsAuth?.getRole?.()||'user').trim().toLowerCase();const roleLabel=r==='admin'?'Administrator':r==='analyst'?'Analyst':r==='viewer'?'Viewer':'User';['#profileName','#profileMenuName'].forEach(s=>{const el=$(s);if(el)el.textContent=name});['#profileRole','#profileMenuRole'].forEach(s=>{const el=$(s);if(el)el.textContent=roleLabel});const em=$('#profileMenuEmail');if(em)em.textContent=email;}
-initNavGroups();document.addEventListener('tms-auth-ready',syncProfileUI);window.addEventListener('load',syncProfileUI);
+function syncProfileUI(){const p=window.tmwaAuth?.getProfile?.()||{};const name=(p.full_name||p.email||'Pengguna').trim();const email=(p.email||'').trim()||'—';const r=String(p.role||window.tmwaAuth?.getRole?.()||'user').trim().toLowerCase();const roleLabel=r==='admin'?'Administrator':r==='analyst'?'Analyst':r==='viewer'?'Viewer':'User';['#profileName','#profileMenuName'].forEach(s=>{const el=$(s);if(el)el.textContent=name});['#profileRole','#profileMenuRole'].forEach(s=>{const el=$(s);if(el)el.textContent=roleLabel});const em=$('#profileMenuEmail');if(em)em.textContent=email;}
+initNavGroups();document.addEventListener('tmwa-auth-ready',syncProfileUI);window.addEventListener('load',syncProfileUI);
 function render(){activeDraftCapture=null;if(state.view==='uniformity'||state.view==='sufficiency')state.view='validation';if(!renderers[state.view])state.view='dashboard';const active=$(`#nav button[data-view=\"${state.view}\"]`);if(active?.dataset.role==='admin'&&!isAdmin())state.view='dashboard';renderers[state.view]();updateSidebarTitle();$$('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));applyRoleUI();syncNavGroups();}
 $$('#nav button[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.role==='admin'&&!isAdmin()){showToast('Menu ini hanya dapat diakses Admin.','warning');return}captureActiveDraft();state.view=b.dataset.view;state.tskkEditor=false;state.tskkDraftId=null;history.replaceState({appView:state.view,tskkEditor:false,tskkId:null},'',location.href);setSidebar(false);render()});
 document.body.addEventListener('click',e=>{let b=e.target.closest('[data-go]');if(b){captureActiveDraft();state.view=b.dataset.go;state.tskkEditor=false;state.tskkDraftId=null;history.replaceState({appView:state.view,tskkEditor:false,tskkId:null},'',location.href);setSidebar(false);render()}});
@@ -933,33 +979,33 @@ $('#importCsv').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);
 async function bootCloud(){
   try{
     await hydrateLocalData();
-    if(window.tmsCloud?.enabled){
-      if(window.tmsAuthMiddleware?.waitUntilReady) await window.tmsAuthMiddleware.waitUntilReady();
-      if(window.tmsAuthMiddleware?.requireSession) await window.tmsAuthMiddleware.requireSession();
-      window.tmsCloud.onStatus(status=>{
+    if(window.tmwaCloud?.enabled){
+      if(window.tmwaAuthMiddleware?.waitUntilReady) await window.tmwaAuthMiddleware.waitUntilReady();
+      if(window.tmwaAuthMiddleware?.requireSession) await window.tmwaAuthMiddleware.requireSession();
+      window.tmwaCloud.onStatus(status=>{
         const x=$('#storageStatus'); if(!x)return;
         const time=new Date().toLocaleTimeString('id-ID');
         if(status==='synced') x.textContent='Cloud synced '+time;
         else if(status==='retrying') x.textContent='Menyambungkan ulang ke cloud…';
         else if(status==='pending') x.textContent='Saved locally • akan disinkronkan otomatis begitu online '+time;
       });
-      if(window.tmsCloud.hasPending()){
+      if(window.tmwaCloud.hasPending()){
         const x=$('#storageStatus'); if(x)x.textContent='Ada data lokal belum tersinkron • mencoba otomatis…';
       }
-      const pendingBeforeLoad=window.tmsCloud.hasPending();
-      if(pendingBeforeLoad) await window.tmsCloud.flushPending();
-      const cloud=await window.tmsCloud.loadState();
+      const pendingBeforeLoad=window.tmwaCloud.hasPending();
+      if(pendingBeforeLoad) await window.tmwaCloud.flushPending();
+      const cloud=await window.tmwaCloud.loadState();
       if(cloud){
         if(Array.isArray(cloud.observations)) observations=mergeObservations(cloud.observations,observations);
         settings={...settings,...(cloud.settings||{})};
-        if(Array.isArray(cloud.master)&&(!window.tmsCloud.hasPending()||!pendingBeforeLoad)){safeWrite(MASTER_KEY,cloud.master);idbSet(MASTER_KEY,cloud.master).catch(()=>{});}
+        if(Array.isArray(cloud.master)&&(!window.tmwaCloud.hasPending()||!pendingBeforeLoad)){safeWrite(MASTER_KEY,cloud.master);idbSet(MASTER_KEY,cloud.master).catch(()=>{});}
         saveLocalOnly();
       }
-      window.tmsCloud.subscribe(async(remote,event)=>{
+      window.tmwaCloud.subscribe(async(remote,event)=>{
         if(!remote)return;
         if(Array.isArray(remote.observations)) observations=mergeObservations(remote.observations,observations);
         settings={...settings,...(remote.settings||{})};
-        if(Array.isArray(remote.master)&&!window.tmsCloud.hasPending()){safeWrite(MASTER_KEY,remote.master);idbSet(MASTER_KEY,remote.master).catch(()=>{});}
+        if(Array.isArray(remote.master)&&!window.tmwaCloud.hasPending()){safeWrite(MASTER_KEY,remote.master);idbSet(MASTER_KEY,remote.master).catch(()=>{});}
         saveLocalOnly();
 
         // Update the visible page only when it is safe. Never rebuild an active
@@ -977,7 +1023,7 @@ async function bootCloud(){
     }
   }catch(err){console.error(err);showToast(err?.code==='AUTH_ACCESS_DENIED'?'Akun belum memiliki akses aktif. Hubungi administrator.':(err?.message||'Backend cloud belum dapat dimuat.'),'error',5000);$('#loginScreen').classList.remove('hidden');$('#appShell').classList.add('hidden');document.body.classList.remove('auth-booting');return;}
   render();
-  document.dispatchEvent(new CustomEvent('tms-app-ready'));
+  document.dispatchEvent(new CustomEvent('tmwa-app-ready'));
 }
 async function saveLocalOnly(){safeWrite(KEY,observations);safeWrite(SETTINGS_KEY,settings);try{await Promise.all([idbSet(KEY,observations),idbSet(SETTINGS_KEY,settings)])}catch(e){console.warn('Local-only save failed:',e)}}
 window.addEventListener('beforeunload',()=>captureActiveDraft());
@@ -986,8 +1032,8 @@ function startAppCloud(){
   // Jika memakai Supabase, jangan load tabel sebelum login berhasil.
   // Pada mode lokal aplikasi dapat langsung berjalan seperti biasa.
   const shell=$('#appShell');
-  if(window.tmsCloud?.enabled && shell?.classList.contains('hidden')){
-    document.addEventListener('tms-auth-ready',()=>bootCloud(),{once:true});
+  if(window.tmwaCloud?.enabled && shell?.classList.contains('hidden')){
+    document.addEventListener('tmwa-auth-ready',()=>bootCloud(),{once:true});
   }else{
     bootCloud();
   }
@@ -1026,22 +1072,22 @@ startAppCloud();
   var logoutBtn = document.getElementById('profileLogout');
   if(logoutBtn) logoutBtn.addEventListener('click', function(){
     closeMenu();
-    tmsDialog.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true}).then(ok=>{if(ok)window.tmsAuth&&window.tmsAuth.logout&&window.tmsAuth.logout()});
+    tmwaDialog.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true}).then(ok=>{if(ok)window.tmwaAuth&&window.tmwaAuth.logout&&window.tmwaAuth.logout()});
   });
 
   var pwBtn = document.getElementById('profileChangePw');
   if(pwBtn) pwBtn.addEventListener('click', async function(){
     closeMenu();
-    var client = window.tmsAuth && window.tmsAuth.getClient && window.tmsAuth.getClient();
+    var client = window.tmwaAuth && window.tmwaAuth.getClient && window.tmwaAuth.getClient();
     if(!client){
       showToast('Ganti password hanya tersedia saat login memakai akun cloud (Supabase).','warning');
       return;
     }
-    var pw = await tmsDialog.input('Password baru','',{message:'Minimal 6 karakter.',placeholder:'Masukkan password baru',inputType:'password'});
+    var pw = await tmwaDialog.input('Password baru','',{message:'Minimal 6 karakter.',placeholder:'Masukkan password baru',inputType:'password'});
     if(pw === null) return;
     pw = pw.trim();
     if(pw.length < 6){ showToast('Password minimal 6 karakter.','warning'); return; }
-    var confirmPw = await tmsDialog.input('Konfirmasi password','',{message:'Ketik ulang password baru.',placeholder:'Ulangi password baru',inputType:'password'});
+    var confirmPw = await tmwaDialog.input('Konfirmasi password','',{message:'Ketik ulang password baru.',placeholder:'Ulangi password baru',inputType:'password'});
     if(confirmPw === null) return;
     if(pw !== confirmPw.trim()){ showToast('Konfirmasi password tidak cocok. Tidak ada perubahan.','warning'); return; }
     try{

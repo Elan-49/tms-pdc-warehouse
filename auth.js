@@ -1,10 +1,10 @@
 /* ==========================================================================
-   TMS PDC WAREHOUSE — auth.js
+   TMWA PDC WAREHOUSE — auth.js
    Gerbang login sebelum aplikasi utama tampil. Menggunakan Supabase Auth untuk produksi. Mode passcode lokal hanya boleh
    digunakan pada localhost untuk development dan otomatis diblokir pada host publik.
    ========================================================================== */
 (function () {
-  const SESSION_KEY = 'tms_pdc_session';
+  const SESSION_KEY = 'tmwa_pdc_session';
   const hasSupabaseConfig = typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL &&
                              typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY;
   const localHost = ['localhost','127.0.0.1'].includes(location.hostname);
@@ -21,7 +21,7 @@
   // The app shell may be prepared before the first cloud render, but the
   // boot loader remains visible until app.js finishes the authoritative
   // initial render. This prevents a blank white frame between loader and app.
-  document.addEventListener('tms-app-ready', () => {
+  document.addEventListener('tmwa-app-ready', () => {
     document.body.classList.remove('auth-booting');
   });
   function showLogin() {
@@ -59,21 +59,21 @@
     if (!hasSupabaseConfig) {
       throw new Error('Pendaftaran akun membutuhkan konfigurasi Supabase.');
     }
-    if (window.__tmsSupabaseClient) {
-      supabaseClient = window.__tmsSupabaseClient;
+    if (window.__tmwaSupabaseClient) {
+      supabaseClient = window.__tmwaSupabaseClient;
       return supabaseClient;
     }
-    if (!window.__tmsSupabaseClientPromise) {
-      window.__tmsSupabaseClientPromise = loadSupabaseSdk().then(sb => {
-        const existing = window.tmsSupabaseClient || window.__tmsSupabaseClient;
+    if (!window.__tmwaSupabaseClientPromise) {
+      window.__tmwaSupabaseClientPromise = loadSupabaseSdk().then(sb => {
+        const existing = window.tmwaSupabaseClient || window.__tmwaSupabaseClient;
         const client = existing || sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.__tmsSupabaseClient = client;
-        window.tmsSupabaseClient = client;
+        window.__tmwaSupabaseClient = client;
+        window.tmwaSupabaseClient = client;
         return client;
       });
     }
-    supabaseClient = await window.__tmsSupabaseClientPromise;
-    window.tmsSupabaseClient = supabaseClient;
+    supabaseClient = await window.__tmwaSupabaseClientPromise;
+    window.tmwaSupabaseClient = supabaseClient;
     return supabaseClient;
   }
 
@@ -156,12 +156,12 @@
     localStorage.removeItem(SESSION_KEY);
     // Cloud data is not deleted. Only local browser cache is cleared so the
     // next user on a shared workstation cannot read the previous session's data.
-    ['tms-pdc-v2-data','tms-pdc-v2-settings','tms-pdc-v2-master'].forEach(k => localStorage.removeItem(k));
+    ['tmwa-pdc-v2-data','tmwa-pdc-v2-settings','tmwa-pdc-v2-master'].forEach(k => localStorage.removeItem(k));
     currentProfile = null;
     if (supabaseClient) supabaseClient.auth.signOut().catch(() => {});
     showLogin();
   }
-  window.tmsAuth = {
+  window.tmwaAuth = {
     logout,
     isLoggedIn,
     getClient: () => supabaseClient,
@@ -234,7 +234,7 @@
       if (isLoggedIn()) {
         currentProfile = { id: null, email: '', role: 'admin', status: 'approved' };
         showApp();
-        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+        document.dispatchEvent(new CustomEvent('tmwa-auth-ready'));
       } else showLogin();
       return;
     }
@@ -246,7 +246,7 @@
         const profile = await requireApprovedProfile(sb, data.session.user.id);
         localStorage.setItem(SESSION_KEY, JSON.stringify({ mode: 'supabase', user: data.session.user.email || '', userId: data.session.user.id, role: profile.role, status: profile.status, at: Date.now() }));
         showApp();
-        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+        document.dispatchEvent(new CustomEvent('tmwa-auth-ready'));
       } else {
         currentProfile = null;
         localStorage.removeItem(SESSION_KEY);
@@ -298,7 +298,7 @@
       await doLogin(user, pass);
       document.body.classList.add('auth-booting');
       showApp();
-      document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+      document.dispatchEvent(new CustomEvent('tmwa-auth-ready'));
     } catch (err) {
       errEl.textContent = err.message || 'Login gagal. Coba lagi.';
       errEl.classList.remove('hidden');
@@ -328,7 +328,7 @@
       errEl.classList.remove('hidden');
       if (result.signedIn) {
         showApp();
-        document.dispatchEvent(new CustomEvent('tms-auth-ready'));
+        document.dispatchEvent(new CustomEvent('tmwa-auth-ready'));
       } else {
         signupForm.reset();
         showAuthTab('login');
@@ -343,7 +343,7 @@
 
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'logoutBtn') {
-      (window.tmsDialog?.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true})||Promise.resolve(false)).then(ok=>{if(ok)logout();});
+      (window.tmwaDialog?.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true})||Promise.resolve(false)).then(ok=>{if(ok)logout();});
     }
   });
 

@@ -1,8 +1,8 @@
-/* TMS PDC Warehouse — Auth Middleware
+/* TMWA PDC Warehouse — Auth Middleware
    Guard untuk memastikan session autentikasi siap sebelum operasi cloud.
    Ini bukan pengganti RLS Supabase; RLS tetap menjadi lapisan keamanan utama. */
 (function () {
-  const SESSION_KEY = 'tms_pdc_session';
+  const SESSION_KEY = 'tmwa_pdc_session';
   const configured = typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL &&
     typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY;
 
@@ -37,22 +37,22 @@
   async function getClient() {
     if (!configured) return null;
     if (client) return client;
-    if (window.__tmsSupabaseClient) {
-      client = window.__tmsSupabaseClient;
-      window.tmsSupabaseClient = client;
+    if (window.__tmwaSupabaseClient) {
+      client = window.__tmwaSupabaseClient;
+      window.tmwaSupabaseClient = client;
       return client;
     }
-    if (!window.__tmsSupabaseClientPromise) {
-      window.__tmsSupabaseClientPromise = loadSdk().then(sb => {
-        const existing = window.tmsSupabaseClient || window.__tmsSupabaseClient;
+    if (!window.__tmwaSupabaseClientPromise) {
+      window.__tmwaSupabaseClientPromise = loadSdk().then(sb => {
+        const existing = window.tmwaSupabaseClient || window.__tmwaSupabaseClient;
         const instance = existing || sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.__tmsSupabaseClient = instance;
-        window.tmsSupabaseClient = instance;
+        window.__tmwaSupabaseClient = instance;
+        window.tmwaSupabaseClient = instance;
         return instance;
       });
     }
-    client = await window.__tmsSupabaseClientPromise;
-    window.tmsSupabaseClient = client;
+    client = await window.__tmwaSupabaseClientPromise;
+    window.tmwaSupabaseClient = client;
     return client;
   }
 
@@ -164,7 +164,7 @@
     const app = document.querySelector('#appShell');
     if (login) login.classList.remove('hidden');
     if (app) app.classList.add('hidden');
-    document.dispatchEvent(new CustomEvent('tms-auth-required'));
+    document.dispatchEvent(new CustomEvent('tmwa-auth-required'));
   }
 
   async function startListener() {
@@ -184,7 +184,7 @@
     }
   }
 
-  window.tmsAuthMiddleware = {
+  window.tmwaAuthMiddleware = {
     enabled: !!configured,
     waitUntilReady,
     requireSession,

@@ -1,89 +1,153 @@
+# TMWA PDC Warehouse
 
-## V3.0.28 Refresh Session Fix
-- Keeps valid Supabase sessions across browser refreshes.
-- Retries user profile reads before treating them as temporary failures.
-- Avoids signing out a valid user because of a transient network/profile read error.
-# TMS PDC Warehouse V3.0.28
+**Time and Motion Study & Waste Analysis** untuk pengelolaan data observasi aktivitas kerja di Parts Warehouse.
 
-Versi ini sudah berisi frontend statis dan backend/database schema Supabase.
+Aplikasi ini digunakan untuk mencatat waktu kerja, mengolah waktu normal dan waktu baku, melakukan analisis keseragaman serta kecukupan data, menerapkan Rating Factor Westinghouse dan allowance, serta mengidentifikasi waste berdasarkan pendekatan Lean.
 
-## Update V2.9.7
-- Ditambahkan **halaman Login** sebelum masuk ke dashboard: background gradasi biru navy (warna UT) dengan foto gedung United Tractors di bagian atas.
-- Login mendukung 2 mode yang otomatis dipilih tergantung konfigurasi: **Passcode Lokal** (aktif secara default, tanpa setup) atau **Supabase** (akun & password sungguhan per orang). Panduan lengkap ada di `AUTH-SETUP.md`.
-- Tombol **Keluar** ditambahkan di footer aplikasi untuk logout.
-- Perbaikan mobile: input tanggal & form lain tidak lagi memicu auto-zoom Safari di iPhone (font kontrol dinaikkan ke 16px khusus di layar HP).
-- Tombol Fullscreen video sekarang mem-fullscreen-kan video itu sendiri (bukan bingkainya), sehingga video portrait langsung tampil benar tanpa perlu klik dua kali.
+## Fitur Utama
 
-## Update V2.8.8
+- **Dashboard** — ringkasan KPI, waktu normal, waktu baku, waste, dan informasi observasi.
+- **Data Waktu / Observasi** — pencatatan dan pengelolaan data observasi berbasis elemen kerja.
+- **Edit Observasi Lengkap** — Process, Activity, Element Kerja, PIC, tanggal, kategori, metode observasi, waktu, klasifikasi, waste, metode kerja, peralatan, dan catatan dapat diperbarui dalam satu popup.
+- **Dropdown Master Data** — Process, Activity, dan Element Kerja menggunakan data master secara bertingkat.
+- **PIC / Operator** — pilihan PIC berasal dari daftar operator pada Rating Factor.
+- **Uji Keseragaman** — pengujian keseragaman data waktu observasi.
+- **Uji Kecukupan** — perhitungan kebutuhan jumlah observasi.
+- **Rating Factor** — pengelolaan faktor Skill, Effort, Condition, Consistency, rating factor, kebutuhan observasi awal, dan allowance.
+- **Standard Time** — perhitungan waktu normal dan waktu baku berdasarkan allowance.
+- **Analisis LEAN** — klasifikasi aktivitas dan identifikasi 8 jenis waste.
+- **Master Data** — pengelolaan struktur Process, Activity, Element Kerja, serta atribut pendukung.
+- **TSKK** — pengelolaan dan pencetakan tabel standar kerja terkait data yang tersedia pada aplikasi.
+- **Print & Export** — pencetakan dan ekspor data sesuai modul yang tersedia.
+- **Authentication & Role** — pengaturan akses berdasarkan akun dan role.
+- **Supabase Cloud Sync** — sinkronisasi data ke cloud ketika konfigurasi dan koneksi tersedia.
+- **Local Storage** — data aplikasi tetap dapat digunakan secara lokal ketika cloud tidak tersedia.
 
-- Revisi vertical spacing Dashboard: jarak filter → KPI → Time Classification/Pareto dibuat konsisten dan seimbang atas-bawah.
-- KPI tidak lagi menempel pada card filter di atas atau terlihat memiliki ruang bawah yang berlebihan.
-- Video observasi dapat dibuka dalam mode **fullscreen**.
-- Ditambahkan **seek/timeline bar** yang dapat ditarik dengan mouse/kursor untuk maju atau mundur ke detik mana pun.
-- Kontrol Mundur/Maju 5 Detik dan keyboard tetap tersedia.
-- Setelah **Set End** dan **Simpan Observasi**, video **tetap aktif** dan tidak perlu di-upload ulang. Satu video dapat digunakan untuk menyimpan banyak segmen observasi.
-- Ditambahkan tombol **×** di area video untuk menutup/menghapus video dari sesi observasi setelah selesai digunakan. Data observasi yang sudah tersimpan tetap aman.
+## Struktur Data Observasi
 
-## Update V2.8.4
-- Tampilan video sekarang membaca rasio asli file setelah metadata dimuat. Video portrait, landscape, dan square ditampilkan tanpa crop/zoom paksa.
-- Penjelasan bantuan di bawah kontrol video dan input manual dihapus agar halaman lebih ringkas.
-- Deskripsi panjang di Master Process & Lean dihapus.
-- Form Tambah PIC diberi ruang dan posisi yang lebih nyaman dari tabel rating di bawahnya.
+Data observasi menggunakan satu record untuk setiap pengamatan. Informasi yang dapat dikelola meliputi:
 
-## Update V2.8.3
-- **Set End** sekarang otomatis menjeda/pause video.
-- **Set Start** menyimpan titik awal lalu otomatis menjalankan/play video kembali.
-- Tampilan waktu video dan input manual menggunakan **2 angka di belakang koma**, bukan 3 digit.
-- Frontend dirapikan: ukuran font, tinggi kontrol, tombol, tabel, kartu, dan alignment dibuat lebih konsisten serta responsif.
+- Tanggal
+- PIC / Operator
+- Process
+- Activity
+- Element Kerja
+- Kategori ukuran: Small / Medium / Big
+- Metode observasi
+- Waktu observasi
+- Klasifikasi aktivitas
+- Jenis waste
+- Metode kerja
+- Peralatan
+- Catatan
 
-## Update V2.8.2
-- Sidebar/taskbar kiri default tersembunyi.
-- Klik tombol garis tiga di header kiri atas untuk membuka navigasi.
-- Saat memilih Dashboard, Observation, atau halaman lain, sidebar otomatis tersembunyi kembali.
-- Klik area gelap di luar sidebar atau tekan `Esc` untuk menutup menu.
+Saat observasi diedit, record yang sama diperbarui berdasarkan **ID observasi** sehingga tidak membuat data observasi baru.
 
-## Backend/database
-Folder `supabase/schema.sql` berisi schema database untuk deployment backend. Lihat `BACKEND-SETUP.md` dan `DEPLOY.md`.
+## Alur Pengolahan
 
-## Jalankan lokal
-Buka `index.html` untuk mode frontend lokal. Data prototype tetap menggunakan localStorage sampai integrasi Supabase diaktifkan.
+```text
+Master Data
+    ↓
+Data Observasi
+    ↓
+Uji Keseragaman & Uji Kecukupan
+    ↓
+Rating Factor + Allowance
+    ↓
+Waktu Normal
+    ↓
+Waktu Baku / Standard Time
+    ↓
+Dashboard & Analisis LEAN
+```
 
+## Analisis LEAN
 
-## Cloud Realtime
-Tambahan `cloud-sync.js` menghubungkan aplikasi ke Supabase jika URL dan anon key diisi. Jika kosong, aplikasi tetap berjalan local-first. Lihat `SUPABASE-SETUP.md`.
+Aplikasi menggunakan klasifikasi waste berikut:
 
+1. Defects
+2. Overproduction
+3. Waiting
+4. Non-Utilized Talent
+5. Transportation
+6. Inventory
+7. Motion
+8. Extra Processing
 
-## V3.0.5 Fix
-- Cloud backend tidak lagi dijalankan sebelum login Supabase selesai.
-- Menghapus pengecekan sesi yang menyebabkan error `Sesi Supabase belum siap`.
-- Perbaikan blank pada dropdown Westinghouse untuk PIC pertama/baris paling atas: nilai 0 sekarang dinormalisasi ke format 0.00 agar otomatis memilih D (0.00).
-- Menghapus seluruh simbol ikon teks pada taskbar/sidebar: Dashboard, Observation, Data Waktu, Master Process & Lean, Data Quality, Uji Keseragaman, Uji Kecukupan, Rating Factor, dan Standard Time.
-- Perbaikan Rating PIC dan penghapusan Reset Data Lokal dari V3.0.2 tetap dipertahankan.
+## Penyimpanan & Sinkronisasi
 
-## V3.0.6 Fix
-- Realtime Supabase tidak lagi me-render ulang halaman Observation saat menyimpan observasi, sehingga video lokal tetap terbuka dan dapat dipakai untuk banyak segmentasi.
+Aplikasi menggunakan penyimpanan lokal dan dapat terhubung ke Supabase.
 
+- Perubahan disimpan pada perangkat terlebih dahulu.
+- Jika koneksi dan konfigurasi Supabase tersedia, data disinkronkan ke cloud.
+- Jika cloud tidak tersedia, data lokal tetap tersimpan.
+- Sinkronisasi dapat dilanjutkan ketika koneksi cloud tersedia kembali.
+- Pembaruan observasi menggunakan ID record yang sama sehingga data cloud diperbarui, bukan diduplikasi.
 
-## V3.0.7 Final
-- Simbol Set Start diganti menjadi ikon play CSS murni (tanpa background/badge).
-- Tombol Set Start dan Set End dibuat transparan/polos di desktop dan mobile.
-- Tidak mengubah struktur frontend, backend, database schema, maupun konfigurasi cloud yang sudah ada.
+## Role & Akses
 
+Akses menu mengikuti role akun yang digunakan. Fitur administrasi dan **User Management** dibatasi untuk role yang memiliki hak administrasi.
 
-### Auth Middleware
-`auth-middleware.js` memastikan session Supabase siap sebelum operasi cloud. RLS Supabase tetap menjadi lapisan keamanan utama.
+## Struktur File
 
+```text
+TMWA-PDC-WAREHOUSE/
+├── index.html
+├── app.js
+├── styles.css
+├── master-data.js
+├── auth.js
+├── auth-config.js
+├── auth-middleware.js
+├── cloud-sync.js
+├── vercel.json
+├── supabase/
+│   └── schema.sql
+├── ut-logo.png
+├── ut-logo-2.png
+├── ut-logo-bulat.png
+├── ut-motto.png
+└── login-building-bg.webp
+```
 
-## V3.0.28 Production Security Hardening
-- Supabase Auth is required on public production hosts; local passcode is development-only on localhost.
-- New accounts are `pending` by default and need admin approval.
-- Added `user_profiles` RBAC: admin, analyst, viewer.
-- RLS changed from shared unrestricted authenticated access to explicit read/write/delete policies.
-- Added immutable `audit_logs` with actor, action, table, record ID, old/new payloads, and timestamp.
-- Added User Management screen for admin approval, suspension, and role changes.
-- Viewer is read-only in the UI and cannot export/import or edit data.
-- Admin-only destructive operations: delete observations, delete PIC, delete master elements, and change study settings.
-- Local browser cache is cleared on logout to reduce data exposure on shared workstations.
-- Added production security headers through `vercel.json` including CSP, HSTS, frame protection, and Permissions Policy.
+## Menjalankan Secara Lokal
 
-Before production use, run `SECURITY-TEST-PLAN.md` and complete the first-admin bootstrap in `SECURITY-OPERATIONS.md`.
+Karena aplikasi menggunakan JavaScript dan modul browser, jalankan melalui local web server, bukan dengan membuka `index.html` menggunakan `file://`.
+
+Contoh dengan VS Code:
+
+1. Buka folder aplikasi.
+2. Jalankan menggunakan **Live Server** atau web server lokal lainnya.
+3. Buka alamat localhost yang diberikan server.
+
+## Konfigurasi Supabase
+
+Konfigurasi koneksi berada pada:
+
+```text
+auth-config.js
+cloud-sync.js
+supabase/schema.sql
+```
+
+Gunakan schema yang tersedia pada folder `supabase` untuk menyiapkan struktur database. Pastikan URL project, anon key, tabel, policy, dan konfigurasi autentikasi sesuai dengan project Supabase yang digunakan.
+
+## Deployment
+
+Aplikasi dapat dideploy sebagai static web application pada layanan seperti Vercel atau platform hosting lain yang mendukung HTML, CSS, dan JavaScript.
+
+Pastikan konfigurasi Supabase dan authentication sudah tersedia pada environment/project tujuan sebelum digunakan bersama.
+
+## Catatan Penggunaan
+
+- Gunakan **Master Data** sebagai sumber struktur Process → Activity → Element Kerja.
+- Gunakan **Rating Factor** sebagai sumber daftar PIC/Operator dan parameter penilaian.
+- Lakukan pemeriksaan keseragaman dan kecukupan sebelum menetapkan waktu baku.
+- Pastikan allowance dan rating factor sudah sesuai dengan metode pengukuran yang digunakan.
+- Lakukan sinkronisasi cloud secara berkala jika aplikasi digunakan pada lebih dari satu perangkat.
+
+## Migrasi Data Lokal
+
+Versi TMWA melakukan migrasi otomatis terhadap data lokal dari versi aplikasi sebelumnya saat pertama kali dibuka pada browser yang sama. Data dipindahkan ke namespace TMWA tanpa menghapus data sumber lama. Setelah migrasi berhasil, aplikasi menggunakan penyimpanan TMWA untuk penggunaan berikutnya.
+
+Migrasi ini hanya berlaku untuk data yang tersimpan di browser/perangkat tersebut. Data Supabase tidak perlu dipindahkan karena tetap menggunakan project, tabel, Auth, dan konfigurasi backend yang sama.
