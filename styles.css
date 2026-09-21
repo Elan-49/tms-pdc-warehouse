@@ -500,12 +500,6 @@ body.auth-booting #appShell{visibility:hidden!important}
 body.auth-booting .session-loader{position:fixed!important;inset:0!important;z-index:9999!important;display:grid!important;place-items:center!important;background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .session-loader-card{width:auto!important;min-height:0!important;padding:0!important;display:flex;flex-direction:column;align-items:center;justify-content:center;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;margin:0!important}
 .session-loader-logo{width:78px!important;height:78px!important;object-fit:contain!important;border-radius:50%;margin-bottom:16px!important;filter:drop-shadow(0 5px 12px rgba(10,25,47,.12))!important;position:absolute!important;z-index:2!important;margin:0!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important}
-.session-loader-title{color:#0A192F!important;font-size:17px!important;font-weight:800!important;letter-spacing:.25px!important;margin-bottom:17px}
-.session-loader-dots{display:flex;align-items:center;justify-content:center;gap:9px;height:24px}
-.session-loader-dots span{width:9px;height:9px;border-radius:50%;background:#0A5BA8!important;box-shadow:0 0 12px rgba(10,91,168,.24)!important;animation:session-dot-bounce .8s ease-in-out infinite}
-.session-loader-dots span:nth-child(1){animation-delay:0s}
-.session-loader-dots span:nth-child(2){animation-delay:.16s}
-.session-loader-dots span:nth-child(3){animation-delay:.32s}
 .page-heading h1,
 .sidebar nav button,
 .sidebar nav .import-btn{text-transform:uppercase!important}
@@ -523,7 +517,6 @@ body.auth-booting .session-loader{position:fixed!important;inset:0!important;z-i
 .session-loader-orbit-dots span:nth-child(1){top:2px!important;left:calc(50% - 4px)!important;transform:rotate(0deg) translateY(-52px)!important}
 .session-loader-orbit-dots span:nth-child(2){right:12px!important;bottom:20px!important;top:calc(25% - 2px)!important;transform:rotate(60deg) translateY(-52px)!important}
 .session-loader-orbit-dots span:nth-child(3){left:10px!important;bottom:calc(25% - 2px)!important;right:12px!important;transform:rotate(120deg) translateY(-52px)!important}
-.session-loader-title,.session-loader-dots{display:none!important}
 .card,
 .dashboard-filter,
 .chart-card,
@@ -735,14 +728,6 @@ input[type="password"]{min-height:var(--ui-control-h)}
 @keyframes sidebarTitleIn{
   from{opacity:0;transform:translateY(6px)}
   to  {opacity:1;transform:translateY(0)}
-}
-@keyframes sessionOrbit{
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
-}
-@keyframes sessionOrbitTrue{
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
 }
 @keyframes sessionLoaderSpin{
   from{transform:rotate(0deg)}
@@ -1423,7 +1408,6 @@ input[type="password"]{min-height:var(--ui-control-h)}
   .page-waste > .grid.cols-3 > .kpi .sub{font-size:8.5px!important;line-height:1.2!important}
   .page-quality > .card.section,
   .page-waste > .card.section{margin-top:8px!important;padding:11px!important}
-  .session-loader-orbit-dots{animation:sessionLoaderSpin 1.4s linear infinite!important;animation-play-state:running!important}
   .main > #app > .content{padding-top:14px!important}
   .ut-header-brand img{max-width:150px!important;max-height:32px!important}
   .ut-profile-copy,.ut-profile-chevron{display:none!important}
@@ -1864,8 +1848,8 @@ input[type="password"]{min-height:var(--ui-control-h)}
   .axis span:last-of-type{left:calc(100% - 28px)!important;transform:translateX(-50%)!important}
 }
 @media (prefers-reduced-motion:reduce){
-  .session-loader-dots span{animation:none!important;opacity:1!important}
+  /* Decorative transitions are safe to drop under reduced motion. The session
+     loader spin is intentionally excluded: it's the only signal that the app
+     is still loading, so it keeps animating even here. */
   .sidebar,.sidebar-backdrop,.sidebar-toggle,.sidebar button,.card,.btn{transition:none!important}
-  .session-loader-orbit-dots{animation:none!important}
-  .session-loader-orbit-dots span{opacity:.85}
 }
