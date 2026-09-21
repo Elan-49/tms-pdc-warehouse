@@ -486,7 +486,7 @@ function renderData(){
   const masters=masterData();
   const processes=unique(masters.map(x=>x.process).filter(Boolean));
   const activities=unique(masters.map(x=>x.activity).filter(Boolean));
-  const operators=unique([...(settings.operators||[]),o.operator].filter(Boolean));
+  const operators=operatorList(); if(o.operator && !operators.includes(o.operator)) operators.push(o.operator);
   const methods=['video','manual'];
   const modal=document.createElement('div');
   modal.className='modal-backdrop obs-edit-backdrop';
@@ -495,7 +495,7 @@ function renderData(){
    <div class="obs-edit-card">
     <div class="obs-edit-grid">
      <label>Tanggal<input id="oeDate" type="date" value="${esc(o.date||'')}"></label>
-     <label>PIC / Operator<input id="oeOperator" list="oeOperators" value="${esc(o.operator||'')}"><datalist id="oeOperators">${operators.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></label>
+     <label>PIC / Operator<select id="oeOperator"><option value="">Pilih PIC / Operator</option>${operators.map(x=>`<option value="${esc(x)}" ${String(x)===String(o.operator||'')?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
      <label>Process<select id="oeProcess"></select></label>
      <label>Activity<select id="oeActivity"></select></label>
      <label class="span-2">Element Kerja<select id="oeElement"></select></label>
