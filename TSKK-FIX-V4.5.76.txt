@@ -1,0 +1,13 @@
+TMWA PDC Warehouse — TSKK Fix V4.5.76
+
+Root cause fixed:
+The TSKK editor template referenced `${displayUnit.label}` before the local
+`displayUnit` variable was declared inside `draw()`. That raised a
+ReferenceError while constructing the editor HTML, so the editor never finished
+opening and the Back / Save / Print click handlers were never attached.
+
+Fix:
+- Calculate `initialCalc` and `initialDisplayUnit` before `innerHTML` is evaluated.
+- Use `initialDisplayUnit.label` only for the initial table header.
+- Keep the existing `draw()` displayUnit for dynamic rendering.
+- No database schema, Supabase policy, formula, or CSS logic was changed.

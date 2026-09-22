@@ -1,0 +1,45 @@
+TMWA PDC Warehouse V4.5.75 — CSS Audit & Conservative Cleanup
+
+SOURCE: V4.5.74-Loader-Fix-Migration.zip
+
+OBJECTIVE
+Remove only CSS that is demonstrably redundant while preserving the current cascade, responsive behavior, functionality, and visual appearance.
+
+FULL CSS MAP BEFORE CLEANUP
+- 1,528 parsed CSS rules.
+- 667 base rules.
+- 27 responsive/conditional groups.
+- 338 selectors reused across different responsive contexts; these are retained as breakpoint-specific overrides.
+- 3 exact selector/context duplicate groups.
+
+EXACT DUPLICATES REVIEWED
+- .menu-panel-head .menu-close (base): standalone duplicate display:grid removed.
+- .sidebar-toggle (max-width:760px): both rules retained; later rule is a mobile positioning override.
+- .ut-header-actions (max-width:760px): both rules retained; later rule adds mobile spacing/padding.
+
+SAFE DEAD DECLARATIONS REMOVED
+Only declarations completely overridden later in the SAME declaration block were removed. Partial shorthand overrides were not removed.
+- .sidebar: border-right before later border shorthand.
+- .video-card: padding-bottom before later padding shorthand.
+- .chart-note: margin-top before later margin shorthand.
+- base .ut-header-logo-2: margin-left before later margin shorthand.
+- .login-badge: earlier margin-bottom/left/right before later margin shorthand.
+- .session-loader-logo: margin-bottom before later margin:0.
+- base button/input/select/textarea: font-size before later font:inherit.
+- mobile .seg-controls: margin-bottom before later margin shorthand.
+- mobile .tskk-actions .btn: font-size before later font shorthand.
+- mobile .tskk-meta-grid label: font-size before later font shorthand.
+- mobile .menu-panel-foot: padding-top before later padding shorthand.
+- mobile #manualObservationPanel.manual-time: margin-top before later margin shorthand.
+
+INTENTIONALLY RETAINED
+Responsive overrides and partial shorthand cases were left untouched because removing them could change computed styles.
+
+SYNTAX CLEANUP
+The .modal-backdrop block contained prose outside a CSS comment delimiter. The prose is now a valid CSS comment; effective styling declarations are unchanged.
+
+PRESERVED
+HTML, JavaScript, auth/session behavior, Supabase, local-data migration, cloud sync, all responsive breakpoints, colors, typography, dimensions, spacing, layout, z-index, shadows, and interaction states.
+
+ROLLBACK
+V4.5.74 remains the rollback baseline. Test V4.5.75 locally on desktop, tablet, and mobile before pushing to Vercel.
