@@ -2189,3 +2189,49 @@ input[type="password"]{min-height:var(--ui-control-h)}
   .pareto-legend-line{width:22px;border-top-width:2px;}
   .pareto-legend-line::after{width:6px;height:6px;border-width:1.5px;}
 }
+
+/* ------------------------------------------------------------------------
+   TABEL VALIDASI DATA WAKTU — header ringkas dalam satu lebar tabel
+   Header panjang boleh wrap; tabel tidak melebar ke samping.
+   ------------------------------------------------------------------------ */
+.validation-analysis-table{
+  width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+  font-size:11px!important;
+}
+.validation-analysis-table th{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  line-height:1.2!important;
+  vertical-align:middle!important;
+  text-align:center!important;
+  padding:8px 6px!important;
+}
+.validation-analysis-table td{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  padding:8px 6px!important;
+}
+.validation-analysis-table th:nth-child(1),
+.validation-analysis-table th:nth-child(2),
+.validation-analysis-table th:nth-child(3){width:9%!important}
+.validation-analysis-table th:nth-child(4){width:6%!important}
+.validation-analysis-table th:nth-child(5),
+.validation-analysis-table th:nth-child(6),
+.validation-analysis-table th:nth-child(7){width:8%!important}
+.validation-analysis-table th:nth-child(8),
+.validation-analysis-table th:nth-child(9){width:6%!important}
+.validation-analysis-table th:nth-child(10),
+.validation-analysis-table th:nth-child(11){width:5%!important}
+.validation-analysis-table th:nth-child(12){width:10%!important}
+.validation-analysis-table th:nth-child(13){width:9%!important}
+.validation-analysis-table .num{text-align:center!important}
+
+.validation-analysis-table .badge{white-space:normal!important;display:inline-block;text-align:center}
+
+/* Final override: Validasi tetap satu lebar halaman, tanpa horizontal slider. */
+.page-validation .validation-analysis-table{width:100%!important;min-width:0!important;max-width:100%!important}
+.page-validation .table-wrap:has(.validation-analysis-table){overflow-x:hidden!important;max-width:100%!important}

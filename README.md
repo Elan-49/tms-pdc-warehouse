@@ -64,7 +64,7 @@ NT_i = Observed Time_i × RF Snapshot_i
 Normal Time kelompok data:
 
 ```text
-NT = Σ(Observed Time_i × RF Snapshot_i) / N Valid
+NT = Σ(Observed Timeᵢ × RF Snapshotᵢ) / Nᵥ
 ```
 
 ## Validasi data waktu
@@ -72,23 +72,37 @@ NT = Σ(Observed Time_i × RF Snapshot_i) / N Valid
 ### Uji keseragaman
 
 ```text
-Mean = ΣX / N
+x̄ = ΣX / N
 s = sample standard deviation
-UCL = Mean + 3s
-LCL = max(0, Mean − 3s)
+BKA = x̄ + 3s
+BKB = max(0, x̄ − 3s)
 ```
 
-±3 SD merupakan metode keseragaman yang dipilih dalam penelitian ini. LCL dibatasi minimum 0 karena waktu tidak dapat bernilai negatif.
+±3 SD merupakan metode keseragaman yang dipilih dalam penelitian ini. BKB dibatasi minimum 0 karena waktu tidak dapat bernilai negatif.
 
 ### Uji kecukupan
 
 ```text
-N' = [ (Z / p) × √(NΣX² − (ΣX)²) / ΣX ]²
+N′ = [ (Z / p) × √(NΣX² − (ΣX)²) / ΣX ]²
 ```
 
-Confidence level menentukan Z secara otomatis. Precision `p`, confidence, dan N minimum awal merupakan parameter penelitian; rumus tidak diubah melalui UI.
+Confidence level menentukan Z secara otomatis. Precision `p`, confidence, dan N₀ merupakan parameter penelitian; rumus tidak diubah melalui UI.
 
-Standard Time hanya ditetapkan apabila data memenuhi aturan validasi yang digunakan aplikasi: jumlah observasi awal memenuhi minimum, data seragam, dan N Valid memenuhi N'.
+Standard Time hanya ditetapkan apabila data memenuhi aturan validasi yang digunakan aplikasi: jumlah observasi awal memenuhi minimum, data seragam, dan Nᵥ memenuhi N′.
+
+
+## Notasi Statistik Utama
+
+| Notasi | Keterangan |
+|---|---|
+| **N (Jumlah Pengamatan)** | Seluruh data hasil pengamatan yang tersedia |
+| **Nᵥ (Jumlah Data dalam Batas Kendali)** | Data yang berada di antara BKA dan BKB |
+| **N′ (Jumlah Pengamatan yang Diperlukan)** | Jumlah pengamatan teoritis yang diperlukan berdasarkan uji kecukupan |
+| **N₀ (Jumlah Pengamatan Awal Minimum)** | Batas minimum pengamatan awal yang ditetapkan penelitian |
+| **x̄ (Rata-Rata)** | Rata-rata waktu pengamatan |
+| **s (St Dev)** | Standar deviasi waktu pengamatan |
+| **BKA** | Batas Kontrol Atas |
+| **BKB** | Batas Kontrol Bawah |
 
 ## Standard Time
 
