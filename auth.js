@@ -8,7 +8,8 @@
   const hasSupabaseConfig = typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL &&
                              typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY;
   const localHost = ['localhost','127.0.0.1'].includes(location.hostname);
-  const localModeAllowed = !hasSupabaseConfig && !!ALLOW_LOCAL_MODE && localHost;
+  const localFile = location.protocol === 'file:';
+  const localModeAllowed = !hasSupabaseConfig && !!ALLOW_LOCAL_MODE && (localHost || localFile);
   let currentProfile = null;
   let supabaseClient = null;
 

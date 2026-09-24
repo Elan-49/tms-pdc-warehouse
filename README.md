@@ -1,69 +1,116 @@
 # TMWA PDC Warehouse
 
-**Time and Motion Study & Waste Analysis** untuk pengelolaan data observasi aktivitas kerja di Parts Warehouse.
+**Time and Motion Study & Waste Analysis** untuk pengelolaan pengukuran waktu kerja dan analisis waste di Parts Warehouse.
 
-Aplikasi ini digunakan untuk mencatat waktu kerja, mengolah waktu normal dan waktu baku, melakukan analisis keseragaman serta kecukupan data, menerapkan Rating Factor Westinghouse dan allowance, serta mengidentifikasi waste berdasarkan pendekatan Lean.
+## Struktur penelitian
 
-## Fitur Utama
-
-- **Dashboard** — ringkasan KPI, waktu normal, waktu baku, waste, dan informasi observasi.
-- **Data Waktu / Observasi** — pencatatan dan pengelolaan data observasi berbasis elemen kerja.
-- **Edit Observasi Lengkap** — Process, Activity, Element Kerja, PIC, tanggal, kategori, metode observasi, waktu, klasifikasi, waste, metode kerja, peralatan, dan catatan dapat diperbarui dalam satu popup.
-- **Dropdown Master Data** — Process, Activity, dan Element Kerja menggunakan data master secara bertingkat.
-- **PIC / Operator** — pilihan PIC berasal dari daftar operator pada Rating Factor.
-- **Uji Keseragaman** — pengujian keseragaman data waktu observasi.
-- **Uji Kecukupan** — perhitungan kebutuhan jumlah observasi.
-- **Rating Factor** — pengelolaan faktor Skill, Effort, Condition, Consistency, rating factor, kebutuhan observasi awal, dan allowance.
-- **Standard Time** — perhitungan waktu normal dan waktu baku berdasarkan allowance.
-- **Analisis LEAN** — klasifikasi aktivitas dan identifikasi 8 jenis waste.
-- **Master Data** — pengelolaan struktur Process, Activity, Element Kerja, serta atribut pendukung.
-- **TSKK** — pengelolaan dan pencetakan tabel standar kerja terkait data yang tersedia pada aplikasi.
-- **Print & Export** — pencetakan dan ekspor data sesuai modul yang tersedia.
-- **Authentication & Role** — pengaturan akses berdasarkan akun dan role.
-- **Supabase Cloud Sync** — sinkronisasi data ke cloud ketika konfigurasi dan koneksi tersedia.
-- **Local Storage** — data aplikasi tetap dapat digunakan secara lokal ketika cloud tidak tersedia.
-
-## Struktur Data Observasi
-
-Data observasi menggunakan satu record untuk setiap pengamatan. Informasi yang dapat dikelola meliputi:
-
-- Tanggal
-- PIC / Operator
-- Process
-- Activity
-- Element Kerja
-- Kategori ukuran: Small / Medium / Big
-- Metode observasi
-- Waktu observasi
-- Klasifikasi aktivitas
-- Jenis waste
-- Metode kerja
-- Peralatan
-- Catatan
-
-Saat observasi diedit, record yang sama diperbarui berdasarkan **ID observasi** sehingga tidak membuat data observasi baru.
-
-## Alur Pengolahan
+Aplikasi mempertahankan struktur sederhana:
 
 ```text
-Master Data
-    ↓
-Data Observasi
-    ↓
-Uji Keseragaman & Uji Kecukupan
-    ↓
-Rating Factor + Allowance
-    ↓
-Waktu Normal
-    ↓
-Waktu Baku / Standard Time
-    ↓
-Dashboard & Analisis LEAN
+Process → Activity → Element Kerja
 ```
 
-## Analisis LEAN
+- **Process** = kelompok proses besar, misalnya Inbound, Storage, atau Outbound.
+- **Activity** = pekerjaan utama, misalnya Receiving, QI/QC, atau Binning.
+- **Element Kerja** = rincian pekerjaan di dalam Activity.
+- **Standard Time** dapat dihitung pada level Element dan Activity. Process dapat ditampilkan sebagai agregasi Standard Time Activity yang membentuk process tersebut.
+- **Video hanya menjadi sumber rekaman.** Satu video boleh berisi banyak aktivitas dan tidak harus dianalisis seluruh durasinya. Pengguna memilih rentang waktu yang relevan untuk setiap observasi.
 
-Aplikasi menggunakan klasifikasi waste berikut:
+Tidak ada master data atau filter tambahan bernama **Activity Cycle**. Istilah **Cycle Time** hanya digunakan sebagai istilah pengukuran waktu dalam time study, bukan sebagai level data baru.
+
+## Fitur utama
+
+- **Dashboard** — KPI Normal Time, Standard Time, waste, Pareto, dan filter Process / Activity / Element / Kategori.
+- **Data Waktu / Observasi** — pencatatan waktu dari video atau input manual.
+- **Master Data** — Process, Activity, Element Kerja, klasifikasi, waste, metode, peralatan, dan frekuensi per kategori.
+- **Rating Factor** — Westinghouse pada konteks **PIC + Activity**.
+- **Validasi Data Waktu** — uji keseragaman, uji kecukupan, dan parameter penelitian.
+- **Standard Time** — Normal Time dan Standard Time dengan allowance.
+- **Analisis LEAN** — delapan jenis waste dan Estimated Waste Time / Day.
+- **TSKK / SWCT** — analisis Standard Work Combination berdasarkan data observasi yang dipilih.
+- **Print & Export** — keluaran laporan dan ekspor data.
+- **Authentication & Role** — akses berdasarkan role pengguna.
+- **Supabase Cloud Sync** — sinkronisasi cloud jika konfigurasi tersedia.
+- **Local Storage** — data lokal tetap dapat digunakan saat cloud tidak tersedia.
+
+## Aturan observasi
+
+1. Satu video boleh digunakan untuk banyak observasi.
+2. Video tidak harus dianalisis dari awal sampai akhir.
+3. Pengguna cukup memilih rentang waktu pekerjaan yang ingin diukur.
+4. Jika pekerjaan berpindah dari Receiving ke QI/QC, cukup simpan sebagai observasi berbeda. Tidak perlu membuat level data baru.
+5. Element merupakan breakdown pekerjaan yang dipilih dari Activity.
+6. PIC, Activity, dan kategori dapat berbeda antarobservasi dalam video yang sama.
+7. Satu observasi menyimpan waktu aktual dalam detik; waktu tersebut menjadi dasar perhitungan time study.
+
+## Rating Factor Westinghouse
+
+Rating ditetapkan pada **PIC + Activity** karena satu Activity dapat dikerjakan oleh beberapa PIC dengan penilaian performa yang berbeda.
+
+```text
+RF = 1 + Skill + Effort + Condition + Consistency
+```
+
+Saat observasi disimpan, nilai RF yang digunakan disimpan sebagai **RF Snapshot** pada record observasi.
+
+Snapshot berarti **salinan nilai RF pada saat observasi dilakukan**. Pengguna tidak perlu mengisi snapshot secara manual. Jika rating PIC + Activity berubah di kemudian hari, observasi lama tetap menggunakan RF yang tersimpan saat observasi tersebut dibuat.
+
+Normal Time per observasi:
+
+```text
+NT_i = Observed Time_i × RF Snapshot_i
+```
+
+Normal Time kelompok data:
+
+```text
+NT = Σ(Observed Time_i × RF Snapshot_i) / N Valid
+```
+
+## Validasi data waktu
+
+### Uji keseragaman
+
+```text
+Mean = ΣX / N
+s = sample standard deviation
+UCL = Mean + 3s
+LCL = max(0, Mean − 3s)
+```
+
+±3 SD merupakan metode keseragaman yang dipilih dalam penelitian ini. LCL dibatasi minimum 0 karena waktu tidak dapat bernilai negatif.
+
+### Uji kecukupan
+
+```text
+N' = [ (Z / p) × √(NΣX² − (ΣX)²) / ΣX ]²
+```
+
+Confidence level menentukan Z secara otomatis. Precision `p`, confidence, dan N minimum awal merupakan parameter penelitian; rumus tidak diubah melalui UI.
+
+Standard Time hanya ditetapkan apabila data memenuhi aturan validasi yang digunakan aplikasi: jumlah observasi awal memenuhi minimum, data seragam, dan N Valid memenuhi N'.
+
+## Standard Time
+
+```text
+ST = NT / (1 − A)
+```
+
+Aplikasi menggunakan konvensi allowance tersebut secara konsisten. Nilai allowance harus memiliki dasar acuan dan kondisi kerja penelitian.
+
+### Kategori ukuran
+
+Small, Medium, dan Big dihitung terpisah.
+
+**All / Tanpa Dimensi** adalah pooled calculation pada kombinasi Process + Activity + Element yang sama. All bukan penjumlahan Small + Medium + Big dan bukan rata-rata ketiga hasil tersebut. Hasil pooled hanya digunakan apabila data gabungan memenuhi validasi.
+
+### Process Standard Time
+
+Process tidak dianggap sebagai hasil stopwatch langsung apabila penelitian tidak melakukan pengukuran langsung pada Process. Nilai Process dapat ditampilkan sebagai **agregasi Standard Time Activity** yang memang membentuk Process tersebut.
+
+## LEAN / Waste
+
+Aplikasi menggunakan:
 
 1. Defects
 2. Overproduction
@@ -74,21 +121,28 @@ Aplikasi menggunakan klasifikasi waste berikut:
 7. Motion
 8. Extra Processing
 
-## Penyimpanan & Sinkronisasi
+Estimated Waste Time / Day dihitung berdasarkan:
 
-Aplikasi menggunakan penyimpanan lokal dan dapat terhubung ke Supabase.
+```text
+Standard Time kategori × Frequency kategori / hari
+```
 
-- Perubahan disimpan pada perangkat terlebih dahulu.
-- Jika koneksi dan konfigurasi Supabase tersedia, data disinkronkan ke cloud.
-- Jika cloud tidak tersedia, data lokal tetap tersimpan.
-- Sinkronisasi dapat dilanjutkan ketika koneksi cloud tersedia kembali.
-- Pembaruan observasi menggunakan ID record yang sama sehingga data cloud diperbarui, bukan diduplikasi.
+Istilah **Estimated** digunakan agar hasil tidak disalahartikan sebagai pengukuran langsung durasi pure waste.
 
-## Role & Akses
+## TSKK / SWCT
 
-Akses menu mengikuti role akun yang digunakan. Fitur administrasi dan **User Management** dibatasi untuk role yang memiliki hak administrasi.
+TSKK menggunakan data observasi yang dipilih dan mempertahankan hubungan dengan Process, Activity, PIC, Element, dan kategori yang sudah ada. TSKK tidak membuat level master baru.
 
-## Struktur File
+Cycle Time pada TSKK adalah istilah pengukuran, bukan entitas atau filter baru pada aplikasi.
+
+## Penyimpanan dan sinkronisasi
+
+- Data lokal disimpan terlebih dahulu.
+- Jika Supabase tersedia dan pengguna memiliki hak tulis, data disinkronkan ke cloud.
+- Edit menggunakan ID record yang sama sehingga memperbarui record, bukan membuat duplikasi.
+- Schema canonical berada pada `supabase/schema.sql`.
+
+## Struktur file production
 
 ```text
 TMWA-PDC-WAREHOUSE/
@@ -101,58 +155,19 @@ TMWA-PDC-WAREHOUSE/
 ├── auth-middleware.js
 ├── cloud-sync.js
 ├── vercel.json
+├── README.md
 ├── supabase/
 │   └── schema.sql
-├── ut-logo.png
-├── ut-logo-2.png
-├── ut-logo-bulat.png
-├── ut-motto.png
-└── login-building-bg.webp
+└── assets/
+    ├── ut-logo-2.png
+    ├── ut-logo-bulat.png
+    ├── ut-logo.png
+    ├── ut-motto.png
+    └── login-building-bg.webp
 ```
 
-## Menjalankan Secara Lokal
+## Local dan production
 
-Karena aplikasi menggunakan JavaScript dan modul browser, jalankan melalui local web server, bukan dengan membuka `index.html` menggunakan `file://`.
+Untuk pengujian lokal gunakan localhost / Live Server. Untuk production, gunakan Supabase Auth dan project Supabase yang sama dengan konfigurasi aplikasi.
 
-Contoh dengan VS Code:
-
-1. Buka folder aplikasi.
-2. Jalankan menggunakan **Live Server** atau web server lokal lainnya.
-3. Buka alamat localhost yang diberikan server.
-
-## Konfigurasi Supabase
-
-Konfigurasi koneksi berada pada:
-
-```text
-auth-config.js
-cloud-sync.js
-supabase/schema.sql
-```
-
-Gunakan schema yang tersedia pada folder `supabase` untuk menyiapkan struktur database. Pastikan URL project, anon key, tabel, policy, dan konfigurasi autentikasi sesuai dengan project Supabase yang digunakan.
-
-## Deployment
-
-Aplikasi dapat dideploy sebagai static web application pada layanan seperti Vercel atau platform hosting lain yang mendukung HTML, CSS, dan JavaScript.
-
-Pastikan konfigurasi Supabase dan authentication sudah tersedia pada environment/project tujuan sebelum digunakan bersama.
-
-## Catatan Penggunaan
-
-- Gunakan **Master Data** sebagai sumber struktur Process → Activity → Element Kerja.
-- Gunakan **Rating Factor** sebagai sumber daftar PIC/Operator dan parameter penilaian.
-- Lakukan pemeriksaan keseragaman dan kecukupan sebelum menetapkan waktu baku.
-- Pastikan allowance dan rating factor sudah sesuai dengan metode pengukuran yang digunakan.
-- Lakukan sinkronisasi cloud secara berkala jika aplikasi digunakan pada lebih dari satu perangkat.
-
-## Migrasi Data Lokal
-
-Versi TMWA melakukan migrasi otomatis terhadap data lokal dari versi aplikasi sebelumnya saat pertama kali dibuka pada browser yang sama. Data dipindahkan ke namespace TMWA tanpa menghapus data sumber lama. Setelah migrasi berhasil, aplikasi menggunakan penyimpanan TMWA untuk penggunaan berikutnya.
-
-Migrasi ini hanya berlaku untuk data yang tersimpan di browser/perangkat tersebut. Data Supabase tidak perlu dipindahkan karena tetap menggunakan project, tabel, Auth, dan konfigurasi backend yang sama.
-
-
-## Perbaikan loader autentikasi
-
-Build V4.5.74 memperbaiki kondisi ketika halaman produksi berhenti pada loader orbit. Loader sekarang otomatis dihentikan jika sesi tidak ada, sesi kedaluwarsa, atau pemeriksaan profil/auth gagal sehingga halaman login dapat tampil. Jika autentikasi berhasil, loader tetap menunggu render awal aplikasi selesai.
+Jangan menjalankan SQL reset dummy setelah data penelitian aktual mulai digunakan.

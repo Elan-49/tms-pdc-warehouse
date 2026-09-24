@@ -6,13 +6,15 @@
 
 /* ------------------------------------------------------------------------
    MODE 1 — PASSCODE LOKAL
-   Sengaja dinonaktifkan untuk build produksi agar deployment tidak pernah
-   fallback ke satu passcode bersama. Development lokal juga sebaiknya memakai
-   akun Supabase.
+   true  = aktif → aplikasi mengizinkan login menggunakan passcode lokal.
+   false = nonaktif → aplikasi hanya menggunakan autentikasi Supabase.
+   Untuk production, gunakan false agar aplikasi tidak memiliki fallback
+   ke satu passcode bersama.
    ------------------------------------------------------------------------ */
-const LOCAL_ACCESS_CODE = '';
+const LOCAL_ACCESS_CODE = 'tmwa-demo';
 
-// Production safety: local passcode mode is blocked.
+// Set true untuk mengaktifkan mode passcode lokal.
+// Set false untuk menonaktifkan mode passcode lokal.
 const ALLOW_LOCAL_MODE = false;
 
 /* ------------------------------------------------------------------------

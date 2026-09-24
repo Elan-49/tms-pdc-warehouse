@@ -61,11 +61,19 @@
     const opById=new Map((ops.data||[]).map(x=>[x.id,x]));
     const operators=(ops.data||[]).map(x=>x.name);
     const operatorDepartments=Object.fromEntries((ops.data||[]).map(x=>[x.name,x.activity||'']));
-    const ratings={},westinghouse={};
-    (rfs.data||[]).forEach(r=>{const op=opById.get(r.operator_id);if(!op)return;ratings[op.name]=n(r.rating_factor)||1;westinghouse[op.name]={skill:n(r.skill_value)||0,effort:n(r.effort_value)||0,condition:n(r.condition_value)||0,consistency:n(r.consistency_value)||0};});
-    const settings={allowance:n(st.data?.allowance_percent??10)/100,confidence:95,minInitialN:+(st.data?.n_min_observations??5),operators,operatorDepartments,ratings,westinghouse};
-    const master=(masters.data||[]).map(x=>({id:x.id,process:x.process,activity:x.activity,element:x.element_name,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,frequency:n(x.frequency_per_day)||0,notes:x.notes||''}));
-    const observations=(obs.data||[]).map(x=>({id:x.id,observationSessionId:x.observation_session_id||x.observation_cycle_id||`LEGACY-${x.id}`,observationCycleId:x.observation_cycle_id||x.observation_session_id||`LEGACY-${x.id}`,date:(x.observed_at||'').slice(0,10),study:x.study||'',operator:opById.get(x.operator_id)?.name||x.operator_name||'',process:x.process,activity:x.activity,element:x.element_name,size:x.size_category,start:n(x.start_time),end:n(x.end_time),time:n(x.observed_time)||0,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,note:x.notes||'',createdAt:Date.parse(x.created_at||Date.now())}));
+    const ratings={},westinghouse={},ratingByActivity={};
+    const sortedRatings=[...(rfs.data||[])].sort((a,b)=>String(a.activity_name||'').localeCompare(String(b.activity_name||''))||String(a.id||'').localeCompare(String(b.id||'')));
+    sortedRatings.forEach(r=>{
+      const op=opById.get(r.operator_id);if(!op||!r.activity_name)return;
+      const w={skill:n(r.skill_value)||0,effort:n(r.effort_value)||0,condition:n(r.condition_value)||0,consistency:n(r.consistency_value)||0};
+      ratingByActivity[op.name]??={};
+      ratingByActivity[op.name][String(r.activity_name).trim()]=w;
+    });
+    // Legacy one-RF-per-PIC mirrors remain empty because a PIC may have multiple
+    // Activities. All calculations use PIC + Activity or the stored snapshot.
+    const settings={allowance:n(st.data?.allowance_percent??10)/100,confidence:n(st.data?.confidence_percent??95)||95,zValue:n(st.data?.z_value??1.96)||1.96,precision:n(st.data?.precision_percent??5)/100,minInitialN:+(st.data?.n_min_observations??5),operators,operatorDepartments,ratings,westinghouse,ratingByActivity};
+    const master=(masters.data||[]).map(x=>({id:x.id,process:x.process,activity:x.activity,element:x.element_name,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,frequency:n(x.frequency_per_day)||0,frequencyBySize:{Small:n(x.frequency_small_per_day),Medium:n(x.frequency_medium_per_day),Big:n(x.frequency_big_per_day)},notes:x.notes||''}));
+    const observations=(obs.data||[]).map(x=>({id:x.id,observationSessionId:x.observation_session_id||x.observation_cycle_id||`LEGACY-${x.id}`,observationCycleId:x.observation_cycle_id||x.observation_session_id||`LEGACY-${x.id}`,date:(x.observed_at||'').slice(0,10),study:x.study||'',operator:opById.get(x.operator_id)?.name||x.operator_name||'',process:x.process,activity:x.activity,element:x.element_name,size:x.size_category,start:n(x.start_time),end:n(x.end_time),time:n(x.observed_time)||0,classification:x.classification,waste:x.lean_waste,method:x.work_method,equipment:x.equipment,note:x.notes||'',ratingFactorSnapshot:n(x.rating_factor_snapshot),createdAt:Date.parse(x.created_at||Date.now())}));
     return {observations,settings,master};
   }
   let queuedState=null, queuedResolvers=[];
@@ -132,17 +140,21 @@
     const sb=await getClient(); if(!sb)return;
     if(configured&&!authState?.session&&!authState?.user)throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
     const names=[...new Set((state.settings.operators||[]).map(x=>String(x).trim()).filter(Boolean))];
-    const opRows=names.map(name=>({name,activity:state.settings.operatorDepartments?.[name]||null}));
+    const opRows=names.map(name=>({name}));
     if(opRows.length){const {error}=await sb.from('operators').upsert(opRows,{onConflict:'name'});if(error)throw error;}
     const {data:ops,error:oe}=await sb.from('operators').select('id,name');if(oe)throw oe;
     const opId=Object.fromEntries((ops||[]).map(x=>[x.name,x.id]));
-    const masters=(state.master||[]).map(m=>{const row={process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:normalizeMasterMethod(m.method)||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,notes:m.notes||null};if(m.id)row.id=m.id;else row.id=(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():('m-'+Date.now()+'-'+Math.random().toString(16).slice(2));return row;});
+    const masters=(state.master||[]).map(m=>{const f=m.frequencyBySize||{};const row={process:m.process,activity:m.activity,element_name:m.element,classification:m.classification||null,lean_waste:m.waste||null,work_method:normalizeMasterMethod(m.method)||null,equipment:m.equipment||null,frequency_per_day:n(m.frequency)||0,frequency_small_per_day:n(f.Small),frequency_medium_per_day:n(f.Medium),frequency_big_per_day:n(f.Big),notes:m.notes||null};if(m.id)row.id=m.id;else row.id=(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():('m-'+Date.now()+'-'+Math.random().toString(16).slice(2));return row;});
     if(masters.length){const {error}=await sb.from('master_elements').upsert(masters,{onConflict:'process,activity,element_name'});if(error)throw error;}
-    const ratings=names.map(name=>{const w=state.settings.westinghouse?.[name]||{};return {operator_id:opId[name],skill_value:n(w.skill)||0,effort_value:n(w.effort)||0,condition_value:n(w.condition)||0,consistency_value:n(w.consistency)||0};}).filter(x=>x.operator_id);
-    if(ratings.length){const {error}=await sb.from('rating_factors').upsert(ratings,{onConflict:'operator_id'});if(error)throw error;}
-    const setRow={id:1,n_min_observations:+state.settings.minInitialN||5,allowance_percent:(+state.settings.allowance||0)*100,updated_at:new Date().toISOString()};
+    const ratingRows=[];
+    names.forEach(name=>{
+      const by=state.settings.ratingByActivity?.[name]||{};
+      Object.entries(by).forEach(([activity,w])=>{if(!opId[name]||!activity)return;ratingRows.push({operator_id:opId[name],activity_name:activity,skill_value:n(w.skill)||0,effort_value:n(w.effort)||0,condition_value:n(w.condition)||0,consistency_value:n(w.consistency)||0});});
+    });
+    if(ratingRows.length){const {error}=await sb.from('rating_factors').upsert(ratingRows,{onConflict:'operator_id,activity_name'});if(error)throw error;}
+    const setRow={id:1,n_min_observations:+state.settings.minInitialN||5,allowance_percent:(+state.settings.allowance||0)*100,confidence_percent:+state.settings.confidence||95,z_value:+state.settings.zValue||1.96,precision_percent:(+state.settings.precision||0.05)*100,updated_at:new Date().toISOString()};
     if(currentRole==='admin'){const {error}=await sb.from('study_settings').upsert(setRow);if(error)throw error;}
-    const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observation_session_id:o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`,observation_cycle_id:o.observationCycleId||o.observationSessionId||`LEGACY-${o.id}`,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
+    const obs=(state.observations||[]).map(o=>({id:o.id,observation_no:null,observation_session_id:o.observationSessionId||o.observationCycleId||`LEGACY-${o.id}`,observation_cycle_id:o.observationCycleId||o.observationSessionId||`LEGACY-${o.id}`,observed_at:o.date?`${o.date}T00:00:00Z`:new Date(o.createdAt||Date.now()).toISOString(),study:o.study||null,process:o.process||null,activity:o.activity||null,element_name:o.element||null,operator_id:opId[o.operator]||null,operator_name:o.operator||null,size_category:o.size||null,start_time:n(o.start),end_time:n(o.end),observed_time:n(o.time)||0,classification:o.classification||null,lean_waste:o.waste||null,work_method:o.method||null,equipment:o.equipment||null,notes:o.note||null,rating_factor_snapshot:n(o.ratingFactorSnapshot)||null,created_at:new Date(o.createdAt||Date.now()).toISOString()}));
     if(obs.length){const {error}=await sb.from('observations').upsert(obs,{onConflict:'id'});if(error)throw error;}
   }
   let refreshTimer=null,refreshQueuedEvent=null;
