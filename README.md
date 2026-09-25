@@ -1,3 +1,10 @@
+## Status Sinkronisasi dan Storage Lokal
+- **Supabase** adalah sumber data resmi untuk data yang sudah tersinkron dan dibagi antar-user/perangkat.
+- **IndexedDB/LocalStorage** hanya menyimpan draft, cache, serta pending cloud snapshot pada perangkat yang melakukan perubahan.
+- Indikator pada profil menunjukkan **status sinkronisasi perangkat saat ini**, bukan status global seluruh perangkat pada akun yang sama.
+- Jika ada pending cloud snapshot, indikator peringatan tetap tampil sampai snapshot tersebut berhasil dikirim ke Supabase.
+- Pending sync dicoba otomatis melalui event online, saat tab/aplikasi kembali aktif, dan retry terkontrol dengan backoff 5–60 detik selama queue masih ada.
+
 # TMWA PDC Warehouse
 
 **Time and Motion Study & Waste Analysis** untuk pengelolaan pengukuran waktu kerja dan analisis waste di Parts Warehouse.
@@ -30,8 +37,8 @@ Tidak ada master data atau filter tambahan bernama **Activity Cycle**. Istilah *
 - **TSKK / SWCT** — analisis Standard Work Combination berdasarkan data observasi yang dipilih.
 - **Print & Export** — keluaran laporan dan ekspor data.
 - **Authentication & Role** — akses berdasarkan role pengguna.
+- **Audit Trail** — riwayat INSERT, UPDATE, dan DELETE untuk data yang tercatat di `audit_logs`, hanya dapat dibaca Admin.
 - **Supabase Cloud Sync** — sinkronisasi cloud jika konfigurasi tersedia.
-- **Local Storage** — data lokal tetap dapat digunakan saat cloud tidak tersedia.
 
 ## Aturan observasi
 
@@ -149,11 +156,15 @@ TSKK menggunakan data observasi yang dipilih dan mempertahankan hubungan dengan 
 
 Cycle Time pada TSKK adalah istilah pengukuran, bukan entitas atau filter baru pada aplikasi.
 
-## Penyimpanan dan sinkronisasi
+## Penyimpanan & Sinkronisasi
 
-- Data lokal disimpan terlebih dahulu.
-- Jika Supabase tersedia dan pengguna memiliki hak tulis, data disinkronkan ke cloud.
+- **IndexedDB** menjadi cache lokal utama untuk data studi dan menyimpan snapshot cloud yang masih **Pending Sync**.
+- **LocalStorage** digunakan untuk draft/form sementara, metadata status, compatibility/fallback, dan penanda observasi yang masih pending.
+- **Supabase** adalah **source of truth** untuk data yang sudah tersinkron dan dibagi antar-user/perangkat.
+- Data lokal disimpan terlebih dahulu agar draft dan pemulihan offline tetap tersedia, kemudian disinkronkan ke cloud ketika koneksi dan hak akses tersedia.
 - Edit menggunakan ID record yang sama sehingga memperbarui record, bukan membuat duplikasi.
+- Status penyimpanan ditampilkan ringkas melalui **indikator dot pada profil**; warna hijau menandakan Tersinkron, kuning menandakan Draft/Sedang Sinkronisasi/tersimpan lokal, dan merah menandakan data **Belum tersinkron**. Peringatan merah pada tombol profil hanya muncul saat ada pending sync.
+- Logout membersihkan cache/draft perangkat setelah pending cloud selesai; jika pending belum berhasil disinkronkan, logout diblok agar data tidak terbuang.
 - Schema canonical berada pada `supabase/schema.sql`.
 
 ## Struktur file production
@@ -173,11 +184,11 @@ TMWA-PDC-WAREHOUSE/
 ├── supabase/
 │   └── schema.sql
 └── assets/
-    ├── assets/ut-logo-2.png
-    ├── assets/ut-logo-bulat.png
-    ├── assets/ut-logo.png
-    ├── assets/ut-motto.png
-    └── assets/login-building-bg.webp
+    ├── ut-logo-2.png
+    ├── ut-logo-bulat.png
+    ├── ut-logo.png
+    ├── ut-motto.png
+    └── login-building-bg.webp
 ```
 
 ## Local dan production
@@ -185,3 +196,4 @@ TMWA-PDC-WAREHOUSE/
 Untuk pengujian lokal gunakan localhost / Live Server. Untuk production, gunakan Supabase Auth dan project Supabase yang sama dengan konfigurasi aplikasi.
 
 Jangan menjalankan SQL reset dummy setelah data penelitian aktual mulai digunakan.
+

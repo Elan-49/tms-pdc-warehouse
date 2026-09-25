@@ -4,7 +4,7 @@
    sebagai sumber kebenaran yang boleh menghidupkan kembali record cloud yang dihapus. */
 (function(){
   const configured=typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL&&typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY;
-  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tmwa-pdc-pending-observations'; const CLOUD_PENDING_KEY='tmwa-pdc-pending-cloud-snapshot';
+  let client=null, channel=null, timer=null, applying=false; const PENDING_KEY='tmwa-pdc-pending-observations';
   async function sdk(){
     if(window.supabase)return window.supabase;
     await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});
@@ -79,32 +79,124 @@
   let queuedState=null, queuedResolvers=[];
   let statusCb=null;
   function setStatus(s){try{statusCb&&statusCb(s)}catch(e){}}
-  function migrateLegacyPending(){try{const raw=localStorage.getItem(PENDING_KEY);if(!raw)return;const value=JSON.parse(raw);if(value&&typeof value==='object'&&!Array.isArray(value)&&value.state){localStorage.setItem(CLOUD_PENDING_KEY,raw);localStorage.removeItem(PENDING_KEY)}}catch(e){console.warn('Could not migrate legacy pending cloud snapshot:',e)}}
+
+  const LOCAL_DB_NAME='tmwa-pdc-warehouse';
+  const LOCAL_DB_STORE='kv';
+  const PENDING_IDB_KEY='tmwa-pdc-pending-cloud-snapshot';
+  const PENDING_META_KEY='tmwa-pdc-pending-cloud-meta';
+  const LEGACY_PENDING_KEY='tmwa-pdc-pending-cloud-snapshot';
+  let pendingCache=null;
+
+  function idbOpenLocal(){return new Promise((resolve,reject)=>{
+    try{
+      if(!('indexedDB' in window))return reject(new Error('IndexedDB tidak tersedia'));
+      const req=indexedDB.open(LOCAL_DB_NAME,1);
+      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(LOCAL_DB_STORE))req.result.createObjectStore(LOCAL_DB_STORE)};
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error('IndexedDB gagal dibuka'));
+    }catch(e){reject(e)}
+  })}
+  async function idbGetLocal(key){const db=await idbOpenLocal();return await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_DB_STORE,'readonly'),st=tx.objectStore(LOCAL_DB_STORE),req=st.get(key);req.onsuccess=()=>resolve(req.result??null);req.onerror=()=>reject(req.error||new Error('IndexedDB read gagal'));tx.oncomplete=()=>db.close();tx.onerror=()=>reject(tx.error||new Error('IndexedDB transaction gagal'))})}
+  async function idbSetLocal(key,value){const db=await idbOpenLocal();return await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_DB_STORE,'readwrite');tx.objectStore(LOCAL_DB_STORE).put(value,key);tx.oncomplete=()=>{db.close();resolve(true)};tx.onerror=()=>{const e=tx.error||new Error('IndexedDB write gagal');db.close();reject(e)}})}
+  async function idbDeleteLocal(key){const db=await idbOpenLocal();return await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_DB_STORE,'readwrite');tx.objectStore(LOCAL_DB_STORE).delete(key);tx.oncomplete=()=>{db.close();resolve(true)};tx.onerror=()=>{const e=tx.error||new Error('IndexedDB delete gagal');db.close();reject(e)}})}
+
+  function readPendingMeta(){try{const raw=localStorage.getItem(PENDING_META_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
+  function writePendingMeta(savedAt){try{localStorage.setItem(PENDING_META_KEY,JSON.stringify({hasPending:true,savedAt}))}catch(e){}}
+  function clearPendingMeta(){try{localStorage.removeItem(PENDING_META_KEY)}catch(e){}}
+
+  async function migrateLegacyPending(){
+    try{
+      const raw=localStorage.getItem(LEGACY_PENDING_KEY);
+      if(raw){
+        const value=JSON.parse(raw);
+        if(value&&typeof value==='object'&&!Array.isArray(value)&&value.state){
+          pendingCache=value;
+          try{await idbSetLocal(PENDING_IDB_KEY,value);localStorage.removeItem(LEGACY_PENDING_KEY);writePendingMeta(value.savedAt||Date.now())}
+          catch(e){writePendingMeta(value.savedAt||Date.now())}
+        }
+      }else if(readPendingMeta()?.hasPending){
+        pendingCache=await idbGetLocal(PENDING_IDB_KEY).catch(()=>null);
+      }
+    }catch(e){console.warn('Pending cloud migration skipped:',e)}
+  }
   migrateLegacyPending();
-  function persistPending(state){try{localStorage.setItem(CLOUD_PENDING_KEY,JSON.stringify({state,savedAt:Date.now()}))}catch(e){console.warn('Could not persist pending cloud snapshot:',e)}}
-  function readPending(){try{const raw=localStorage.getItem(CLOUD_PENDING_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
-  function clearPending(){try{localStorage.removeItem(CLOUD_PENDING_KEY)}catch(e){}}
-  function hasPending(){return !!readPending()}
+
+  async function persistPending(state){
+    const value={state,savedAt:Date.now()};
+    pendingCache=value;
+    try{
+      await idbSetLocal(PENDING_IDB_KEY,value);
+      writePendingMeta(value.savedAt);
+      try{localStorage.removeItem(LEGACY_PENDING_KEY)}catch(e){}
+    }catch(e){
+      // LocalStorage is only a fallback queue when IndexedDB is unavailable.
+      try{localStorage.setItem(LEGACY_PENDING_KEY,JSON.stringify(value));writePendingMeta(value.savedAt)}
+      catch(err){console.warn('Could not persist pending cloud snapshot:',err)}
+    }
+  }
+  async function readPending(){
+    if(pendingCache)return pendingCache;
+    // Read IndexedDB first so a successful IDB write cannot be lost merely
+    // because the lightweight LocalStorage metadata was not committed yet.
+    pendingCache=await idbGetLocal(PENDING_IDB_KEY).catch(()=>null);
+    if(!pendingCache){
+      try{const raw=localStorage.getItem(LEGACY_PENDING_KEY);pendingCache=raw?JSON.parse(raw):null}catch(e){}
+    }
+    return pendingCache;
+  }
+  function hasPending(){return !!pendingCache||!!readPendingMeta()?.hasPending||!!localStorage.getItem(LEGACY_PENDING_KEY)}
+  async function clearPending(){
+    pendingCache=null;
+    clearPendingMeta();
+    try{await idbDeleteLocal(PENDING_IDB_KEY)}catch(e){}
+    try{localStorage.removeItem(LEGACY_PENDING_KEY)}catch(e){}
+  }
   let flushing=false;
+  let retryTimer=null;
+  let retryDelay=5000;
+  const RETRY_MIN_MS=5000;
+  const RETRY_MAX_MS=60000;
+
+  function clearPendingRetry(){
+    if(retryTimer){clearTimeout(retryTimer);retryTimer=null;}
+    retryDelay=RETRY_MIN_MS;
+  }
+  function schedulePendingRetry(){
+    if(!configured||retryTimer||!pendingCache||typeof window==='undefined')return;
+    const delay=retryDelay;
+    retryTimer=setTimeout(async()=>{
+      retryTimer=null;
+      const ok=await flushPending();
+      if(ok!==true&&hasPending()){
+        retryDelay=Math.min(Math.round(retryDelay*2),RETRY_MAX_MS);
+        schedulePendingRetry();
+      }
+    },delay);
+  }
+
   async function flushPending(){
     if(flushing||!configured)return false;
-    const pending=readPending();
-    if(!pending)return true;
-    if(typeof navigator!=='undefined'&&navigator.onLine===false)return false;
+    const pending=await readPending();
+    if(!pending){clearPendingRetry();setStatus('synced');return true;}
+    if(typeof navigator!=='undefined'&&navigator.onLine===false){
+      setStatus('pending');
+      schedulePendingRetry();
+      return false;
+    }
     flushing=true; setStatus('retrying');
     try{
       await write(pending.state);
-      clearPending();
+      await clearPending();
+      window.__tmwaResolveLocalPending?.((pending.state?.observations||[]).map(o=>o.id));
+      clearPendingRetry();
       setStatus('synced');
       return true;
     }catch(err){
       console.warn('Cloud retry still failing:',err);
       setStatus('pending');
+      schedulePendingRetry();
       return false;
     }finally{flushing=false}
-  }
-  if(typeof window!=='undefined'){
-    window.addEventListener('online',()=>{flushPending()});
   }
   async function saveSnapshot(state){
     if(!configured||applying)return false;
@@ -118,16 +210,19 @@
         // Persist BEFORE attempting the write. If the tab closes or the network
         // drops mid-request, the next reload (or the "online" event) can still
         // find and retry this exact snapshot instead of losing it silently.
-        persistPending(snapshot);
+        await persistPending(snapshot);
         try{
           await write(snapshot);
-          clearPending();
+          await clearPending();
           try{localStorage.removeItem(PENDING_KEY)}catch(e){}
+          window.__tmwaResolveLocalPending?.((snapshot.observations||[]).map(o=>o.id));
+          clearPendingRetry();
           setStatus('synced');
           resolvers.forEach(resolve=>resolve(true));
         }catch(err){
           console.error('Cloud sync failed',err);
           setStatus('pending');
+          schedulePendingRetry();
           resolvers.forEach(resolve=>resolve(false));
         }
       },150);
@@ -136,8 +231,9 @@
   async function write(state){
     const authState=await ensureAuthSession();
     const currentRole=window.tmwaAuth?.getRole?.()||authState?.profile?.role||null;
-    if(!['admin','analyst'].includes(currentRole)) return;
-    const sb=await getClient(); if(!sb)return;
+    if(!['admin','analyst'].includes(currentRole)) throw new Error('Akun tidak memiliki izin menulis data cloud.');
+    const sb=await getClient();
+    if(!sb)throw new Error('Supabase belum terhubung.');
     if(configured&&!authState?.session&&!authState?.user)throw new Error('Sesi Supabase belum siap. Silakan login ulang.');
     const names=[...new Set((state.settings.operators||[]).map(x=>String(x).trim()).filter(Boolean))];
     const opRows=names.map(name=>({name}));
@@ -170,9 +266,11 @@
     channel=sb.channel('tmwa-realtime');
     tables.forEach(table=>channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>refresh(payload)));
     channel.subscribe(status=>{
-      if(status==='SUBSCRIBED')setStatus('synced');
+      if(status==='SUBSCRIBED')setStatus(hasPending()?'pending':'synced');
       if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
-        setStatus('pending');
+        // Realtime transport problems alone are not unsynced data. Only show
+        // Pending when an actual local cloud snapshot is waiting to be sent.
+        setStatus(hasPending()?'pending':'retrying');
         setTimeout(()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT'].includes(channel.state))subscribe(cb).catch(()=>{})},1500);
       }
     });
@@ -184,14 +282,30 @@
         if(applying)return;
         applying=true;
         try{const data=await loadState();await cb(data,event)}
-        catch(err){console.warn('Realtime refresh failed:',err);setStatus('pending')}
+        catch(err){console.warn('Realtime refresh failed:',err);setStatus(hasPending()?'pending':'retrying')}
         finally{setTimeout(()=>applying=false,150)}
       },80);
     }
   }
   if(typeof window!=='undefined'){
-    window.addEventListener('online',()=>{flushPending();if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)){subscribe(window.__tmwaRealtimeCallback||(()=>{})).catch(()=>{})}});
-    window.addEventListener('pageshow',()=>{if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)&&window.__tmwaRealtimeCallback)subscribe(window.__tmwaRealtimeCallback).catch(()=>{})});
+    // One shared browser lifecycle handler drives both pending-cloud retry and
+    // realtime reconnect. This avoids duplicate online/visibility listeners.
+    window.addEventListener('online',()=>{
+      clearPendingRetry();
+      flushPending();
+      if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)){
+        subscribe(window.__tmwaRealtimeCallback||(()=>{})).catch(()=>{});
+      }
+    });
+    window.addEventListener('pageshow',()=>{
+      flushPending();
+      if(channel&&['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(channel.state)&&window.__tmwaRealtimeCallback){
+        subscribe(window.__tmwaRealtimeCallback).catch(()=>{});
+      }
+    });
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible')flushPending();
+    });
   }
   async function deleteObservation(id){
     await ensureAuthSession();
@@ -216,11 +330,11 @@
     hasPending,flushPending,
     onStatus(cb){statusCb=cb}
   };
-  // If the app was closed while an update was still unsynced, try again as
-  // soon as this module loads (covers "closed the tab offline, reopened
-  // later already connected" — the "online" event alone would never fire
-  // in that case because connectivity was already there before load).
-  if(configured&&hasPending()){
+  // If an update was still unsynced when the app closed, try again as soon as
+  // this module loads. The retry timer then continues while the tab remains open.
+  if(configured){
+    // Check the local pending snapshot after reload even when the lightweight
+    // status metadata was not available. The queue itself lives in IndexedDB.
     setTimeout(()=>{flushPending()},1200);
   }
 })();

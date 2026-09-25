@@ -157,15 +157,35 @@
     try { return !!JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { return false; }
   }
 
-  function logout() {
+  async function logout() {
+    // Never discard an unsynced cloud snapshot silently. Try to flush it first;
+    // if the cloud write still fails, keep the user signed in so data cannot be lost.
+    if (window.tmwaCloud?.enabled && window.tmwaCloud?.hasPending?.()) {
+      const flushed = await window.tmwaCloud.flushPending().catch(() => false);
+      if (!flushed) return false;
+    }
     localStorage.removeItem(SESSION_KEY);
-    // Cloud data is not deleted. Only local browser cache is cleared so the
-    // next user on a shared workstation cannot read the previous session's data.
-    ['tmwa-pdc-v2-data','tmwa-pdc-v2-settings','tmwa-pdc-v2-master'].forEach(k => localStorage.removeItem(k));
+    // Cloud data is not deleted. Clear only device-local cache, drafts, pending
+    // queue, and session context so another user on the same workstation cannot
+    // inherit the previous user's local state. Supabase remains the source of truth.
+    [
+      'tmwa-pdc-v2-data',
+      'tmwa-pdc-v2-settings',
+      'tmwa-pdc-v2-master',
+      'tmwa-pdc-v2-drafts',
+      'tmwa-pdc-v2-draft-observation-video',
+      'tmwa-pdc-pending-observations',
+      'tmwa-pdc-pending-cloud-snapshot',
+      'tmwa-pdc-pending-cloud-meta',
+      'tmwa-pdc-tskk-studies'
+    ].forEach(k => localStorage.removeItem(k));
+    try{ if('indexedDB' in window) indexedDB.deleteDatabase('tmwa-pdc-warehouse'); }catch(e){}
     currentProfile = null;
     if (supabaseClient) supabaseClient.auth.signOut().catch(() => {});
     showLogin();
+    return true;
   }
+
   window.tmwaAuth = {
     logout,
     isLoggedIn,

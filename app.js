@@ -55,7 +55,7 @@ function readDrafts(){const value=safeRead(DRAFT_KEY,{});return value&&typeof va
 let drafts=readDrafts();
 const draftTimers={};
 function persistDrafts(){safeWrite(DRAFT_KEY,drafts)}
-function saveDraft(scope,value){if(!scope)return;drafts[scope]=value;persistDrafts()}
+function saveDraft(scope,value){if(!scope)return;drafts[scope]=value;persistDrafts();setStorageStatus('draft')}
 function scheduleDraft(scope,capture){clearTimeout(draftTimers[scope]);draftTimers[scope]=setTimeout(()=>{try{const value=capture();if(value)saveDraft(scope,value)}catch(e){console.warn('Draft save failed:',scope,e)}},120)}
 function clearDraft(scope){if(!scope)return;delete drafts[scope];persistDrafts()}
 function getDraft(scope){return drafts[scope]||null}
@@ -68,13 +68,14 @@ async function idbSet(key,value){const db=await idbOpen();return await new Promi
 function pendingIds(){const value=safeRead(PENDING_KEY,[]);return new Set(Array.isArray(value)?value:[])}
 function rememberPending(ids){const set=pendingIds();ids.forEach(id=>set.add(id));safeWrite(PENDING_KEY,[...set])}
 function forgetPending(ids){const set=pendingIds();ids.forEach(id=>set.delete(id));safeWrite(PENDING_KEY,[...set])}
+window.__tmwaResolveLocalPending=ids=>forgetPending(Array.isArray(ids)?ids:[]);
 async function hydrateLocalData(){
   await migrateLegacyLocalData();
   let localObs=safeRead(KEY,[]), localSettings=safeRead(SETTINGS_KEY,{}), localMaster=safeRead(MASTER_KEY,null);
   try{const [io,is,im]=await Promise.all([idbGet(KEY),idbGet(SETTINGS_KEY),idbGet(MASTER_KEY)]);
-    if((!Array.isArray(localObs)||!localObs.length)&&Array.isArray(io)) localObs=io;
-    if((!localSettings||!Object.keys(localSettings).length)&&is&&typeof is==='object') localSettings=is;
-    if((!Array.isArray(localMaster)||!localMaster.length)&&Array.isArray(im)) localMaster=im;
+    if(Array.isArray(io)) localObs=io;
+    if(is&&typeof is==='object'&&!Array.isArray(is)) localSettings=is;
+    if(Array.isArray(im)) localMaster=im;
   }catch(e){console.warn('IndexedDB hydration skipped:',e)}
   if(Array.isArray(localObs)) observations=localObs;
   if(localSettings&&typeof localSettings==='object') settings={...settings,...localSettings};
@@ -198,7 +199,7 @@ function backfillRatingSnapshots(){
 }
 backfillRatingSnapshots();
 const initialHistoryState=(history.state&&typeof history.state==='object')?history.state:null;
-let state={view:['dashboard','observe','data','master','tskk','validation','rating','standard','waste','users'].includes(initialHistoryState?.appView)?initialHistoryState.appView:'dashboard',videoUrl:null,start:null,end:null,manualTime:null,observationMethod:'video',observationSessionId:null,videoFileName:'',tskkEditor:initialHistoryState?.appView==='tskk'&&initialHistoryState?.tskkEditor===true,tskkDraftId:initialHistoryState?.tskkId||null};
+let state={view:['dashboard','observe','data','master','tskk','validation','rating','standard','waste','users','audit'].includes(initialHistoryState?.appView)?initialHistoryState.appView:'dashboard',videoUrl:null,start:null,end:null,manualTime:null,observationMethod:'video',observationSessionId:null,videoFileName:'',tskkEditor:initialHistoryState?.appView==='tskk'&&initialHistoryState?.tskkEditor===true,tskkDraftId:initialHistoryState?.tskkId||null};
 let tskkHistoryGuard=false;
 let tskkRenderSeq=0;
 const $=s=>document.querySelector(s), $$=(s,root=document)=>[...root.querySelectorAll(s)];
@@ -289,6 +290,48 @@ function westinghouseFactor(r){return 1+(+r.skill||0)+(+r.effort||0)+(+r.conditi
 /* ==========================================================================
    04. Persistence & study settings helpers
    ========================================================================== */
+let storageStatusState='syncing';
+/* Profile sync indicator: status teknis tidak lagi memenuhi header. Warna dot
+   memberi sinyal cepat; detail status dibaca saat menu profil dibuka. */
+function setStorageStatus(status){
+  const current=storageStatusState||'';
+  // Draft autosave never hides a real cloud-sync state.
+  if(status==='draft'&&['pending','syncing'].includes(current))return;
+
+  // The warning badge is driven by the actual pending cloud queue, not merely
+  // by a transient status event such as a realtime-channel reconnect.
+  const cloudPending=!!window.tmwaCloud?.hasPending?.();
+  if(status==='pending'&&!cloudPending)status='syncing';
+  if(status==='synced'&&cloudPending)status='pending';
+
+  const labels={
+    draft:{title:'Status Data',text:'Draft lokal',state:'draft'},
+    pending:{title:'Status Data',text:'Belum tersinkron',state:'pending'},
+    synced:{title:'Status Data',text:'Tersinkron',state:'synced'},
+    syncing:{title:'Status Data',text:'Sedang sinkronisasi',state:'syncing'},
+    local:{title:'Status Data',text:'Tersimpan di perangkat',state:'local'}
+  };
+  const info=labels[status]||{title:'Status Data',text:String(status||'Tidak diketahui'),state:String(status||'unknown')};
+  storageStatusState=info.state;
+  const syncBox=$('#profileSyncStatus');
+  const dot=$('#profileStatusDot');
+  const alert=$('#profileStatusAlert');
+  const syncText=$('#profileSyncText');
+  const toggle=$('#profileToggle');
+  if(syncBox){
+    syncBox.dataset.state=info.state;
+    syncBox.setAttribute('aria-label',`Status data: ${info.text}`);
+  }
+  if(dot)dot.dataset.state=info.state;
+  const syncDot=syncBox?.querySelector('.ut-profile-sync-dot');
+  if(syncDot)syncDot.dataset.state=info.state;
+  if(syncText)syncText.textContent=info.text;
+  const hasWarning=cloudPending;
+  if(alert){alert.classList.toggle('hidden',!hasWarning);alert.setAttribute('aria-hidden',String(!hasWarning));}
+  if(toggle){
+    toggle.setAttribute('aria-label',hasWarning?'Buka profil pengguna. Ada data yang belum tersinkron.':'Buka profil pengguna');
+  }
+}
 function save(){
   // Local storage is the immediate commit path. Cloud sync must never block a
   // button click or navigation: Supabase can take seconds on a cold connection.
@@ -305,10 +348,18 @@ function save(){
     showToast('Penyimpanan lokal tidak terverifikasi. Data belum dianggap tersimpan. Gunakan localhost untuk pengujian lokal.','warning');
     return false;
   }
-  const x=$('#storageStatus');if(x)x.textContent=(window.tmwaCloud?.enabled?'Saved locally • syncing cloud…':'Auto-saved ')+new Date().toLocaleTimeString('id-ID');
   if(window.tmwaCloud?.enabled && canWrite()){
+    setStorageStatus('syncing');
     const snapshot={observations:[...observations],settings:{...settings},master:masterData()};
-    window.tmwaCloud.saveSnapshot(snapshot).catch(err=>console.warn('Cloud sync queued failed:',err));
+    window.tmwaCloud.saveSnapshot(snapshot).then(ok=>{
+      if(ok===true){
+        forgetPending(snapshot.observations.map(o=>o.id));
+        setStorageStatus('synced');
+      }
+      else if(ok===false)setStorageStatus('pending');
+    }).catch(err=>{console.warn('Cloud sync queued failed:',err);setStorageStatus('pending')});
+  }else{
+    setStorageStatus('local');
   }
   return true;
 }
@@ -1112,6 +1163,117 @@ function renderUsers(){
 }
 
 
+/* ==========================================================================
+   13. Audit Trail — ADMIN ONLY
+   Membaca audit_logs langsung dari Supabase. Tidak disimpan di cache lokal
+   karena audit trail harus mengikuti data cloud sebagai sumber kebenaran.
+   Identitas actor diambil dari user_profiles; log tanpa actor_id tidak
+   diatribusikan ke pengguna lain dan ditampilkan sebagai aktivitas sistem.
+   ========================================================================== */
+const AUDIT_TABLE_LABELS={
+  operators:'PIC / Operator',
+  master_elements:'Master Element',
+  observations:'Observations',
+  rating_factors:'Rating Factor',
+  study_settings:'Parameter Validasi',
+  user_profiles:'User Management',
+  tskk_studies:'TSKK Study',
+  tskk_items:'TSKK Item'
+};
+function auditModuleLabel(name){return AUDIT_TABLE_LABELS[name]||String(name||'—').replace(/_/g,' ')}
+function auditActionClass(action){return action==='DELETE'?'bad':action==='UPDATE'?'warn':'ok'}
+function auditActorLabel(profile,actorId){
+  if(profile)return String(profile.full_name||profile.email||'Pengguna').trim()||'Pengguna';
+  return actorId?'Pengguna tidak ditemukan':'System — actor tidak tercatat';
+}
+function auditValueText(value){
+  if(value===null||value===undefined||value==='')return '—';
+  if(typeof value==='object')return JSON.stringify(value,null,2);
+  return String(value);
+}
+function auditDiffRows(log){
+  const before=log?.old_data&&typeof log.old_data==='object'?log.old_data:{};
+  const after=log?.new_data&&typeof log.new_data==='object'?log.new_data:{};
+  if(log.action==='INSERT')return Object.keys(after).sort().map(key=>({key,before:null,after:after[key]}));
+  if(log.action==='DELETE')return Object.keys(before).sort().map(key=>({key,before:before[key],after:null}));
+  return [...new Set([...Object.keys(before),...Object.keys(after)])].sort()
+    .filter(key=>JSON.stringify(before[key])!==JSON.stringify(after[key]))
+    .map(key=>({key,before:before[key],after:after[key]}));
+}
+function openAuditDetail(log,profilesById){
+  const actor=auditActorLabel(profilesById.get(log.actor_id),log.actor_id);
+  const when=new Date(log.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'medium'});
+  const rows=auditDiffRows(log);
+  const modal=document.createElement('div');
+  modal.className='modal-backdrop audit-detail-backdrop';
+  modal.innerHTML=`<div class="modal audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="auditDetailTitle">
+    <div class="audit-detail-head"><div><h3 id="auditDetailTitle">Detail Perubahan</h3><p class="muted">${esc(auditModuleLabel(log.table_name))} • ${esc(String(log.action||'').toUpperCase())}</p></div><button type="button" class="audit-detail-close" aria-label="Tutup detail">×</button></div>
+    <div class="audit-detail-meta"><div><span>Pengguna</span><b>${esc(actor)}</b></div><div><span>Waktu</span><b>${esc(when)}</b></div><div><span>Aksi</span><b><span class="badge ${auditActionClass(log.action)}">${esc(log.action||'—')}</span></b></div><div><span>Modul</span><b>${esc(auditModuleLabel(log.table_name))}</b></div><div class="full"><span>Record ID</span><b class="audit-record-value">${esc(log.record_id||'—')}</b></div></div>
+    <div class="audit-change-section"><h4>${log.action==='UPDATE'?'Perubahan Data':log.action==='INSERT'?'Data Baru':'Data Sebelum Dihapus'}</h4>${rows.length?`<div class="table-wrap audit-detail-table-wrap"><table class="data-table audit-detail-table"><thead><tr><th>Field</th><th>Sebelum</th><th>Sesudah</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.key)}</b></td><td><span class="audit-value">${esc(auditValueText(r.before))}</span></td><td><span class="audit-value">${esc(auditValueText(r.after))}</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada field yang berubah.</div>'}</div>
+      </div>`;
+  document.body.appendChild(modal);
+  const close=()=>{modal.classList.remove('is-visible');setTimeout(()=>modal.remove(),160)};
+  $$('.audit-detail-close',modal).forEach(btn=>btn.onclick=close);
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  requestAnimationFrame(()=>modal.classList.add('is-visible'));
+}
+function renderAudit(){
+  setHeader('Audit Trail','RIWAYAT PERUBAHAN • ADMIN ONLY');
+  if(!ensureAdmin()){state.view='dashboard';return renderDashboard();}
+  const sb=window.tmwaAuth?.getClient?.();
+  if(!sb){$('#app').innerHTML='<div class="content"><div class="card"><div class="analysis-note">Supabase client belum siap.</div></div></div>';return;}
+  $('#app').innerHTML=`<div class="content page-audit"><div class="card section audit-page">
+    <div class="section-head audit-page-title"><div><h2>Audit Trail</h2><h3>Riwayat Perubahan</h3><p class="muted">Menampilkan perubahan data yang tercatat otomatis di Supabase: siapa, kapan, modul, aksi, dan detail nilai sebelum/sesudah.</p></div><button id="auditRefresh" class="btn secondary audit-action-btn" type="button">↻ Refresh</button></div>
+    <div class="filters audit-filters"><label>Aksi<select id="auditAction"><option value="">Semua Aksi</option><option value="INSERT">INSERT</option><option value="UPDATE">UPDATE</option><option value="DELETE">DELETE</option></select></label><label>Modul<select id="auditModule"><option value="">Semua Modul</option>${Object.entries(AUDIT_TABLE_LABELS).map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join('')}</select></label><label>Pengguna<select id="auditActor"><option value="">Semua Pengguna</option></select></label><label>Tanggal Mulai<input id="auditDateFrom" type="date"></label><label>Tanggal Akhir<input id="auditDateTo" type="date"></label><label class="audit-search-field">Cari Record / Modul<input id="auditSearch" type="search" placeholder="Record ID atau modul"></label><button id="auditApply" class="btn primary audit-action-btn" type="button">Terapkan</button></div>
+    <div id="auditMeta" class="summary-bar audit-meta"><span>Memuat riwayat...</span></div>
+    <div id="auditTable"><div class="empty">Memuat audit trail...</div></div>
+  </div></div>`;
+
+  const pageSize=50;
+  let page=0,total=0,profiles=[],profilesById=new Map();
+  const $id=id=>document.getElementById(id);
+  const collectFilters=()=>({action:$id('auditAction').value,module:$id('auditModule').value,actor:$id('auditActor').value,dateFrom:$id('auditDateFrom').value,dateTo:$id('auditDateTo').value,search:$id('auditSearch').value.trim()});
+  const setMeta=(count)=>{const shown=Math.min(total,(page*pageSize)+count);const from=total?((page*pageSize)+1):0;const to=shown;const pages=Math.max(1,Math.ceil(total/pageSize));$id('auditMeta').innerHTML=`<span>Menampilkan <b>${from}–${to}</b> dari <b>${total}</b> catatan</span><span>Halaman <b>${Math.min(page+1,pages)}</b> / <b>${pages}</b></span>`};
+  const renderRows=(rows)=>{
+    const html=rows.length?`<div class="table-wrap audit-table-wrap"><table class="data-table audit-table"><thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Modul</th><th>Record ID</th><th>Detail</th></tr></thead><tbody>${rows.map(log=>`<tr><td class="audit-time">${esc(new Date(log.created_at).toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'}))}</td><td>${esc(auditActorLabel(profilesById.get(log.actor_id),log.actor_id))}</td><td><span class="badge ${auditActionClass(log.action)}">${esc(log.action)}</span></td><td>${esc(auditModuleLabel(log.table_name))}</td><td class="audit-record-cell" title="${esc(log.record_id||'')}">${esc(log.record_id||'—')}</td><td><button type="button" class="btn ghost audit-detail-btn" data-audit-id="${esc(log.id)}">Detail</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tidak ada riwayat perubahan yang sesuai filter.</div>';
+    $id('auditTable').innerHTML=html;
+    $$('.audit-detail-btn').forEach(btn=>{const log=rows.find(x=>String(x.id)===String(btn.dataset.auditId));btn.onclick=()=>log&&openAuditDetail(log,profilesById)});
+  };
+  async function loadProfiles(){
+    const {data,error}=await sb.from('user_profiles').select('id,email,full_name,role,status').order('full_name',{ascending:true});
+    if(error)throw error;
+    profiles=data||[];profilesById=new Map(profiles.map(x=>[x.id,x]));
+    $id('auditActor').innerHTML='<option value="">Semua Pengguna</option>'+profiles.map(x=>`<option value="${esc(x.id)}">${esc(auditActorLabel(x))}${x.role?` — ${esc(x.role)}`:''}</option>`).join('');
+  }
+  async function loadAudit(){
+    const filter=collectFilters();
+    if(filter.dateFrom&&filter.dateTo&&filter.dateFrom>filter.dateTo){showToast('Tanggal Mulai tidak boleh melebihi Tanggal Akhir.','warning');return;}
+    const offset=page*pageSize;
+    let q=sb.from('audit_logs').select('id,actor_id,action,table_name,record_id,old_data,new_data,created_at',{count:'exact'}).order('created_at',{ascending:false}).range(offset,offset+pageSize-1);
+    if(filter.action)q=q.eq('action',filter.action);
+    if(filter.module)q=q.eq('table_name',filter.module);
+    if(filter.actor)q=q.eq('actor_id',filter.actor);
+    if(filter.dateFrom)q=q.gte('created_at',new Date(`${filter.dateFrom}T00:00:00`).toISOString());
+    if(filter.dateTo){const end=new Date(`${filter.dateTo}T00:00:00`);end.setDate(end.getDate()+1);q=q.lt('created_at',end.toISOString());}
+    const safeSearch=filter.search.replace(/[^a-zA-Z0-9_\- ]/g,'').trim();
+    if(safeSearch)q=q.or(`record_id.ilike.%${safeSearch}%,table_name.ilike.%${safeSearch}%,action.ilike.%${safeSearch}%`);
+    $id('auditTable').innerHTML='<div class="empty">Memuat audit trail...</div>';
+    const {data,error,count}=await q;
+    if(error){console.error('Audit trail load failed:',error);$id('auditTable').innerHTML='<div class="analysis-note">Gagal memuat Audit Trail: '+esc(error.message)+'</div>';$id('auditMeta').innerHTML='<span>Data audit tidak dapat dimuat.</span>';return;}
+    total=Number(count)||0;renderRows(data||[]);setMeta((data||[]).length);
+    const pages=Math.max(1,Math.ceil(total/pageSize));
+    const nav=document.getElementById('auditPagination');
+    const block=`<div id="auditPagination" class="toolbar audit-pagination"><button type="button" class="btn ghost" id="auditPrev" ${page<=0?'disabled':''}>← Sebelumnya</button><button type="button" class="btn ghost" id="auditNext" ${page>=pages-1?'disabled':''}>Berikutnya →</button></div>`;
+    if(nav)nav.outerHTML=block;else $id('auditTable').insertAdjacentHTML('afterend',block);
+    document.getElementById('auditPrev').onclick=()=>{if(page>0){page--;loadAudit()}};
+    document.getElementById('auditNext').onclick=()=>{if(page<pages-1){page++;loadAudit()}};
+  }
+  $('#auditApply').onclick=()=>{page=0;loadAudit()};
+  $('#auditRefresh').onclick=async()=>{try{await loadProfiles();page=0;await loadAudit();showToast('Audit Trail diperbarui.','success')}catch(err){console.error(err);showToast('Gagal memuat daftar pengguna audit: '+(err.message||err),'error')}};
+  $('#auditSearch').onkeydown=e=>{if(e.key==='Enter'){page=0;loadAudit()}};
+  loadProfiles().then(()=>loadAudit()).catch(err=>{console.error('Audit profile load failed:',err);$id('auditTable').innerHTML='<div class="analysis-note">Gagal memuat pengguna audit: '+esc(err.message)+'</div>';});
+}
+
 /* ========================================================================
    TSKK / SWCT — Observation-driven Standard Work Combination Table
    Source = saved observations. Master Data remains the single source
@@ -1337,6 +1499,7 @@ const VIEW_LABELS={
   standard:'Standard Time',
   waste:'Waste & Pareto',
   users:'User Management',
+  audit:'Audit Trail',
 };
 function updateSidebarTitle(){
   const el=document.getElementById('sidebarTitle');
@@ -1348,7 +1511,7 @@ function updateSidebarTitle(){
   el.textContent=next;
   el.classList.add('sidebar-title-in');      // jalankan fade-slide masuk
 }
-const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,validation:renderValidation,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers};
+const renderers={dashboard:renderDashboard,observe:renderObserve,data:renderData,master:renderMaster,tskk:renderTSKK,validation:renderValidation,rating:renderRating,standard:renderStandard,waste:renderWaste,users:renderUsers,audit:renderAudit};
 function setSidebar(open){const shell=$('#appShell'); if(!shell)return; const isOpen=!!open; shell.classList.toggle('sidebar-open',isOpen); const toggle=$('#sidebarToggle'); if(toggle){ toggle.setAttribute('aria-expanded',String(isOpen)); toggle.setAttribute('aria-label',isOpen?'Tutup menu navigasi':'Buka menu navigasi'); }}
 function syncNavGroups(){$$('#nav .nav-group').forEach(g=>{const items=g.querySelector('.nav-group-items'),toggle=g.querySelector('.nav-group-toggle');if(!items||!toggle)return;const active=!!g.querySelector('button[data-view].active');g.classList.toggle('open',active);toggle.setAttribute('aria-expanded',String(active));items.setAttribute('aria-hidden',String(!active));});}
 function setNavGroup(group,open){if(!group)return;const items=group.querySelector('.nav-group-items'),toggle=group.querySelector('.nav-group-toggle');group.classList.toggle('open',!!open);if(toggle)toggle.setAttribute('aria-expanded',String(!!open));if(items)items.setAttribute('aria-hidden',String(!open));}
@@ -1395,15 +1558,11 @@ async function bootCloud(){
       if(window.tmwaAuthMiddleware?.waitUntilReady) await window.tmwaAuthMiddleware.waitUntilReady();
       if(window.tmwaAuthMiddleware?.requireSession) await window.tmwaAuthMiddleware.requireSession();
       window.tmwaCloud.onStatus(status=>{
-        const x=$('#storageStatus'); if(!x)return;
-        const time=new Date().toLocaleTimeString('id-ID');
-        if(status==='synced') x.textContent='Cloud synced '+time;
-        else if(status==='retrying') x.textContent='Menyambungkan ulang ke cloud…';
-        else if(status==='pending') x.textContent='Saved locally • akan disinkronkan otomatis begitu online '+time;
+        if(status==='synced') setStorageStatus('synced');
+        else if(status==='retrying') setStorageStatus('syncing');
+        else if(status==='pending') setStorageStatus('pending');
       });
-      if(window.tmwaCloud.hasPending()){
-        const x=$('#storageStatus'); if(x)x.textContent='Ada data lokal belum tersinkron • mencoba otomatis…';
-      }
+      if(window.tmwaCloud.hasPending()) setStorageStatus('pending');
       const pendingBeforeLoad=window.tmwaCloud.hasPending();
       if(pendingBeforeLoad) await window.tmwaCloud.flushPending();
       const cloud=await window.tmwaCloud.loadState();
@@ -1446,6 +1605,7 @@ async function bootCloud(){
     }
   }catch(err){console.error(err);showToast(err?.code==='AUTH_ACCESS_DENIED'?'Akun belum memiliki akses aktif. Hubungi administrator.':(err?.message||'Backend cloud belum dapat dimuat.'),'error',5000);$('#loginScreen').classList.remove('hidden');$('#appShell').classList.add('hidden');document.body.classList.remove('auth-booting');return;}
   render();
+  if(!window.tmwaCloud?.enabled) setStorageStatus('local');
   document.dispatchEvent(new CustomEvent('tmwa-app-ready'));
 }
 async function saveLocalOnly(){safeWrite(KEY,observations);safeWrite(SETTINGS_KEY,settings);try{await Promise.all([idbSet(KEY,observations),idbSet(SETTINGS_KEY,settings)])}catch(e){console.warn('Local-only save failed:',e)}}
@@ -1498,7 +1658,11 @@ startAppCloud();
   var logoutBtn = document.getElementById('profileLogout');
   if(logoutBtn) logoutBtn.addEventListener('click', function(){
     closeMenu();
-    tmwaDialog.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true}).then(ok=>{if(ok)window.tmwaAuth&&window.tmwaAuth.logout&&window.tmwaAuth.logout()});
+    tmwaDialog.confirm('Sesi Anda akan diakhiri dan kembali ke halaman login.',{title:'Keluar dari aplikasi?',confirmText:'Keluar',danger:true}).then(async ok=>{
+      if(!ok||!window.tmwaAuth?.logout)return;
+      const loggedOut=await window.tmwaAuth.logout();
+      if(loggedOut===false)showToast('Masih ada data Pending Sync. Hubungkan ke cloud dan tunggu status menjadi Synced sebelum keluar.','warning',5600);
+    });
   });
 
   var pwBtn = document.getElementById('profileChangePw');
