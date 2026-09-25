@@ -813,6 +813,10 @@ input[type="password"]{min-height:var(--ui-control-h)}
 .ut-profile-sync-copy span{font-size:9px!important;line-height:1.35!important;color:#64748B!important;font-weight:700!important;overflow-wrap:anywhere!important}
 .ut-profile-sync[data-state="pending"]{background:#FFF7F7!important;border-color:#F5C2C2!important}
 .ut-profile-sync[data-state="synced"]{background:#F3FBF7!important;border-color:#C9EBDD!important}
+/* Waktu perangkat real-time ditampilkan di dalam menu profil, bukan di header. */
+.ut-profile-clock{display:flex!important;flex-direction:column!important;gap:2px!important;margin-top:10px!important;padding-top:10px!important;border-top:1px solid rgba(10,25,47,.08)!important;min-width:0!important}
+.ut-profile-clock strong{font-size:14px!important;line-height:1.15!important;color:#0F172A!important;font-weight:900!important;letter-spacing:.2px!important;font-variant-numeric:tabular-nums!important}
+.ut-profile-clock span{font-size:9px!important;line-height:1.35!important;color:#64748B!important;font-weight:700!important;text-transform:none!important;overflow-wrap:anywhere!important}
 #appShell.hidden,.app-shell.hidden{display:none!important}
 #loginScreen.hidden,.login-screen.hidden{display:none!important}
 #appShell.hidden .ut-topbar,
