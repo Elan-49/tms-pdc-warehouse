@@ -5,6 +5,10 @@
   const SESSION_KEY = 'tmwa_pdc_session';
   const configured = typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL &&
     typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY;
+  const localHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const localFile = location.protocol === 'file:';
+  const localModeAllowed = !configured && typeof ALLOW_LOCAL_MODE !== 'undefined' &&
+    !!ALLOW_LOCAL_MODE && (localHost || localFile);
 
   let client = null;
   let currentSession = null;
@@ -94,7 +98,8 @@
   async function initialize() {
     try {
       if (!configured) {
-        readyResolve({ mode: 'local', session: null });
+        // Local mode follows the same flag and environment rule as auth.js.
+        readyResolve({ mode: 'local', session: null, allowed: localModeAllowed });
         return;
       }
       const session = await readSession();
@@ -115,7 +120,11 @@
   async function requireSession() {
     const state = await waitUntilReady();
     if (!configured) {
-      if (localSessionExists() && ['localhost','127.0.0.1'].includes(location.hostname) && typeof ALLOW_LOCAL_MODE !== 'undefined' && ALLOW_LOCAL_MODE) return { mode: 'local', session: null, profile: { role:'admin', status:'approved' } };
+      if (localSessionExists() && localModeAllowed) {
+        return { mode: 'local', session: null, profile: { role:'admin', status:'approved' } };
+      }
+      // Never keep a local session when local mode is disabled or the host is not local.
+      if (localSessionExists()) localStorage.removeItem(SESSION_KEY);
       const error = new Error('Akses lokal tidak diizinkan pada host produksi.');
       error.code = 'AUTH_SESSION_REQUIRED';
       throw error;
@@ -191,7 +200,11 @@
     getClient,
     getSession: async () => {
       await waitUntilReady();
-      if (!configured) return localSessionExists() ? null : null;
+      if (!configured) {
+        return localModeAllowed && localSessionExists()
+          ? { mode: 'local', session: null, profile: { role: 'admin', status: 'approved' } }
+          : null;
+      }
       return readSession();
     }
   };

@@ -19,8 +19,7 @@ const ALLOW_LOCAL_MODE = false;
 
 /* ------------------------------------------------------------------------
    MODE 2 — SUPABASE (akun & password sungguhan per orang, tersimpan di cloud)
-   Kosongkan (biarkan '') jika belum ingin memakai ini — aplikasi otomatis
-   memakai MODE 1 di atas. Isi kedua nilai ini SETELAH mengikuti panduan
+   Isi kedua nilai ini SETELAH mengikuti panduan
    di AUTH-SETUP.md kalau sudah siap memakai akun Supabase sungguhan:
    ------------------------------------------------------------------------ */
 const SUPABASE_URL = 'https://cakfxhtnakqicphvaiss.supabase.co';

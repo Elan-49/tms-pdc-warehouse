@@ -58,6 +58,40 @@ body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--ut-bg
 .page-validation>.analysis-note,.page-validation>.card,.page-validation>.grid{margin-top:0!important;margin-bottom:0!important}
 .page-validation>.card{width:100%}
 
+/* ------------------------------------------------------------------------
+   VALIDASI DATA WAKTU — JARAK KONTEN
+   Menjaga jarak judul, parameter, keterangan, dan tombol tetap seimbang.
+   Berlaku untuk desktop, tablet, dan mobile.
+   ------------------------------------------------------------------------ */
+.page-validation .validation-parameters{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.page-validation .validation-parameters .section-head{
+  margin-bottom:18px;
+}
+.page-validation .validation-parameter-grid{
+  row-gap:16px!important;
+  column-gap:14px!important;
+}
+.page-validation .validation-parameter-grid label{
+  gap:7px!important;
+}
+.page-validation .validation-parameter-grid label small{
+  display:block;
+  margin-top:1px;
+  line-height:1.4;
+}
+.page-validation .validation-setting-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid var(--ut-line);
+}
+
 /* -------------------------------------------------------------------------
    04. Tables, forms, badges & controls
    ------------------------------------------------------------------------- */
@@ -298,7 +332,7 @@ button,.btn,.sidebar button,.import-btn{touch-action:manipulation}
 html, body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 .app-shell, .main, #app, .content, .dashboard-content, .card, .workspace, .dashboard-filter, .chart-card, .video-card{min-width:0;max-width:100%}
 img, video, svg, canvas{max-width:100%}
-.login-screen{position:fixed;inset:0;z-index:3000!important;overflow-y:auto;background:#fff!important;color:#111827!important;background-color:#fff!important;background-image:url('login-building-bg.webp')!important;background-repeat:no-repeat!important;background-size:cover!important;background-position:center center!important}
+.login-screen{position:fixed;inset:0;z-index:3000!important;overflow-y:auto;background:#fff!important;color:#111827!important;background-color:#fff!important;background-image:url('assets/login-building-bg.webp')!important;background-repeat:no-repeat!important;background-size:cover!important;background-position:center center!important}
 .login-bg{position:fixed;inset:0;z-index:0;background:#0b2340}
 .login-bg img{width:100%;height:100%;object-fit:cover;display:block}
 .login-bg-gradient{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(7,27,51,0) 0%,rgba(7,27,51,0) 52%,rgba(7,27,51,.35) 75%,rgba(7,27,51,.72) 100%)}
@@ -569,6 +603,18 @@ body.auth-booting .session-loader{position:fixed!important;inset:0!important;z-i
 .rating-table td{border-right:0!important;border-left:0!important;box-sizing:border-box!important;border-top:0!important}
 .rating-table th:last-child,
 .rating-table td:last-child{border-right:0!important}
+/* Rating Factor table header: keep the header height consistent with other data tables. */
+.rating-table thead th{
+  padding:7px 8px!important;
+  line-height:1.15!important;
+  font-size:10.5px!important;
+  height:36px!important;
+  min-height:36px!important;
+  white-space:nowrap!important;
+  vertical-align:middle!important;
+}
+.rating-table thead tr{height:36px!important;}
+
 .rating-table th:nth-child(1),.rating-table td:nth-child(1){min-width:120px!important}
 .rating-table th:nth-child(2),.rating-table td:nth-child(2){min-width:180px!important}
 .rating-table th:nth-child(3),.rating-table td:nth-child(3),
@@ -1472,6 +1518,14 @@ input[type="password"]{min-height:var(--ui-control-h)}
   .tskk-work-table input,.tskk-work-table select,
   .data-table select{font-size:13px!important}
 }
+/* Validation spacing — MOBILE / TABLET */
+@media (max-width:760px){
+  .page-validation .validation-parameters .section-head{margin-bottom:16px;}
+  .page-validation .validation-parameter-grid{row-gap:14px!important;}
+  .page-validation .validation-setting-actions{margin-top:18px;padding-top:14px;}
+  .page-validation .validation-setting-actions .btn{width:100%;max-width:100%;}
+}
+
 /* ===== RESPONSIVE: MOBILE PHONE (<=700px) ===== */
 @media (max-width:700px){
   .section-head{display:block}
@@ -2163,6 +2217,34 @@ input[type="password"]{min-height:var(--ui-control-h)}
 }
 
 
+/* ==========================================================================
+   VALIDATION TABLES — MOBILE PHONE
+   Tabel tetap berupa tabel; pada layar sempit dapat digeser horizontal seperti
+   tabel data lainnya. Tidak diubah menjadi layout card.
+   ========================================================================== */
+@media (max-width:700px){
+  .page-validation .validation-coverage-table,
+  .page-validation .validation-analysis-table{
+    width:max-content!important;
+    min-width:720px!important;
+    table-layout:auto!important;
+  }
+
+  .page-validation .validation-coverage-table-wrap,
+  .page-validation .validation-analysis-table-wrap,
+  .page-validation .table-wrap:has(.validation-coverage-table),
+  .page-validation .table-wrap:has(.validation-analysis-table){
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    touch-action:pan-x pan-y!important;
+  }
+}
+
 /* Chart axis labels: explicit, aligned, and readable on desktop/mobile */
 .tskk-axis-caption{position:absolute;left:50%;top:4px;transform:translateX(-50%);font-size:10px;line-height:1;letter-spacing:.15px;color:#5f6b7a;white-space:nowrap;font-weight:800;pointer-events:none}
 /* ===== RESPONSIVE: MOBILE PHONE (<=700px) ===== */
@@ -2232,6 +2314,6 @@ input[type="password"]{min-height:var(--ui-control-h)}
 
 .validation-analysis-table .badge{white-space:normal!important;display:inline-block;text-align:center}
 
-/* Final override: Validasi tetap satu lebar halaman, tanpa horizontal slider. */
-.page-validation .validation-analysis-table{width:100%!important;min-width:0!important;max-width:100%!important}
-.page-validation .table-wrap:has(.validation-analysis-table){overflow-x:hidden!important;max-width:100%!important}
+/* Validation wrapper tetap mengikuti pola table-wrap global.
+   Pada mobile, aturan RESPONSIVE di atas mengaktifkan horizontal scrolling. */
+.page-validation .validation-analysis-table{max-width:none!important}

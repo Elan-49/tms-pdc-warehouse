@@ -173,11 +173,11 @@ TMWA-PDC-WAREHOUSE/
 ├── supabase/
 │   └── schema.sql
 └── assets/
-    ├── ut-logo-2.png
-    ├── ut-logo-bulat.png
-    ├── ut-logo.png
-    ├── ut-motto.png
-    └── login-building-bg.webp
+    ├── assets/ut-logo-2.png
+    ├── assets/ut-logo-bulat.png
+    ├── assets/ut-logo.png
+    ├── assets/ut-motto.png
+    └── assets/login-building-bg.webp
 ```
 
 ## Local dan production
